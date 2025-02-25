@@ -5,9 +5,8 @@
 #import bevy_pbr::mesh_functions::get_world_from_local
 #import bevy_pbr::prepass_io::Vertex
 
-#import "shaders/intensity_shared.wgsl"::get_intensity_coefficient;
 
-@group(2) @binding(0) var<uniform> radius: f32;
+#import "shaders/intensity_shared.wgsl"::{galaxy, get_intensity_coefficient};
 
 // see https://github.com/kulkalkul/bevy_mod_billboard/blob/main/src/shader/billboard.wgsl
 
@@ -22,7 +21,7 @@ struct MyVertexOutput {
 fn vertex(vertex: Vertex) -> MyVertexOutput {
     let model = get_world_from_local(vertex.instance_index);
 
-    let world_space = vertex.position.xyz * vec3<f32>(radius*1.25,50.0,radius*1.25);
+    let world_space = vertex.position.xyz * vec3<f32>(galaxy.radius*1.25,50.0,galaxy.radius*1.25);
     let position = view.clip_from_world * model * vec4<f32>(world_space, 1.0);
 
     var out: MyVertexOutput;
@@ -64,7 +63,7 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> f32 {
     for(var i =0; i<64; i++) {
         let p = o1 + rd * (f32(i) * t);
 
-        let intensity = get_intensity_coefficient(p, radius, 1.0, true);
+        let intensity = get_intensity_coefficient(p, 1.0, true);
 
         accumulation += intensity;
     }
@@ -76,7 +75,7 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> f32 {
 fn fragment(
     mesh: MyVertexOutput,
 ) -> @location(0) vec4<f32> {
-    let t = sphIntersect(mesh.camera_origin, normalize(mesh.ray_dir), radius);
+    let t = sphIntersect(mesh.camera_origin, normalize(mesh.ray_dir), galaxy.radius);
 
     //let a = (t.y-max(0.0,t.x))/(radius*2.0)*0.1;
     let a = march(mesh.camera_origin, normalize(mesh.ray_dir), max(0.0,t.x),max(0.0,t.y));

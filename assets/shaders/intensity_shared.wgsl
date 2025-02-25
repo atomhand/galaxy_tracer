@@ -1,5 +1,35 @@
 const pi = radians(180.0);
     
+
+// These structs are duplicated in render.rs, so make sure to update both
+struct GalaxyParams {
+    arm_offsets : vec4<f32>,
+    radius : f32,
+    num_arms : i32,
+    winding_b : f32,
+    winding_n : f32
+}
+struct BulgeParams {
+    strength : f32,
+    r0 : f32, // (inverse) width
+}
+struct ComponentParams {
+    strength : f32,
+    arm_width : f32, // inverse
+    y0 : f32,
+    r0 : f32, // radial intensity start
+    r1 : f32, // radial falloff start
+    angular_offset : f32,
+    winding : f32,
+    noise_scale : f32,
+    noise_offset : f32,
+    tilt : f32,
+    ks : f32
+}
+
+@group(2) @binding(0) var<uniform> galaxy: GalaxyParams;
+@group(2) @binding(1) var<uniform> bulge: BulgeParams;
+
 fn get_height_modulation(height : f32, y0 : f32) -> f32 {
     // only overwritten by Bulge
 
@@ -43,23 +73,16 @@ fn find_theta_difference(t1 : f32, t2 : f32) -> f32 {
     return v;
 }
 
-// This is where the per component angular delta is added
-// It's maybe a little awkward to apply it here
-// But we do so in order to follow the original program
-fn get_theta(p : vec3<f32>, angular_offset : f32) -> f32 {
-    return atan2(p.x,p.z) + angular_offset;
-}
-
 fn arm_modifier(p : vec3<f32>, r : f32, angular_offset : f32, arm_id : i32) -> f32 {
     // .. these will be loaded from a uniform
 
-    let wb = 0.5;
-    let wn = 3.0;
+    let wb = galaxy.winding_b;
+    let wn = galaxy.winding_n;
     let aw = 0.1 * f32(arm_id+1);
-    let disp = f32(arm_id) * radians(90.0); // angular offset
+    let disp = galaxy.arm_offsets[arm_id]; // angular offset
 
     let winding = get_winding(r,wb,wn);
-    let theta = -get_theta(p,angular_offset);
+    let theta = -(atan2(p.x,p.z)+angular_offset);
 
     let v = abs(find_theta_difference(winding,theta+disp))/pi;
 
@@ -68,15 +91,14 @@ fn arm_modifier(p : vec3<f32>, r : f32, angular_offset : f32, arm_id : i32) -> f
 
 fn all_arms_modifier(distance : f32, p : vec3<f32>, angular_offset : f32) -> f32 {
     var v = 0.0;
-    let num_arms = 4;// 0 to 4
     for(var i = 0; i<4; i++) {
-        if i >= num_arms { break; }
+        if i >= galaxy.num_arms { break; }
         v = max(v,arm_modifier(p,distance,angular_offset,i));
     }
     return v;
 }
 
-fn get_intensity_coefficient(p : vec3<f32>, galaxy_radius : f32, weight : f32, is_arm : bool) -> f32 {
+fn get_intensity_coefficient(p : vec3<f32>, weight : f32, is_arm : bool) -> f32 {
     // component paramaters
     // These either need to be passed as function parameters
     // Or the function could be passed a component id and then read these from a uniform buffer
@@ -87,7 +109,7 @@ fn get_intensity_coefficient(p : vec3<f32>, galaxy_radius : f32, weight : f32, i
     let y0 = 0.01; // height of the component above the galaxy plane (called z0 in the program)
 
 
-    let d = length(p.xz) / galaxy_radius; // distance to galactic central axis
+    let d = length(p.xz) / galaxy.radius; // distance to galactic central axis
 
     // this paramater is called scale in the reference codebase
     let central_falloff = pow(smoothstep(0.0,1.0 * inner, d), 4.0);

@@ -6,7 +6,7 @@
 #import bevy_pbr::prepass_io::Vertex
 
 
-#import "shaders/intensity_shared.wgsl"::{galaxy, get_intensity_coefficient};
+#import "shaders/intensity_shared.wgsl"::{galaxy, step};
 
 // see https://github.com/kulkalkul/bevy_mod_billboard/blob/main/src/shader/billboard.wgsl
 
@@ -45,29 +45,23 @@ fn sphIntersect( ro : vec3<f32> , rd : vec3<f32> ,  r : f32 ) -> vec2<f32>
     return vec2(-b - h, -b + h);
 }
 
-fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> f32 {
-    var accumulation = 0.0;
-
-    if t1 == -1.0 {
-        return accumulation;
+fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {
+    
+    var col = vec3<f32>(0.0,0.0,0.0);
+    if t1 == -1.0 && t2 == -1.0 {
+        return col;
     }
-    
-    let n = vec3(0.0,1.0,0.0);
-    let d = 25.0;
-    let tplane1 : f32= -(dot(n,ro)+d) / dot(n, rd);
-    let tplane2 : f32 = -(dot(n,ro)-d) / dot(n, rd);
 
-    let o1 = ro + rd * max(0.0,tplane1);
+    let o1 = ro + rd * max(0.0,t1);
     
-    let t = (tplane2 - max(0.0,tplane1))/64.0;
+    let t = (t2 - max(0.0,t1))/64.0;
     for(var i =0; i<64; i++) {
-        let p = o1 + rd * (f32(i) * t);
+        // walking back from t2
+        let p = o1 + rd * (f32(64-i) * t);
 
-        let intensity = get_intensity_coefficient(p, 1.0, true);
-
-        accumulation += intensity;
+        col = step(p, col, 1.0 / 64.0);
     }
-    return accumulation;
+    return col;
     
 }
 
@@ -75,9 +69,16 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> f32 {
 fn fragment(
     mesh: MyVertexOutput,
 ) -> @location(0) vec4<f32> {
-    let t = sphIntersect(mesh.camera_origin, normalize(mesh.ray_dir), galaxy.radius);
+    //let t = sphIntersect(mesh.camera_origin, normalize(mesh.ray_dir), galaxy.radius);
+
+    let ro = mesh.camera_origin;
+    let rd = normalize(mesh.ray_dir);
+    let n = vec3(0.0,1.0,0.0);
+    let d = 25.0;
+    let t1 : f32= -(dot(n,ro)+d) / dot(n, rd);
+    let t2 : f32 = -(dot(n,ro)-d) / dot(n, rd);
 
     //let a = (t.y-max(0.0,t.x))/(radius*2.0)*0.1;
-    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), max(0.0,t.x),max(0.0,t.y));
-    return vec4<f32>(1.0,0.0,0.0,1.0)*a;        
+    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), t1, t2);
+    return vec4<f32>(a,1.0);        
 }

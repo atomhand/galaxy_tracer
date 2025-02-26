@@ -98,14 +98,13 @@ fn all_arms_modifier(distance : f32, p : vec3<f32>, angular_offset : f32) -> f32
     return v;
 }
 
-fn get_intensity_coefficient(p : vec3<f32>, weight : f32, is_arm : bool) -> f32 {
+fn get_intensity_coefficient(p : vec3<f32>, angular_offset : f32, weight : f32, is_arm : bool) -> f32 {
     // component paramaters
     // These either need to be passed as function parameters
     // Or the function could be passed a component id and then read these from a uniform buffer
 
     let r0 = 0.5;
     let inner = 0.1; // central falloff parameter
-    let angular_offset = -0.2;// per-component angular offset in radians. Called Delta in the program help
     let y0 = 0.01; // height of the component above the galaxy plane (called z0 in the program)
 
 
@@ -119,4 +118,23 @@ fn get_intensity_coefficient(p : vec3<f32>, weight : f32, is_arm : bool) -> f32 
     let arm_mod = select(1.0,all_arms_modifier(d,p, angular_offset),is_arm); // some components don't follow the arms
 
     return central_falloff * arm_mod * h * r;
+}
+
+fn step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
+
+    let disk = get_intensity_coefficient(p, 0.0, 1.0, true);
+
+    let dust = get_intensity_coefficient(p, -1.0, 1.0, true);
+
+    let disk_col = vec3<f32>(3.54387,3.44474,3.448229);
+    let dust_col = vec3<f32>(1.0,1.0,1.0);
+
+    var col = in_col;
+    col += disk_col * disk ;
+
+    let extinction = exp(-dust * dust_col );
+
+    col *= extinction;
+
+    return col;
 }

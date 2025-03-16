@@ -120,11 +120,11 @@ pub fn camera_control_system(
         match ev.unit {
             MouseScrollUnit::Line => {
                 //camera_main.zoom -= ev.y * 0.05;
-                camera_main.smooth_zoom_buffer += ev.y;
+                camera_main.smooth_zoom_buffer += ev.y * 0.05;
             }
             MouseScrollUnit::Pixel => {
                 //camera_main.zoom -= ev.y * 0.05;
-                camera_main.smooth_zoom_buffer += ev.y;
+                camera_main.smooth_zoom_buffer += ev.y * 0.05;
             }
         }
     }
@@ -143,7 +143,7 @@ pub fn camera_control_system(
             smooth_zoom_min.min(camera_main.smooth_zoom_buffer),
         )
     };
-    camera_main.zoom -= smooth_zoom_amount * 0.05;
+    camera_main.zoom -= smooth_zoom_amount;
     camera_main.smooth_zoom_buffer -= smooth_zoom_amount;
 
     camera_main.zoom = camera_main.zoom.clamp(0., 1.);

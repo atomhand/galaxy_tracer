@@ -3,12 +3,13 @@ use bevy::prelude::*;
 #[derive(Resource)]
 pub struct GalaxyConfig {
     pub radius: f32,
-    pub n_arms : i32,
-    pub arm_offsets : [f32; 4],
-    pub winding_b : f32,
-    pub winding_n : f32,
+    pub n_arms: i32,
+    pub arm_offsets: [f32; 4],
+    pub winding_b: f32,
+    pub winding_n: f32,
     pub max_stars: i32,
     pub spacing: f32,
+    pub padding_coeff: f32,
 }
 
 // NOTE
@@ -34,10 +35,16 @@ impl Default for GalaxyConfig {
             radius: 500.0, // in parsecs
             max_stars: 1000,
             spacing: 40.0,
-            n_arms : 4,
-            arm_offsets : [ 0.0, 90f32.to_radians(), 180f32.to_radians(), 270f32.to_radians() ],
-            winding_b : 0.5,
-            winding_n : 3.0,
+            n_arms: 3,
+            arm_offsets: [
+                0.0,
+                90f32.to_radians(),
+                180f32.to_radians(),
+                270f32.to_radians(),
+            ],
+            winding_b: 1.0,
+            winding_n: 6.0,
+            padding_coeff: 1.5,
         }
     }
 }

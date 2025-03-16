@@ -7,7 +7,9 @@ struct GalaxyParams {
     radius : f32,
     num_arms : i32,
     winding_b : f32,
-    winding_n : f32
+    winding_n : f32,
+    padding_coefficient : f32,
+    padding : vec3<f32>,
 }
 struct BulgeParams {
     strength : f32,
@@ -29,6 +31,12 @@ struct ComponentParams {
 
 @group(2) @binding(0) var<uniform> galaxy: GalaxyParams;
 @group(2) @binding(1) var<uniform> bulge: BulgeParams;
+@group(2) @binding(2) var material_galaxy_texture: texture_2d<f32>;
+@group(2) @binding(3) var material_galaxy_sampler: sampler;
+
+fn pos_to_uv(p : vec2<f32>) -> vec2<f32> {
+    return p / (galaxy.radius * 2.0 * galaxy.padding_coefficient) + 0.5;
+}
 
 fn get_height_modulation(height : f32, y0 : f32) -> f32 {
     // only overwritten by Bulge
@@ -73,7 +81,7 @@ fn find_theta_difference(t1 : f32, t2 : f32) -> f32 {
     return v;
 }
 
-fn arm_modifier(p : vec3<f32>, r : f32, angular_offset : f32, arm_id : i32) -> f32 {
+fn arm_modifier(p : vec2<f32>, r : f32, angular_offset : f32, arm_id : i32) -> f32 {
     // .. these will be loaded from a uniform
 
     let wb = galaxy.winding_b;
@@ -82,20 +90,46 @@ fn arm_modifier(p : vec3<f32>, r : f32, angular_offset : f32, arm_id : i32) -> f
     let disp = galaxy.arm_offsets[arm_id]; // angular offset
 
     let winding = get_winding(r,wb,wn);
-    let theta = -(atan2(p.x,p.z)+angular_offset);
+    let theta = -(atan2(p.x,p.y)+angular_offset);
 
     let v = abs(find_theta_difference(winding,theta+disp))/pi;
 
     return pow(1.0-v, aw*15.0);
 }
 
-fn all_arms_modifier(distance : f32, p : vec3<f32>, angular_offset : f32) -> f32 {
+fn all_arms_modifier(distance : f32, p : vec2<f32>, angular_offset : f32) -> f32 {
     var v = 0.0;
     for(var i = 0; i<4; i++) {
         if i >= galaxy.num_arms { break; }
         v = max(v,arm_modifier(p,distance,angular_offset,i));
     }
     return v;
+}
+fn get_xz_intensity(p : vec2<f32>, angular_offset : f32, is_arm : bool) -> f32 {
+    return textureSample(material_galaxy_texture, material_galaxy_sampler, pos_to_uv(p)).x;
+}
+
+fn get_xz_intensity1(p : vec2<f32>, angular_offset : f32, is_arm : bool) -> f32 {
+    let r0 = 0.5;
+    let inner = 0.1; // central falloff parameter
+    let y0 = 0.01; // height of the component above the galaxy plane (called z0 in the program)
+
+
+    let d = length(p) / galaxy.radius; // distance to galactic central axis
+
+    // this paramater is called scale in the reference codebase
+    let central_falloff = pow(smoothstep(0.0,1.0 * inner, d), 4.0);
+    let r = get_radial_intensity(d, r0);
+    let arm_mod = select(1.0,all_arms_modifier(d,p, angular_offset),is_arm); // some components don't follow the arms
+
+    return central_falloff * arm_mod * r;
+}
+
+fn reconstruct_intensity(p : vec3<f32>, xz_intensity : f32, weight : f32) -> f32 {
+    let y0 = 0.01; // height of the component above the galaxy plane (called z0 in the program)
+    let h = get_height_modulation(abs(p.y), y0);
+
+    return xz_intensity * h * weight;
 }
 
 fn get_intensity_coefficient(p : vec3<f32>, angular_offset : f32, weight : f32, is_arm : bool) -> f32 {
@@ -115,16 +149,17 @@ fn get_intensity_coefficient(p : vec3<f32>, angular_offset : f32, weight : f32, 
 
     let h = get_height_modulation(abs(p.y), y0);
     let r = get_radial_intensity(d, r0);
-    let arm_mod = select(1.0,all_arms_modifier(d,p, angular_offset),is_arm); // some components don't follow the arms
+    let arm_mod = select(1.0,all_arms_modifier(d,p.xz, angular_offset),is_arm); // some components don't follow the arms
 
-    return central_falloff * arm_mod * h * r;
+    return central_falloff * arm_mod * h * r * weight;
 }
 
 fn step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
+    let disk = reconstruct_intensity(p, get_xz_intensity(p.xz, 0.0, true), 1.0);
+    //let disk = get_intensity_coefficient(p, 0.0, 1.0, true);
 
-    let disk = get_intensity_coefficient(p, 0.0, 1.0, true);
-
-    let dust = get_intensity_coefficient(p, -1.0, 1.0, true);
+    //let dust = get_intensity_coefficient(p, -0.2, 1.0, true);
+    let dust = reconstruct_intensity(p, get_xz_intensity(p.xz, -0.2, true), 1.0);
 
     let disk_col = vec3<f32>(3.54387,3.44474,3.448229);
     let dust_col = vec3<f32>(1.0,1.0,1.0);

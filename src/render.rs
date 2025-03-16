@@ -12,9 +12,13 @@ impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<GalaxyVolumeMaterial>::default());
 
-        app.add_systems(Startup, place_galaxy_volume);
+        app.add_systems(Startup, place_galaxy_volume)
+            .add_systems(Update, update_volume_mat);
     }
 }
+
+#[derive(Component)]
+struct GalaxyRenderer;
 
 fn place_galaxy_volume(
     mut commands: Commands,
@@ -29,8 +33,26 @@ fn place_galaxy_volume(
         Transform::IDENTITY,
         Visibility::Inherited,
         MeshMaterial3d(mat),
+        GalaxyRenderer,
         bevy::render::view::NoFrustumCulling,
     ));
+}
+
+fn update_volume_mat(
+    galaxy_mat: Query<&MeshMaterial3d<GalaxyVolumeMaterial>, With<GalaxyRenderer>>,
+    galaxy_texture: Res<crate::galaxy_texture::GalaxyTexture>,
+    mut galaxy_materials: ResMut<Assets<GalaxyVolumeMaterial>>,
+) {
+    if galaxy_texture.is_changed() {
+        let Ok(galaxy) = galaxy_mat.get_single() else {
+            return;
+        };
+        let Some(mat) = galaxy_materials.get_mut(&galaxy.0) else {
+            return;
+        };
+
+        mat.xz_texture = galaxy_texture.tex.clone();
+    }
 }
 
 // GALAXY - VOLUME MATERIAL
@@ -39,32 +61,34 @@ fn place_galaxy_volume(
 #[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug)]
 #[repr(C)]
 struct GalaxyParams {
-    arm_offsets : Vec4,
-    radius : f32,
-    num_arms : i32,
-    winding_b : f32,
-    winding_n : f32
+    arm_offsets: Vec4,
+    radius: f32,
+    num_arms: i32,
+    winding_b: f32,
+    winding_n: f32,
+    padding_coefficient: f32,
+    pad: Vec3,
 }
 #[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug)]
 #[repr(C)]
 struct BulgeParams {
-    strength : f32,
-    r0 : f32, // (inverse) width
+    strength: f32,
+    r0: f32, // (inverse) width
 }
 #[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug)]
 #[repr(C)]
 struct ComponentParams {
-    strength : f32,
-    arm_width : f32, // inverse
-    y0 : f32,
-    r0 : f32, // radial intensity start
-    r1 : f32, // radial falloff start
-    angular_offset : f32,
-    winding : f32,
-    noise_scale : f32,
-    noise_offset : f32,
-    tilt : f32,
-    ks : f32
+    strength: f32,
+    arm_width: f32, // inverse
+    y0: f32,
+    r0: f32, // radial intensity start
+    r1: f32, // radial falloff start
+    angular_offset: f32,
+    winding: f32,
+    noise_scale: f32,
+    noise_offset: f32,
+    tilt: f32,
+    ks: f32,
 }
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
@@ -72,24 +96,30 @@ pub struct GalaxyVolumeMaterial {
     #[uniform(0)]
     galaxy_params: GalaxyParams,
     #[uniform(1)]
-    bulge_params : BulgeParams,
+    bulge_params: BulgeParams,
+    #[texture(2)]
+    #[sampler(3)]
+    xz_texture: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
 }
 impl GalaxyVolumeMaterial {
-    pub fn new(galaxy_config : &GalaxyConfig) -> Self {
+    pub fn new(galaxy_config: &GalaxyConfig) -> Self {
         Self {
-            galaxy_params : GalaxyParams{
-                radius : galaxy_config.radius,
-                num_arms : galaxy_config.n_arms,
-                arm_offsets : Vec4::from_array(galaxy_config.arm_offsets),
-                winding_b : galaxy_config.winding_b,
-                winding_n : galaxy_config.winding_n
+            galaxy_params: GalaxyParams {
+                padding_coefficient: galaxy_config.padding_coeff,
+                radius: galaxy_config.radius,
+                num_arms: galaxy_config.n_arms,
+                arm_offsets: Vec4::from_array(galaxy_config.arm_offsets),
+                winding_b: galaxy_config.winding_b,
+                winding_n: galaxy_config.winding_n,
+                pad: Vec3::ZERO,
             },
-            bulge_params : BulgeParams {
-                strength : 1.0,
-                r0 : 0.2,
+            bulge_params: BulgeParams {
+                strength: 1.0,
+                r0: 0.2,
             },
-            alpha_mode : AlphaMode::Add
+            alpha_mode: AlphaMode::Add,
+            xz_texture: None,
         }
     }
 }

@@ -6,11 +6,11 @@
 #import bevy_pbr::prepass_io::Vertex
 
 
-#import "shaders/intensity_shared.wgsl"::{galaxy, step};
+#import "shaders/intensity_shared.wgsl"::{galaxy, step, get_xz_intensity};
 
 // see https://github.com/kulkalkul/bevy_mod_billboard/blob/main/src/shader/billboard.wgsl
 
-struct MyVertexOutput {
+struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) camera_origin: vec3<f32>,
     @location(1) ray_dir: vec3<f32>,
@@ -18,13 +18,13 @@ struct MyVertexOutput {
 
 
 @vertex
-fn vertex(vertex: Vertex) -> MyVertexOutput {
+fn vertex(vertex: Vertex) -> VertexOutput {
     let model = get_world_from_local(vertex.instance_index);
 
     let world_space = vertex.position.xyz * vec3<f32>(galaxy.radius*1.25,50.0,galaxy.radius*1.25);
     let position = view.clip_from_world * model * vec4<f32>(world_space, 1.0);
 
-    var out: MyVertexOutput;
+    var out: VertexOutput;
     out.position = position;
     out.camera_origin = view.world_position;
     out.ray_dir = (model * vec4<f32>(world_space, 1.0)).xyz - view.world_position;
@@ -67,7 +67,7 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {
 
 @fragment
 fn fragment(
-    mesh: MyVertexOutput,
+    mesh: VertexOutput,
 ) -> @location(0) vec4<f32> {
     //let t = sphIntersect(mesh.camera_origin, normalize(mesh.ray_dir), galaxy.radius);
 

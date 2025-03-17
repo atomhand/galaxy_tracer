@@ -58,6 +58,7 @@ fn get_radial_intensity(distance : f32, r0 : f32) -> f32 {
     return saturate(r-0.01f);
 }
 
+// SHOULD PROBABLY BE REPLACED BY A LUT
 fn get_winding(rad : f32) -> f32 {
     let r = rad + 0.05;
 
@@ -153,19 +154,15 @@ fn get_intensity_coefficient(p : vec3<f32>, angular_offset : f32, weight : f32, 
     return central_falloff * arm_mod * h * r * weight;
 }
 
-fn disk_intensity(p : vec3<f32>, base_intensity : f32) -> f32 {
+fn disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
     if(base_intensity < 0.0005) {
         return 0.0;
     }
 
-    let d = length(p) / galaxy.radius;
-    let winding = 0.0;//get_winding(d);
-
-
     let octaves : i32 = 10;
     let scale : f32 = 1.0 / 20.0;
     let persistence : f32 = 0.5;
-    var p2 = abs(perlin_cloud_noise(p, winding, octaves, scale, persistence));
+    var p2 = abs(perlin_cloud_noise(p, winding_angle, octaves, scale, persistence));
     p2 = max(p2, 0.01);
 
     p2 = pow(p2,1.0); // pow(p2,noiseTilt)
@@ -174,17 +171,14 @@ fn disk_intensity(p : vec3<f32>, base_intensity : f32) -> f32 {
     return base_intensity * p2;
 }
 
-fn dust_intensity(p : vec3<f32>, base_intensity : f32) -> f32 {
+fn dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
     if(base_intensity < 0.0005) {
         return 0.0;
     }
     let octaves = 9;
     let scale = 1.0 / 10.0;
-    // NOTE - This is the resolved Winding amount (calculated in the get_winding function)
-    // it's sorta expensive to compute and is invariant to y, so it would make a lot of sense to cache it
-    let winding : f32  = 1.0;
     let persistence = 0.5;
-    var p2 = perlin_cloud_noise(p, winding, octaves, scale, persistence);
+    var p2 = perlin_cloud_noise(p, winding_angle, octaves, scale, persistence);
     let noiseOffset = 0.0;
     p2 = max(p2-noiseOffset,0.0);
 
@@ -197,23 +191,28 @@ fn dust_intensity(p : vec3<f32>, base_intensity : f32) -> f32 {
 }
 
 fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
-    let disk_base_intensity = reconstruct_intensity(p, get_xz_intensity(p.xz, -0.2, true), 1.0);
-    let disk = disk_intensity(p,disk_base_intensity);
-    //let disk = get_intensity_coefficient(p, 0.0, 1.0, true);
 
-    //let dust = get_intensity_coefficient(p, -0.2, 1.0, true);
-    let dust_base_intensity = reconstruct_intensity(p, get_xz_intensity(p.xz, -0.2, true), 1.0);
-    let dust = dust_intensity(p,dust_base_intensity);
+    let d : f32 = length(p.xz) / galaxy.radius;
+    let uv : vec2<f32> = pos_to_uv(p.xz);
+
+    // disk components
+    //for(var i = 0; i<4; i++) {
+    //    if i >= galaxy.num_arms { break; }
+
+    let disk_sample = textureSample(material_galaxy_texture, material_galaxy_sampler, uv).x;
+    let disk_xz: f32  = reconstruct_intensity(p, disk_sample, 1.0);
+    let winding_angle : f32 = -get_winding(d);//-disk_sample.y;
 
     let disk_col = vec3<f32>(3.54387,3.44474,3.448229);
-    let dust_col = vec3<f32>(1.0,1.0,1.0);
+    let disk_intensity : f32 = disk_intensity(p, winding_angle, disk_xz);
 
-    var col = in_col;
-    col += disk_col * disk ;
+    let dust_xz = disk_xz;//textureSample(material_galaxy_texture, material_galaxy_sampler, uv, i + galaxy.num_arms).x;
+    let dust_intensity : f32 = dust_intensity(p, winding_angle, dust_xz);
+    //}
 
-    let extinction = exp(-dust * dust_col );
+    let dust_col : vec3<f32> = vec3<f32>(1.0,1.0,1.0);
+    let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
 
-    col *= extinction;
-
-    return col;
+    let col = in_col + disk_col * disk_intensity;
+    return col * extinction;
 }

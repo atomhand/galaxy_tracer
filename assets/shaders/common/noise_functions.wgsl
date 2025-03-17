@@ -97,10 +97,7 @@ fn octave_noise_3d(octaves: i32, persistence : f32, scale : f32, pos : vec3<f32>
     var amplitude = 1.0;
 
     var amp_sum = 0.0;
-    for(var i =0; i < 10; i++) {
-        if(i >= octaves) {
-            break;
-        }
+    for(var i =0; i < octaves; i++) {
         sum += Perlin3D(pos * frequency) * amplitude;
 
         frequency *= 2.0;

@@ -1,5 +1,7 @@
 const pi = radians(180.0);
-    
+
+
+#import "shaders/noise_functions.wgsl"::perlin_cloud_noise;
 
 // These structs are duplicated in render.rs, so make sure to update both
 struct GalaxyParams {
@@ -109,7 +111,7 @@ fn get_xz_intensity(p : vec2<f32>, angular_offset : f32, is_arm : bool) -> f32 {
     return textureSample(material_galaxy_texture, material_galaxy_sampler, pos_to_uv(p)).x;
 }
 
-fn get_xz_intensity1(p : vec2<f32>, angular_offset : f32, is_arm : bool) -> f32 {
+fn get_xz_intensity_old(p : vec2<f32>, angular_offset : f32, is_arm : bool) -> f32 {
     let r0 = 0.5;
     let inner = 0.1; // central falloff parameter
     let y0 = 0.01; // height of the component above the galaxy plane (called z0 in the program)
@@ -154,12 +156,55 @@ fn get_intensity_coefficient(p : vec3<f32>, angular_offset : f32, weight : f32, 
     return central_falloff * arm_mod * h * r * weight;
 }
 
+fn disk_intensity(p : vec3<f32>, base_intensity : f32) -> f32 {
+    if(base_intensity < 0.0005) {
+        return 0.0;
+    }
+    let octaves : i32 = 10;
+    // NOTE - This is the resolved Winding amount (calculated in the get_winding function)
+    // it's sorta expensive to compute and is invariant to y, so it would make a lot of sense to cache it
+    let winding : f32  = galaxy.winding_b;
+    let scale : f32 = 1.0 / 20.0;
+    let persistence : f32 = 0.5;
+    var p2 = abs(perlin_cloud_noise(p, winding, octaves, scale, persistence));
+    p2 = max(p2, 0.01);
+
+    p2 = pow(p2,1.0); // pow(p2,noiseTilt)
+    // p2 += componentParams.noiseOffset
+
+    return base_intensity * p2;
+}
+
+fn dust_intensity(p : vec3<f32>, base_intensity : f32) -> f32 {
+    if(base_intensity < 0.0005) {
+        return 0.0;
+    }
+    let octaves = 9;
+    let scale = 1.0 / 10.0;
+    // NOTE - This is the resolved Winding amount (calculated in the get_winding function)
+    // it's sorta expensive to compute and is invariant to y, so it would make a lot of sense to cache it
+    let winding : f32  = 1.0;
+    let persistence = 0.5;
+    var p2 = perlin_cloud_noise(p, winding, octaves, scale, persistence);
+    let noiseOffset = 0.0;
+    p2 = max(p2-noiseOffset,0.0);
+
+    let noiseTilt = 1.0;
+    p2 = clamp(pow(5*p2, noiseTilt), -10.0, 10.0);
+
+    let s : f32 = 0.01;
+
+    return base_intensity * p2 * s;
+}
+
 fn step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
-    let disk = reconstruct_intensity(p, get_xz_intensity(p.xz, 0.0, true), 1.0);
+    let disk_base_intensity = reconstruct_intensity(p, get_xz_intensity(p.xz, -0.2, true), 1.0);
+    let disk = disk_intensity(p,disk_base_intensity);
     //let disk = get_intensity_coefficient(p, 0.0, 1.0, true);
 
     //let dust = get_intensity_coefficient(p, -0.2, 1.0, true);
-    let dust = reconstruct_intensity(p, get_xz_intensity(p.xz, -0.2, true), 1.0);
+    let dust_base_intensity = reconstruct_intensity(p, get_xz_intensity(p.xz, -0.2, true), 1.0);
+    let dust = dust_intensity(p,dust_base_intensity);
 
     let disk_col = vec3<f32>(3.54387,3.44474,3.448229);
     let dust_col = vec3<f32>(1.0,1.0,1.0);

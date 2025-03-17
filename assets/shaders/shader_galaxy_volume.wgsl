@@ -53,13 +53,15 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {
     }
 
     let o1 = ro + rd * max(0.0,t1);
-    
-    let t = (t2 - max(0.0,t1))/64.0;
-    for(var i =0; i<64; i++) {
-        // walking back from t2
-        let p = o1 + rd * (f32(64-i) * t);
 
-        col = step(p, col, 1.0 / 64.0);
+    const STEPS = 32;
+    
+    let t = (t2 - max(0.0,t1))/f32(STEPS);
+    for(var i =0; i<STEPS; i++) {
+        // walking back from t2
+        let p = o1 + rd * (f32(STEPS-i) * t);
+
+        col = step(p, col, 1.0 / f32(STEPS));
     }
     return col;
     

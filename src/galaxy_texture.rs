@@ -34,9 +34,10 @@ fn get_texture(config: &GalaxyConfig) -> Image {
                 y as f32 / DIMENSIONS as f32 * config.radius * 2.0 - config.radius,
             ) * config.padding_coeff;
 
-            let val = painter.get_xz_intensity(p, config.arm_offsets[0], true);
+            let val = painter.get_xz_intensity(p, config.arm_offsets[0]);
 
-            texture_data.extend_from_slice(&val.to_le_bytes());
+            texture_data.extend_from_slice(&val.intensity.to_le_bytes());
+            //texture_data.extend_from_slice(&val.winding.to_le_bytes());
         }
     }
 

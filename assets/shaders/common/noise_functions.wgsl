@@ -86,8 +86,8 @@ fn Perlin3D(  P : vec3<f32>) -> f32
 
 }
 
-fn get_twirl(p : vec3<f32>, angle : f32) -> vec3<f32> {
-    let rot : vec2<f32> = vec2<f32>(cos(angle),sin(angle));
+fn get_twirl(p : vec3<f32>, winding_angle : f32) -> vec3<f32> {
+    let rot : vec2<f32> = vec2<f32>(cos(winding_angle),sin(winding_angle));
     return vec3<f32>( p.x * rot.x - p.z * rot.y, p.y,  p.x * rot.y + p.z * rot.x);
 }
 
@@ -97,7 +97,7 @@ fn octave_noise_3d(octaves: i32, persistence : f32, scale : f32, pos : vec3<f32>
     var amplitude = 1.0;
 
     var amp_sum = 0.0;
-    for(var i =0; i < 4; i++) {
+    for(var i =0; i < 10; i++) {
         if(i >= octaves) {
             break;
         }
@@ -111,7 +111,7 @@ fn octave_noise_3d(octaves: i32, persistence : f32, scale : f32, pos : vec3<f32>
     return sum / amp_sum;
 }
 
-fn perlin_cloud_noise(p : vec3<f32>, twirl_coefficient : f32, octaves : i32, scale : f32, persistence : f32) -> f32 {
-    let r = get_twirl(p,twirl_coefficient);
+fn perlin_cloud_noise(p : vec3<f32>, winding_angle : f32, octaves : i32, scale : f32, persistence : f32) -> f32 {
+    let r = get_twirl(p,winding_angle);
     return octave_noise_3d(octaves,persistence,scale, r);
 }

@@ -6,7 +6,7 @@
 #import bevy_pbr::prepass_io::Vertex
 
 
-#import "shaders/intensity_shared.wgsl"::{galaxy, step, get_xz_intensity};
+#import "shaders/intensity_shared.wgsl"::{galaxy, ray_step, get_xz_intensity};
 
 // see https://github.com/kulkalkul/bevy_mod_billboard/blob/main/src/shader/billboard.wgsl
 
@@ -54,14 +54,14 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {
 
     let o1 = ro + rd * max(0.0,t1);
 
-    const STEPS = 32;
+    const STEPS = 128;
     
     let t = (t2 - max(0.0,t1))/f32(STEPS);
     for(var i =0; i<STEPS; i++) {
         // walking back from t2
         let p = o1 + rd * (f32(STEPS-i) * t);
 
-        col = step(p, col, 1.0 / f32(STEPS));
+        col = ray_step(p, col, 1.0 / f32(STEPS));
     }
     return col;
     

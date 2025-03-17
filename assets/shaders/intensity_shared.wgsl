@@ -1,7 +1,6 @@
 const pi = radians(180.0);
 
-
-#import "shaders/noise_functions.wgsl"::perlin_cloud_noise;
+#import "shaders/common/noise_functions.wgsl"::perlin_cloud_noise;
 
 // These structs are duplicated in render.rs, so make sure to update both
 struct GalaxyParams {
@@ -59,10 +58,10 @@ fn get_radial_intensity(distance : f32, r0 : f32) -> f32 {
     return saturate(r-0.01f);
 }
 
-fn get_winding(rad : f32, wb : f32, wn : f32) -> f32 {
+fn get_winding(rad : f32) -> f32 {
     let r = rad + 0.05;
 
-    let t = atan(exp(-0.25/(0.5*r)) / wb) * 2.0 * wn;
+    let t = atan(exp(-0.25/(0.5*r)) / galaxy.winding_b) * 2.0 * galaxy.winding_n;
     //let t= atan(exp(1.0/r) / wb) * 2.0 * wn;
     
     return t;
@@ -86,12 +85,10 @@ fn find_theta_difference(t1 : f32, t2 : f32) -> f32 {
 fn arm_modifier(p : vec2<f32>, r : f32, angular_offset : f32, arm_id : i32) -> f32 {
     // .. these will be loaded from a uniform
 
-    let wb = galaxy.winding_b;
-    let wn = galaxy.winding_n;
     let aw = 0.1 * f32(arm_id+1);
     let disp = galaxy.arm_offsets[arm_id]; // angular offset
 
-    let winding = get_winding(r,wb,wn);
+    let winding = get_winding(r);
     let theta = -(atan2(p.x,p.y)+angular_offset);
 
     let v = abs(find_theta_difference(winding,theta+disp))/pi;
@@ -160,10 +157,12 @@ fn disk_intensity(p : vec3<f32>, base_intensity : f32) -> f32 {
     if(base_intensity < 0.0005) {
         return 0.0;
     }
+
+    let d = length(p) / galaxy.radius;
+    let winding = 0.0;//get_winding(d);
+
+
     let octaves : i32 = 10;
-    // NOTE - This is the resolved Winding amount (calculated in the get_winding function)
-    // it's sorta expensive to compute and is invariant to y, so it would make a lot of sense to cache it
-    let winding : f32  = galaxy.winding_b;
     let scale : f32 = 1.0 / 20.0;
     let persistence : f32 = 0.5;
     var p2 = abs(perlin_cloud_noise(p, winding, octaves, scale, persistence));
@@ -197,7 +196,7 @@ fn dust_intensity(p : vec3<f32>, base_intensity : f32) -> f32 {
     return base_intensity * p2 * s;
 }
 
-fn step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
+fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     let disk_base_intensity = reconstruct_intensity(p, get_xz_intensity(p.xz, -0.2, true), 1.0);
     let disk = disk_intensity(p,disk_base_intensity);
     //let disk = get_intensity_coefficient(p, 0.0, 1.0, true);

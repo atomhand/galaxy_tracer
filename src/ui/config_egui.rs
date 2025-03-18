@@ -44,7 +44,7 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
         );
         ui.add(
             egui::Slider::new(&mut config.arm_width, minval.arm_width..=maxval.arm_width)
-                .text("Arm Width"),
+                .text("Inverse Arm Width"),
         );
         ui.add(
             egui::Slider::new(&mut config.y_offset, minval.y_offset..=maxval.y_offset)

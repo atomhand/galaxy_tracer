@@ -62,7 +62,6 @@ impl GalaxyPainter<'_> {
     }
 
     fn arm_modifier(&self, p: Vec2, winding: f32, arm_id: i32) -> f32 {
-        let aw = 0.5; // * (arm_id + 1) as f32;
         let disp = self.galaxy.arm_offsets[arm_id as usize]; // angular offset
 
         let angular_offset = self.component.delta_angle.to_radians();
@@ -70,7 +69,7 @@ impl GalaxyPainter<'_> {
 
         let v = (self.find_theta_difference(winding, theta + disp)).abs() / PI;
 
-        return (1.0 - v).powf(aw * 15.0);
+        return (1.0 - v).powf(self.component.arm_width * 15.0);
     }
 
     fn all_arms_modifier(&self, winding: f32, p: Vec2) -> f32 {

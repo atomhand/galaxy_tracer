@@ -278,7 +278,7 @@ fn dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f
 
     p2 = clamp(pow(5*p2, dust_params.tilt), -10.0, 10.0);
 
-    let s : f32 = 0.01;
+    let s : f32 = 100.0;//0.01;
 
     return base_intensity * p2 * s * dust_params.strength;
 }

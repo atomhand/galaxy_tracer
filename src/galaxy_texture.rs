@@ -34,7 +34,7 @@ fn get_texture(config: &GalaxyConfig) -> Image {
                 y as f32 / DIMENSIONS as f32 * config.radius * 2.0 - config.radius,
             ) * config.padding_coeff;
 
-            let val = painter.get_xz_intensity(p, config.arm_offsets[0]);
+            let val = painter.get_xz_intensity(p, 0.0);
 
             texture_data.extend_from_slice(&val.intensity.to_le_bytes());
             //texture_data.extend_from_slice(&val.winding.to_le_bytes());
@@ -59,7 +59,8 @@ fn update_texture(
     config: Res<GalaxyConfig>,
     mut tex_holder: ResMut<GalaxyTexture>,
 ) {
-    if config.is_changed() && tex_holder.tex.is_none() {
+    if config.is_changed() || tex_holder.tex.is_none() {
+        info!("Galaxy config updated, rebaking galaxy");
         let handle = images.add(get_texture(&config));
         tex_holder.tex = Some(handle);
     }

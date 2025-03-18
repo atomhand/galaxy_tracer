@@ -15,8 +15,8 @@ pub struct GalaxyPainter {
 }
 
 pub struct PaintResult {
-    pub intensity : f32,
-    pub winding : f32
+    pub intensity: f32,
+    pub winding: f32,
 }
 
 impl GalaxyPainter {
@@ -61,7 +61,7 @@ impl GalaxyPainter {
     }
 
     fn arm_modifier(&self, p: Vec2, winding: f32, angular_offset: f32, arm_id: i32) -> f32 {
-        let aw = 0.1 * (arm_id + 1) as f32;
+        let aw = 0.5; // * (arm_id + 1) as f32;
         let disp = self.arm_offsets[arm_id as usize]; // angular offset
 
         let theta = -(f32::atan2(p.x, p.y) + angular_offset);
@@ -72,7 +72,7 @@ impl GalaxyPainter {
     }
 
     fn all_arms_modifier(&self, winding: f32, p: Vec2, angular_offset: f32) -> f32 {
-        let mut v : f32 = 0.0;
+        let mut v: f32 = 0.0;
         for i in 0..self.num_arms {
             v = v.max(self.arm_modifier(p, winding, angular_offset, i));
         }
@@ -93,8 +93,8 @@ impl GalaxyPainter {
         let arm_mod = self.all_arms_modifier(winding, p, angular_offset);
 
         return PaintResult {
-            intensity : central_falloff * arm_mod * r,
-            winding
+            intensity: central_falloff * arm_mod * r,
+            winding,
         };
     }
 }

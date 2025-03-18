@@ -292,16 +292,22 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     //for(var i = 0; i<4; i++) {
     //    if i >= galaxy.num_arms { break; }
 
-    let disk_sample = get_xz_intensity(p.xz, 0.0);// textureSample(material_galaxy_texture, material_galaxy_sampler, uv).x;
-    let disk_xz: f32  = reconstruct_intensity(p, disk_sample, 1.0);
-    let winding_angle : f32 = -get_winding(d);//-disk_sample.y;
+    let xz_sample : vec4<f32> = textureSample(material_galaxy_texture, material_galaxy_sampler, uv);
+
+    let base_winding : f32 = -get_winding(d);
+
+    let disk_xz: f32  = reconstruct_intensity(p, xz_sample.x, 1.0);
+    let disk_winding_angle : f32 = base_winding * disk_params.winding;//-disk_sample.y;
 
     let disk_col = vec3<f32>(3.54387,3.44474,3.448229);
-    let disk_intensity : f32 = disk_intensity(p, winding_angle, disk_xz);
+    let disk_intensity : f32 = disk_intensity(p, disk_winding_angle, disk_xz);
 
-    let dust_xz = disk_xz;//textureSample(material_galaxy_texture, material_galaxy_sampler, uv, i + galaxy.num_arms).x;
-    let dust_intensity : f32 = dust_intensity(p, winding_angle, dust_xz);
+    let dust_xz = reconstruct_intensity(p, xz_sample.y, 1.0);//textureSample(material_galaxy_texture, material_galaxy_sampler, uv, i + galaxy.num_arms).x;
+    let dust_winding_angle : f32 = base_winding * dust_params.winding;
+    let dust_intensity : f32 = dust_intensity(p, dust_winding_angle, dust_xz);
     //}
+
+    // let stars_xz = reconstruct_intensity(p,xz_sample.z, 1.0);
 
     let dust_col : vec3<f32> = vec3<f32>(1.0,1.0,1.0);
     let extinction : vec3<f32> = exp(-dust_intensity * dust_col );

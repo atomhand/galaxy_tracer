@@ -1,3 +1,4 @@
+#![feature(f16)]
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 

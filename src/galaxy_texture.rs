@@ -1,3 +1,4 @@
+
 use super::galaxy_xz_painter::GalaxyPainter;
 use bevy::prelude::*;
 pub struct GalaxyTexturePlugin;
@@ -24,9 +25,12 @@ use bevy::render::{
 fn get_texture(config: &GalaxyConfig) -> Image {
     const DIMENSIONS: u32 = 1024; //((config.radius * 1.2).ceil() as u32).next_power_of_two();
 
-    let painter = GalaxyPainter::from(config);
+    let disk_painter = GalaxyPainter::new(&config, &config.disk_params);
+    let dust_painter = GalaxyPainter::new(&config, &config.dust_params);
+    let stars_painter = GalaxyPainter::new(&config, &config.stars_params);
 
-    let mut texture_data = Vec::<u8>::with_capacity((DIMENSIONS * DIMENSIONS * 4) as usize);
+
+    let mut texture_data = Vec::<u8>::with_capacity((DIMENSIONS * DIMENSIONS * 8) as usize);
     for y in 0..DIMENSIONS {
         for x in 0..DIMENSIONS {
             let p = Vec2::new(
@@ -34,9 +38,13 @@ fn get_texture(config: &GalaxyConfig) -> Image {
                 y as f32 / DIMENSIONS as f32 * config.radius * 2.0 - config.radius,
             ) * config.padding_coeff;
 
-            let val = painter.get_xz_intensity(p, 0.0);
-
-            texture_data.extend_from_slice(&val.intensity.to_le_bytes());
+            let disk = disk_painter.get_xz_intensity(p);
+            let dust = dust_painter.get_xz_intensity(p);
+            let stars = stars_painter.get_xz_intensity(p);
+            texture_data.extend_from_slice(&((disk.intensity as f16).to_le_bytes()));
+            texture_data.extend_from_slice(&((dust.intensity as f16).to_le_bytes()));
+            texture_data.extend_from_slice(&((stars.intensity as f16).to_le_bytes()));
+            texture_data.extend_from_slice(&((0.0 as f16).to_le_bytes()));
             //texture_data.extend_from_slice(&val.winding.to_le_bytes());
         }
     }
@@ -49,7 +57,7 @@ fn get_texture(config: &GalaxyConfig) -> Image {
         },
         TextureDimension::D2,
         texture_data,
-        TextureFormat::R32Float,
+        TextureFormat::Rgba16Float,
         RenderAssetUsages::RENDER_WORLD,
     )
 }

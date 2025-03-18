@@ -1,9 +1,11 @@
 #![feature(f16)]
+#![feature(test)]
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 
 use bevy::window::{PresentMode, WindowTheme};
 
+mod benchmarks;
 mod camera;
 mod galaxy_config;
 mod galaxy_xz_painter;

@@ -1,6 +1,6 @@
-
 use super::galaxy_xz_painter::GalaxyPainter;
 use bevy::prelude::*;
+use rayon::prelude::*;
 pub struct GalaxyTexturePlugin;
 
 #[derive(Resource, Default)]
@@ -22,17 +22,22 @@ use bevy::render::{
     render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
-fn get_texture(config: &GalaxyConfig) -> Image {
-    const DIMENSIONS: u32 = 1024; //((config.radius * 1.2).ceil() as u32).next_power_of_two();
+pub fn get_texture(config: &GalaxyConfig) -> Image {
+    const DIMENSIONS: u32 = 128; //((config.radius * 1.2).ceil() as u32).next_power_of_two();
 
     let disk_painter = GalaxyPainter::new(&config, &config.disk_params);
     let dust_painter = GalaxyPainter::new(&config, &config.dust_params);
     let stars_painter = GalaxyPainter::new(&config, &config.stars_params);
 
+    let mut texture_data = vec![0u8; (DIMENSIONS * DIMENSIONS * 8) as usize];
 
-    let mut texture_data = Vec::<u8>::with_capacity((DIMENSIONS * DIMENSIONS * 8) as usize);
-    for y in 0..DIMENSIONS {
-        for x in 0..DIMENSIONS {
+    texture_data
+        .par_chunks_exact_mut(8)
+        .enumerate()
+        .for_each(|(i, chunk)| {
+            let x = i % DIMENSIONS as usize;
+            let y = i / DIMENSIONS as usize;
+
             let p = Vec2::new(
                 x as f32 / DIMENSIONS as f32 * config.radius * 2.0 - config.radius,
                 y as f32 / DIMENSIONS as f32 * config.radius * 2.0 - config.radius,
@@ -41,13 +46,17 @@ fn get_texture(config: &GalaxyConfig) -> Image {
             let disk = disk_painter.get_xz_intensity(p);
             let dust = dust_painter.get_xz_intensity(p);
             let stars = stars_painter.get_xz_intensity(p);
-            texture_data.extend_from_slice(&((disk.intensity as f16).to_le_bytes()));
-            texture_data.extend_from_slice(&((dust.intensity as f16).to_le_bytes()));
-            texture_data.extend_from_slice(&((stars.intensity as f16).to_le_bytes()));
-            texture_data.extend_from_slice(&((0.0 as f16).to_le_bytes()));
-            //texture_data.extend_from_slice(&val.winding.to_le_bytes());
-        }
-    }
+
+            let slice = [
+                (disk.intensity as f16).to_le_bytes(),
+                (dust.intensity as f16).to_le_bytes(),
+                (stars.intensity as f16).to_le_bytes(),
+                (0.0 as f16).to_le_bytes(),
+            ]
+            .concat();
+
+            chunk.copy_from_slice(&slice);
+        });
 
     Image::new(
         Extent3d {

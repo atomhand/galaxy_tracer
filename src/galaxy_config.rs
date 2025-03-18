@@ -12,11 +12,76 @@ pub struct GalaxyConfig {
     pub padding_coeff: f32,
 }
 
+#[derive(Resource)]
+pub struct GalaxyConfigUi {
+    pub arm_configs: [ArmConfig; 4],
+}
+
+impl Default for GalaxyConfigUi {
+    fn default() -> Self {
+        Self {
+            arm_configs: [
+                ArmConfig {
+                    enabled: true,
+                    offset: 0,
+                },
+                ArmConfig {
+                    enabled: true,
+                    offset: 90,
+                },
+                ArmConfig {
+                    enabled: true,
+                    offset: 180,
+                },
+                ArmConfig {
+                    enabled: true,
+                    offset: 270,
+                },
+            ],
+        }
+    }
+}
+
+pub struct GalaxyConfigPlugin;
+
+impl Plugin for GalaxyConfigPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(GalaxyConfig::default())
+            .insert_resource(GalaxyConfigUi::default())
+            .add_systems(Update, apply_ui_updates);
+    }
+}
+
+fn apply_ui_updates(
+    galaxy_config_ui: Res<GalaxyConfigUi>,
+    mut galaxy_config: ResMut<GalaxyConfig>,
+) {
+    if galaxy_config_ui.is_changed() {
+        let mut arms = 0;
+
+        for i in 0..4 {
+            let ui = galaxy_config_ui.arm_configs[i];
+
+            if ui.enabled {
+                galaxy_config.arm_offsets[arms] = (ui.offset as f32).to_radians();
+                arms += 1;
+            }
+        }
+        galaxy_config.n_arms = arms as i32;
+    }
+}
+
 // NOTE
 // The world space coordinate system is scaled to parsecs, for now
 // In the future it would probably be wise to use separate coordinate systems for the galaxy and systems
 //  --- The transitions will get a bit fiddly tho which is why I have not bothered for now
 //  --- I'm assuming precision errors will eventually become a problem and force my hand
+
+#[derive(Default, Clone, Copy)]
+pub struct ArmConfig {
+    pub enabled: bool,
+    pub offset: i32, // in degrees
+}
 
 impl GalaxyConfig {
     pub const AU_SCALE: f32 = 0.1; // scale of 1 AU to a Parsec

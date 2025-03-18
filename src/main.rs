@@ -3,10 +3,10 @@ use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowTheme};
 
 mod camera;
-mod fps_widget;
 mod galaxy_config;
 mod galaxy_xz_painter;
 mod render;
+mod ui;
 pub use galaxy_config::GalaxyConfig;
 mod galaxy_texture;
 
@@ -25,11 +25,11 @@ fn main() {
             }),
             ..default()
         }))
-        .insert_resource(GalaxyConfig::default())
         .add_plugins((
+            galaxy_config::GalaxyConfigPlugin,
             camera::CameraPlugin,
             render::RenderPlugin,
-            fps_widget::FpsWidgetPlugin,
+            ui::UiPlugin,
             galaxy_texture::GalaxyTexturePlugin,
         ))
         .run();

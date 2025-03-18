@@ -91,6 +91,9 @@ impl ComponentConfig {
 
 #[derive(Resource)]
 pub struct GalaxyConfigUi {
+    pub winding_b : f32,
+    pub winding_n : f32,
+    pub radius : f32,
     pub arm_configs: [ArmConfig; 4],
     pub disk_config: ComponentConfig,
     pub dust_config: ComponentConfig,
@@ -100,6 +103,9 @@ pub struct GalaxyConfigUi {
 impl Default for GalaxyConfigUi {
     fn default() -> Self {
         Self {
+            winding_b : 1.0,
+            winding_n : 6.0,
+            radius : 500.0,
             arm_configs: [
                 ArmConfig {
                     enabled: true,
@@ -152,6 +158,10 @@ fn apply_ui_updates(
         let mut arms = 0;
 
         let old = galaxy_config.clone();
+
+        galaxy_config.winding_n = galaxy_config_ui.winding_n;
+        galaxy_config.winding_b = galaxy_config_ui.winding_b;
+        galaxy_config.radius = galaxy_config_ui.radius;
 
         for i in 0..4 {
             let ui = galaxy_config_ui.arm_configs[i];

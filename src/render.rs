@@ -52,6 +52,15 @@ fn update_volume_mat(
             return;
         };
 
+        mat.galaxy_params = GalaxyParams {
+            padding_coefficient: galaxy_config.padding_coeff,
+            radius: galaxy_config.radius,
+            num_arms: galaxy_config.n_arms,
+            arm_offsets: Vec4::from_array(galaxy_config.arm_offsets),
+            winding_b: galaxy_config.winding_b,
+            winding_n: galaxy_config.winding_n,
+            pad: Vec3::ZERO,
+        };
         mat.disk_params = ComponentParams::from(galaxy_config.disk_params.clone());
         mat.dust_params = ComponentParams::from(galaxy_config.dust_params.clone());
         mat.stars_params = ComponentParams::from(galaxy_config.stars_params.clone());
@@ -74,6 +83,7 @@ struct GalaxyParams {
     padding_coefficient: f32,
     pad: Vec3,
 }
+
 #[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug)]
 #[repr(C)]
 struct BulgeParams {

@@ -138,6 +138,21 @@ fn ui_system(
         .show(ctx, |ui| {
             ui.heading("Configuration");
 
+            egui::CollapsingHeader::new("Winding Parameters").show(ui, |ui| {
+                ui.add(
+                    egui::Slider::new(&mut galaxy_ui_config.radius, 100.0..=1000.0)
+                        .text("Radius"),
+                );
+                ui.add(
+                    egui::Slider::new(&mut galaxy_ui_config.winding_b, 0.5..=3.0)
+                        .text("windingB"),
+                );
+                ui.add(
+                    egui::Slider::new(&mut galaxy_ui_config.winding_n, 0.5..=10.0)
+                        .text("windingN"),
+                );
+            });
+
             ui.separator();
             for i in 0..4 {
                 let arm_config = &mut galaxy_ui_config.arm_configs[i as usize];

@@ -1,4 +1,4 @@
-use crate::galaxy_config::{GalaxyConfig,ComponentConfig};
+use crate::galaxy_config::{ComponentConfig, GalaxyConfig};
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
@@ -7,20 +7,15 @@ fn smoothstep(edge0: f32, edge1: f32, x: f32) -> f32 {
     return s * s * (3.0 - 2.0 * s);
 }
 pub struct GalaxyPainter<'a> {
-    galaxy : &'a GalaxyConfig,
-    component : &'a ComponentConfig
-}
-
-pub struct PaintResult {
-    pub intensity: f32,
-    pub winding: f32,
+    galaxy: &'a GalaxyConfig,
+    component: &'a ComponentConfig,
 }
 
 impl GalaxyPainter<'_> {
-    pub fn new<'a>(config: &'a GalaxyConfig, component : &'a ComponentConfig) -> GalaxyPainter<'a> {
+    pub fn new<'a>(config: &'a GalaxyConfig, component: &'a ComponentConfig) -> GalaxyPainter<'a> {
         GalaxyPainter {
             galaxy: config,
-            component
+            component,
         }
     }
 
@@ -29,14 +24,26 @@ impl GalaxyPainter<'_> {
         let r = f32::exp(-distance / (r0 * 0.5f32));
         return (r - 0.01f32).clamp(0.0, 0.1);
     }
-
-    fn get_winding(&self, rad: f32) -> f32 {
+    pub fn pos_winding(&self, p: Vec2) -> f32 {
+        let rad = p.length() / self.galaxy.radius;
         let r = rad + 0.05;
 
-        let t = f32::atan(f32::exp(-0.25 / (0.5 * r)) / self.galaxy.winding_b) * 2.0 * self.galaxy.winding_n;
+        let t = f32::atan(f32::exp(-0.25 / (0.5 * r)) / self.galaxy.winding_b)
+            * 2.0
+            * self.galaxy.winding_n;
         //let t= atan(exp(1.0/r) / wb) * 2.0 * wn;
 
-        return t * self.component.winding_coefficient;
+        return t;
+    }
+    fn get_raw_winding(&self, rad: f32) -> f32 {
+        let r = rad + 0.05;
+
+        let t = f32::atan(f32::exp(-0.25 / (0.5 * r)) / self.galaxy.winding_b)
+            * 2.0
+            * self.galaxy.winding_n;
+        //let t= atan(exp(1.0/r) / wb) * 2.0 * wn;
+
+        return t;
     }
 
     fn find_theta_difference(&self, t1: f32, t2: f32) -> f32 {
@@ -74,7 +81,7 @@ impl GalaxyPainter<'_> {
         return v;
     }
 
-    pub fn get_xz_intensity(&self, p: Vec2) -> PaintResult {
+    pub fn get_xz_intensity(&self, p: Vec2) -> f32 {
         let r0 = self.component.radial_start;
         let inner = self.component.radial_dropoff; // central falloff parameter
 
@@ -84,12 +91,9 @@ impl GalaxyPainter<'_> {
         let central_falloff = (smoothstep(0.0, 1.0 * inner, d)).powi(4);
         let r = self.get_radial_intensity(d, r0);
 
-        let winding = self.get_winding(d);
+        let winding = self.get_raw_winding(d) * self.component.winding_coefficient;
         let arm_mod = self.all_arms_modifier(winding, p);
 
-        return PaintResult {
-            intensity: central_falloff * arm_mod * r,
-            winding,
-        };
+        return central_falloff * arm_mod * r;
     }
 }

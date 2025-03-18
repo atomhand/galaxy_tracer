@@ -1,22 +1,13 @@
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContextSettings, EguiContexts, EguiPlugin};
+use bevy_egui::{egui, EguiContexts};
 
 pub struct ConfigEguiPlugin;
 
 impl Plugin for ConfigEguiPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<UiState>()
-            .add_systems(
-                Startup,
-                (configure_visuals_system, configure_ui_state_system),
-            )
+        app.add_systems(Startup, configure_visuals_system)
             .add_systems(Update, ui_system);
     }
-}
-
-#[derive(Default, Resource)]
-struct UiState {
-    active_tab: Option<i32>,
 }
 
 fn configure_visuals_system(mut contexts: EguiContexts) {
@@ -25,8 +16,6 @@ fn configure_visuals_system(mut contexts: EguiContexts) {
         ..Default::default()
     });
 }
-
-fn configure_ui_state_system(mut ui_state: ResMut<UiState>) {}
 
 use crate::galaxy_config::{ArmConfig, ComponentConfig, ComponentType, GalaxyConfigUi};
 
@@ -126,11 +115,7 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
     ui.separator();
 }
 
-fn ui_system(
-    mut ui_state: ResMut<UiState>,
-    mut contexts: EguiContexts,
-    mut galaxy_ui_config: ResMut<GalaxyConfigUi>,
-) {
+fn ui_system(mut contexts: EguiContexts, mut galaxy_ui_config: ResMut<GalaxyConfigUi>) {
     let ctx = contexts.ctx_mut();
 
     egui::SidePanel::left("side_panel")
@@ -138,18 +123,23 @@ fn ui_system(
         .show(ctx, |ui| {
             ui.heading("Configuration");
 
-            egui::CollapsingHeader::new("Winding Parameters").show(ui, |ui| {
+            egui::CollapsingHeader::new("Galaxy Parameters").show(ui, |ui| {
                 ui.add(
-                    egui::Slider::new(&mut galaxy_ui_config.radius, 100.0..=1000.0)
-                        .text("Radius"),
+                    egui::Slider::new(&mut galaxy_ui_config.radius, 100.0..=1000.0).text("Radius"),
                 );
                 ui.add(
-                    egui::Slider::new(&mut galaxy_ui_config.winding_b, 0.5..=3.0)
-                        .text("windingB"),
+                    egui::Slider::new(&mut galaxy_ui_config.texture_size, 4..=11).custom_formatter(|n, _| {
+                        let n = n as u32;
+                        format!("{}",2u32.pow(n))
+                    })
+                        .text("Texture Size"),
+                );
+
+                ui.add(
+                    egui::Slider::new(&mut galaxy_ui_config.winding_b, 0.5..=3.0).text("windingB"),
                 );
                 ui.add(
-                    egui::Slider::new(&mut galaxy_ui_config.winding_n, 0.5..=10.0)
-                        .text("windingN"),
+                    egui::Slider::new(&mut galaxy_ui_config.winding_n, 0.5..=10.0).text("windingN"),
                 );
             });
 

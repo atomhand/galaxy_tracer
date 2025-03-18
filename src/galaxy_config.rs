@@ -3,6 +3,7 @@ use bevy::prelude::*;
 #[derive(Resource, Clone, PartialEq)]
 pub struct GalaxyConfig {
     pub should_rebake: bool,
+    pub texture_dimension: u32,
     pub radius: f32,
     pub n_arms: i32,
     pub arm_offsets: [f32; 4],
@@ -91,9 +92,10 @@ impl ComponentConfig {
 
 #[derive(Resource)]
 pub struct GalaxyConfigUi {
-    pub winding_b : f32,
-    pub winding_n : f32,
-    pub radius : f32,
+    pub texture_size: u32,
+    pub winding_b: f32,
+    pub winding_n: f32,
+    pub radius: f32,
     pub arm_configs: [ArmConfig; 4],
     pub disk_config: ComponentConfig,
     pub dust_config: ComponentConfig,
@@ -103,9 +105,10 @@ pub struct GalaxyConfigUi {
 impl Default for GalaxyConfigUi {
     fn default() -> Self {
         Self {
-            winding_b : 1.0,
-            winding_n : 6.0,
-            radius : 500.0,
+            texture_size: 10,
+            winding_b: 1.0,
+            winding_n: 6.0,
+            radius: 500.0,
             arm_configs: [
                 ArmConfig {
                     enabled: true,
@@ -159,6 +162,8 @@ fn apply_ui_updates(
 
         let old = galaxy_config.clone();
 
+        galaxy_config.texture_dimension = 2u32.pow(galaxy_config_ui.texture_size).clamp(16,2048);
+
         galaxy_config.winding_n = galaxy_config_ui.winding_n;
         galaxy_config.winding_b = galaxy_config_ui.winding_b;
         galaxy_config.radius = galaxy_config_ui.radius;
@@ -209,6 +214,7 @@ impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
             should_rebake: true,
+            texture_dimension: 1024,
             radius: 500.0, // in parsecs
             max_stars: 1000,
             spacing: 40.0,

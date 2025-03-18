@@ -294,7 +294,10 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
 
     let xz_sample : vec4<f32> = textureSample(material_galaxy_texture, material_galaxy_sampler, uv);
 
-    let base_winding : f32 = -get_winding(d);
+    // It's feasible to calculate this live, but caching it to the texture gets a very acceptable result
+    // The winding angle is only variant with respect to d, so a 1d LUT would be even better
+    // .. it was just convenient to pack it into the main texture for now because I had a spare channel
+    let base_winding : f32 = -xz_sample.w;//-get_winding(d);
 
     let disk_xz: f32  = reconstruct_intensity(p, xz_sample.x, 1.0);
     let disk_winding_angle : f32 = base_winding * disk_params.winding;//-disk_sample.y;

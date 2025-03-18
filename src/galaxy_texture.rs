@@ -23,35 +23,36 @@ use bevy::render::{
 };
 
 pub fn get_texture(config: &GalaxyConfig) -> Image {
-    const DIMENSIONS: u32 = 128; //((config.radius * 1.2).ceil() as u32).next_power_of_two();
+    let dimension = config.texture_dimension.next_power_of_two();
 
     let disk_painter = GalaxyPainter::new(&config, &config.disk_params);
     let dust_painter = GalaxyPainter::new(&config, &config.dust_params);
     let stars_painter = GalaxyPainter::new(&config, &config.stars_params);
 
-    let mut texture_data = vec![0u8; (DIMENSIONS * DIMENSIONS * 8) as usize];
+    let mut texture_data = vec![0u8; (dimension * dimension * 8) as usize];
 
     texture_data
         .par_chunks_exact_mut(8)
         .enumerate()
         .for_each(|(i, chunk)| {
-            let x = i % DIMENSIONS as usize;
-            let y = i / DIMENSIONS as usize;
+            let x = i % dimension as usize;
+            let y = i / dimension as usize;
 
             let p = Vec2::new(
-                x as f32 / DIMENSIONS as f32 * config.radius * 2.0 - config.radius,
-                y as f32 / DIMENSIONS as f32 * config.radius * 2.0 - config.radius,
+                x as f32 / dimension as f32 * config.radius * 2.0 - config.radius,
+                y as f32 / dimension as f32 * config.radius * 2.0 - config.radius,
             ) * config.padding_coeff;
 
             let disk = disk_painter.get_xz_intensity(p);
             let dust = dust_painter.get_xz_intensity(p);
             let stars = stars_painter.get_xz_intensity(p);
+            let winding = disk_painter.pos_winding(p);
 
             let slice = [
-                (disk.intensity as f16).to_le_bytes(),
-                (dust.intensity as f16).to_le_bytes(),
-                (stars.intensity as f16).to_le_bytes(),
-                (0.0 as f16).to_le_bytes(),
+                (disk as f16).to_le_bytes(),
+                (dust as f16).to_le_bytes(),
+                (stars as f16).to_le_bytes(),
+                (winding as f16).to_le_bytes(),
             ]
             .concat();
 
@@ -60,8 +61,8 @@ pub fn get_texture(config: &GalaxyConfig) -> Image {
 
     Image::new(
         Extent3d {
-            width: DIMENSIONS,
-            height: DIMENSIONS,
+            width: dimension,
+            height: dimension,
             depth_or_array_layers: 1,
         },
         TextureDimension::D2,

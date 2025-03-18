@@ -43,6 +43,35 @@ struct ArmEnabledButton(i32);
 #[derive(Component)]
 struct ArmOffsetInput(i32);
 
+fn row_container() -> (Node,BorderColor) {
+    (
+        Node {
+            width: Val::Percent(100.),
+            margin : UiRect::all(Val::Px(1.0)),
+            padding : UiRect::all(Val::Px(3.0)),
+            border: UiRect::all(Val::Px(1.0)),
+            justify_content : JustifyContent::Center,
+            align_items : AlignItems::Center,
+            ..default()
+        },
+        BorderColor(Color::WHITE),
+    )
+}
+
+fn input_container() -> (Node,BorderColor,BackgroundColor) {
+    (
+        Node {
+            width: Val::Percent(60.),
+            margin : UiRect::all(Val::Px(1.0)),
+            padding : UiRect::all(Val::Px(3.0)),
+            border: UiRect::all(Val::Px(1.0)),
+            ..default()
+        },
+        BorderColor(Color::WHITE),
+        BackgroundColor(Color::srgba(0.01, 0.01, 0.01, 1.0)),
+    )
+}
+
 fn setup_ui(mut commands: Commands) {
     let font = TextFont {
         font_size: 14.0,
@@ -92,7 +121,7 @@ fn setup_ui(mut commands: Commands) {
                     .with_children(|parent| {
                         parent.spawn((
                             BackgroundColor(Color::srgba(0.2, 0.2, 0.2, 0.2)),
-                            Text("Header text".to_string()),
+                            Text(format!("Arm {} Config", i)),
                         ));
                         parent
                             .spawn((
@@ -100,6 +129,7 @@ fn setup_ui(mut commands: Commands) {
                                     width: Val::Percent(100.),
                                     display: Display::None,
                                     flex_direction: FlexDirection::Column,
+                                    padding: UiRect::all(Val::Px(4.0)),
                                     ..Default::default()
                                 },
                                 FocusPolicy::Block,
@@ -107,10 +137,7 @@ fn setup_ui(mut commands: Commands) {
                             ))
                             .with_children(|parent| {
                                 parent
-                                    .spawn(Node {
-                                        width: Val::Percent(100.),
-                                        ..default()
-                                    })
+                                    .spawn(row_container())
                                     .with_children(|parent| {
                                         parent.spawn((
                                             Node {
@@ -121,13 +148,9 @@ fn setup_ui(mut commands: Commands) {
                                             Text("Arm Enabled".to_string()),
                                             font.clone(),
                                         ));
-                                        parent.spawn((
-                                            Node {
-                                                width: Val::Percent(40.),
-                                                ..Default::default()
-                                            },
+                                        parent.spawn((                                            
+                                            input_container(),
                                             Button,
-                                            BackgroundColor(Color::srgba(0.2, 0.2, 0.2, 0.75)),
                                             Text("Yes".to_string()),
                                             PressHeld(false),
                                             font.clone(),
@@ -135,10 +158,7 @@ fn setup_ui(mut commands: Commands) {
                                         ));
                                     });
                                 parent
-                                    .spawn(Node {
-                                        width: Val::Percent(100.),
-                                        ..default()
-                                    })
+                                    .spawn(row_container())
                                     .with_children(|parent| {
                                         parent.spawn((
                                             Node {
@@ -150,14 +170,9 @@ fn setup_ui(mut commands: Commands) {
                                             font.clone(),
                                         ));
                                         parent.spawn((
-                                            Node {
-                                                width: Val::Percent(40.),
-                                                ..Default::default()
-                                            },
-                                            BackgroundColor(Color::srgba(0.2, 0.2, 0.2, 0.75)),
+                                            input_container(),
                                             TextInput,
                                             TextInputInactive(true),
-                                            BorderColor(BORDER_COLOR_INACTIVE),
                                             TextInputTextColor(TextColor::WHITE),
                                             TextInputValue("1".to_string()),
                                             TextInputSettings {

@@ -1,0 +1,151 @@
+use bevy::prelude::*;
+use bevy_egui::{egui, EguiContextSettings, EguiContexts, EguiPlugin};
+
+pub struct ConfigEguiPlugin;
+
+impl Plugin for ConfigEguiPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<UiState>()
+            .add_systems(
+                Startup,
+                (configure_visuals_system, configure_ui_state_system),
+            )
+            .add_systems(Update, ui_system);
+    }
+}
+
+#[derive(Default, Resource)]
+struct UiState {
+    active_tab: Option<i32>,
+}
+
+fn configure_visuals_system(mut contexts: EguiContexts) {
+    contexts.ctx_mut().set_visuals(egui::Visuals {
+        window_corner_radius: 0.0.into(),
+        ..Default::default()
+    });
+}
+
+fn configure_ui_state_system(mut ui_state: ResMut<UiState>) {}
+
+use crate::galaxy_config::{ArmConfig, ComponentConfig, ComponentType, GalaxyConfigUi};
+
+fn arm_component_ui(id: i32, arm_config: &mut ArmConfig, ui: &mut egui::Ui) {
+    egui::CollapsingHeader::new(format!("Arm config {}", id)).show(ui, |ui| {
+        ui.checkbox(&mut arm_config.enabled, "Enabled");
+        ui.add(egui::Slider::new(&mut arm_config.offset, 0..=360).text("Angular Offset"));
+    });
+    ui.separator();
+}
+
+fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
+    let heading = match (config.component_type) {
+        ComponentType::Disk => "Disk Config",
+        ComponentType::Dust => "Dust Config",
+        ComponentType::Stars => "Stars Config",
+    };
+
+    let minval = ComponentConfig::MIN;
+    let maxval = ComponentConfig::MAX;
+
+    egui::CollapsingHeader::new(heading).show(ui, |ui| {
+        ui.add(
+            egui::Slider::new(&mut config.strength, minval.strength..=maxval.strength)
+                .text("Strength"),
+        );
+        ui.add(
+            egui::Slider::new(&mut config.arm_width, minval.arm_width..=maxval.arm_width)
+                .text("Arm Width"),
+        );
+        ui.add(
+            egui::Slider::new(&mut config.y_offset, minval.y_offset..=maxval.y_offset)
+                .text("Y Offset"),
+        );
+        ui.add(
+            egui::Slider::new(
+                &mut config.radial_start,
+                minval.radial_start..=maxval.radial_start,
+            )
+            .text("Radial Start"),
+        );
+        ui.add(
+            egui::Slider::new(
+                &mut config.radial_dropoff,
+                minval.radial_dropoff..=maxval.radial_dropoff,
+            )
+            .text("Radial Dropoff"),
+        );
+        ui.add(
+            egui::Slider::new(
+                &mut config.delta_angle,
+                minval.delta_angle..=maxval.delta_angle,
+            )
+            .text("Delta Angle"),
+        );
+        ui.add(
+            egui::Slider::new(
+                &mut config.winding_coefficient,
+                minval.winding_coefficient..=maxval.winding_coefficient,
+            )
+            .text("Winding Coeff."),
+        );
+        // speciual case for stars, ugly hack but w/e
+        if config.component_type == ComponentType::Stars {
+            ui.add(egui::Slider::new(&mut config.noise_scale, 1.0..=100.0).text("Noise Scale"));
+        } else {
+            ui.add(
+                egui::Slider::new(
+                    &mut config.noise_scale,
+                    minval.noise_scale..=maxval.noise_scale,
+                )
+                .text("Noise Scale"),
+            );
+        }
+        ui.add(
+            egui::Slider::new(
+                &mut config.noise_offset,
+                minval.noise_offset..=maxval.noise_offset,
+            )
+            .text("Noise Offset"),
+        );
+        ui.add(
+            egui::Slider::new(
+                &mut config.noise_tilt,
+                minval.noise_tilt..=maxval.noise_tilt,
+            )
+            .text("Noise Tilt"),
+        );
+        ui.add(
+            egui::Slider::new(
+                &mut config.noise_freq,
+                minval.noise_freq..=maxval.noise_freq,
+            )
+            .text("Noise Freq"),
+        );
+    });
+    ui.separator();
+}
+
+fn ui_system(
+    mut ui_state: ResMut<UiState>,
+    mut contexts: EguiContexts,
+    mut galaxy_ui_config: ResMut<GalaxyConfigUi>,
+) {
+    let ctx = contexts.ctx_mut();
+
+    egui::SidePanel::left("side_panel")
+        .default_width(200.0)
+        .show(ctx, |ui| {
+            ui.heading("Configuration");
+
+            ui.separator();
+            for i in 0..4 {
+                let arm_config = &mut galaxy_ui_config.arm_configs[i as usize];
+                arm_component_ui(i, arm_config, ui);
+            }
+
+            component_ui(&mut galaxy_ui_config.disk_config, ui);
+            component_ui(&mut galaxy_ui_config.dust_config, ui);
+            component_ui(&mut galaxy_ui_config.star_config, ui);
+        });
+}

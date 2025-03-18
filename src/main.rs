@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_egui::EguiPlugin;
 
 use bevy::window::{PresentMode, WindowTheme};
 
@@ -25,6 +26,7 @@ fn main() {
             }),
             ..default()
         }))
+        .add_plugins(EguiPlugin)
         .add_plugins((
             galaxy_config::GalaxyConfigPlugin,
             camera::CameraPlugin,

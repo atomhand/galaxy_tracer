@@ -144,8 +144,11 @@ struct ComponentParams {
 
 @group(2) @binding(0) var<uniform> galaxy: GalaxyParams;
 @group(2) @binding(1) var<uniform> bulge: BulgeParams;
-@group(2) @binding(2) var material_galaxy_texture: texture_2d<f32>;
-@group(2) @binding(3) var material_galaxy_sampler: sampler;
+@group(2) @binding(2) var<uniform> disk_params: ComponentParams;
+@group(2) @binding(3) var<uniform> dust_params: ComponentParams;
+@group(2) @binding(4) var<uniform> stars_params: ComponentParams;
+@group(2) @binding(5) var material_galaxy_texture: texture_2d<f32>;
+@group(2) @binding(6) var material_galaxy_sampler: sampler;
 
 fn pos_to_uv(p : vec2<f32>) -> vec2<f32> {
     return p / (galaxy.radius * 2.0 * galaxy.padding_coefficient) + 0.5;
@@ -256,15 +259,13 @@ fn disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f
     }
 
     let octaves : i32 = 10;
-    let scale : f32 = 1.0 / 20.0;
-    let persistence : f32 = 0.5;
-    var p2 = abs(perlin_cloud_noise(p, winding_angle, octaves, scale, persistence));
+    var p2 = abs(perlin_cloud_noise(p, winding_angle, octaves, disk_params.noise_scale, disk_params.ks));
     p2 = max(p2, 0.01);
 
-    p2 = pow(p2,1.0); // pow(p2,noiseTilt)
-    // p2 += componentParams.noiseOffset
+    p2 = pow(p2,disk_params.tilt);
+    p2 += disk_params.noise_offset;
 
-    return base_intensity * p2;
+    return base_intensity * p2 * disk_params.strength;
 }
 
 fn dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
@@ -272,18 +273,14 @@ fn dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f
         return 0.0;
     }
     let octaves = 9;
-    let scale = 1.0 / 10.0;
-    let persistence = 0.5;
-    var p2 = perlin_cloud_noise(p, winding_angle, octaves, scale, persistence);
-    let noiseOffset = 0.0;
-    p2 = max(p2-noiseOffset,0.0);
+    var p2 = perlin_cloud_noise(p, winding_angle, octaves, dust_params.noise_scale, dust_params.ks);
+    p2 = max(p2-dust_params.noise_offset,0.0);
 
-    let noiseTilt = 1.0;
-    p2 = clamp(pow(5*p2, noiseTilt), -10.0, 10.0);
+    p2 = clamp(pow(5*p2, dust_params.tilt), -10.0, 10.0);
 
     let s : f32 = 0.01;
 
-    return base_intensity * p2 * s;
+    return base_intensity * p2 * s * dust_params.strength;
 }
 
 fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {

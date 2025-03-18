@@ -41,6 +41,7 @@ fn place_galaxy_volume(
 fn update_volume_mat(
     galaxy_mat: Query<&MeshMaterial3d<GalaxyVolumeMaterial>, With<GalaxyRenderer>>,
     galaxy_texture: Res<crate::galaxy_texture::GalaxyTexture>,
+    galaxy_config: Res<GalaxyConfig>,
     mut galaxy_materials: ResMut<Assets<GalaxyVolumeMaterial>>,
 ) {
     if galaxy_texture.is_changed() {
@@ -50,6 +51,10 @@ fn update_volume_mat(
         let Some(mat) = galaxy_materials.get_mut(&galaxy.0) else {
             return;
         };
+
+        mat.disk_params = ComponentParams::from(galaxy_config.disk_params.clone());
+        mat.dust_params = ComponentParams::from(galaxy_config.dust_params.clone());
+        mat.stars_params = ComponentParams::from(galaxy_config.stars_params.clone());
 
         mat.xz_texture = galaxy_texture.tex.clone();
     }
@@ -90,6 +95,24 @@ struct ComponentParams {
     tilt: f32,
     ks: f32,
 }
+use crate::galaxy_config::ComponentConfig;
+impl From<ComponentConfig> for ComponentParams {
+    fn from(other: ComponentConfig) -> Self {
+        Self {
+            strength: other.strength,
+            arm_width: other.arm_width,
+            y0: other.y_offset,
+            r0: other.radial_start,
+            r1: other.radial_dropoff,
+            angular_offset: other.delta_angle,
+            winding: other.winding_coefficient,
+            noise_scale: other.noise_scale,
+            noise_offset: other.noise_offset,
+            tilt: other.noise_tilt,
+            ks: other.noise_freq,
+        }
+    }
+}
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
 pub struct GalaxyVolumeMaterial {
@@ -97,8 +120,14 @@ pub struct GalaxyVolumeMaterial {
     galaxy_params: GalaxyParams,
     #[uniform(1)]
     bulge_params: BulgeParams,
-    #[texture(2)]
-    #[sampler(3)]
+    #[uniform(2)]
+    disk_params: ComponentParams,
+    #[uniform(3)]
+    dust_params: ComponentParams,
+    #[uniform(4)]
+    stars_params: ComponentParams,
+    #[texture(5)]
+    #[sampler(6)]
     xz_texture: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
 }
@@ -118,6 +147,9 @@ impl GalaxyVolumeMaterial {
                 strength: 1.0,
                 r0: 0.2,
             },
+            disk_params: ComponentParams::from(galaxy_config.disk_params.clone()),
+            dust_params: ComponentParams::from(galaxy_config.dust_params.clone()),
+            stars_params: ComponentParams::from(galaxy_config.stars_params.clone()),
             alpha_mode: AlphaMode::Add,
             xz_texture: None,
         }

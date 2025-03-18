@@ -13,5 +13,5 @@ opt-level = 3
 
 [dependencies]
 bevy = "0.15.3"
-bevy_simple_text_input = "0.10.2"
+bevy_egui = "0.33.0"
 bytemuck = "1.21.0"

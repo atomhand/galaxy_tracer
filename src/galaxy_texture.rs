@@ -56,12 +56,13 @@ fn get_texture(config: &GalaxyConfig) -> Image {
 
 fn update_texture(
     mut images: ResMut<Assets<Image>>,
-    config: Res<GalaxyConfig>,
+    mut config: ResMut<GalaxyConfig>,
     mut tex_holder: ResMut<GalaxyTexture>,
 ) {
-    if config.is_changed() || tex_holder.tex.is_none() {
+    if config.should_rebake || tex_holder.tex.is_none() {
         info!("Galaxy config updated, rebaking galaxy");
         let handle = images.add(get_texture(&config));
         tex_holder.tex = Some(handle);
+        config.should_rebake = false;
     }
 }

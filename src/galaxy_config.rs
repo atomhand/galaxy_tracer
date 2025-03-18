@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 
-#[derive(Resource)]
+#[derive(Resource, Clone, PartialEq)]
 pub struct GalaxyConfig {
+    pub should_rebake: bool,
     pub radius: f32,
     pub n_arms: i32,
     pub arm_offsets: [f32; 4],
@@ -10,11 +11,90 @@ pub struct GalaxyConfig {
     pub max_stars: i32,
     pub spacing: f32,
     pub padding_coeff: f32,
+    pub disk_params: ComponentConfig,
+    pub dust_params: ComponentConfig,
+    pub stars_params: ComponentConfig,
+}
+
+#[derive(Clone, PartialEq)]
+pub enum ComponentType {
+    Disk,
+    Dust,
+    Stars,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct ComponentConfig {
+    pub component_type: ComponentType,
+    pub strength: f32,
+    pub arm_width: f32,
+    pub y_offset: f32,
+    pub radial_start: f32,
+    pub radial_dropoff: f32,
+    pub delta_angle: f32,
+    pub winding_coefficient: f32,
+    pub noise_scale: f32,
+    pub noise_offset: f32,
+    pub noise_tilt: f32,
+    pub noise_freq: f32,
+}
+
+impl Default for ComponentConfig {
+    fn default() -> Self {
+        Self {
+            component_type: ComponentType::Disk,
+            strength: 1.0,
+            arm_width: 0.5,
+            y_offset: 0.001,
+            radial_start: 0.1,
+            radial_dropoff: 0.5,
+            delta_angle: 0.0,
+            winding_coefficient: 0.5,
+            noise_scale: 1.0,
+            noise_offset: 0.0,
+            noise_tilt: 1.0,
+            noise_freq: 1.0,
+        }
+    }
+}
+
+impl ComponentConfig {
+    pub const MIN: Self = Self {
+        component_type: ComponentType::Disk,
+        strength: 0.01,
+        arm_width: 0.001,
+        y_offset: 0.001,
+        radial_start: 0.0,
+        radial_dropoff: 0.1,
+        delta_angle: -1.0,
+        winding_coefficient: 0.0,
+        noise_scale: 0.1,
+        noise_offset: -1.0,
+        noise_tilt: -1.0,
+        noise_freq: 0.1,
+    };
+    pub const MAX: Self = Self {
+        component_type: ComponentType::Disk,
+        strength: 5.0,
+        arm_width: 1.0,
+        y_offset: 0.05,
+        radial_start: 1.0,
+        radial_dropoff: 0.6,
+        delta_angle: 1.0,
+        winding_coefficient: 0.5,
+        noise_scale: 2.0,
+        noise_offset: 1.0,
+        noise_tilt: 1.0,
+        noise_freq: 2.0,
+    };
 }
 
 #[derive(Resource)]
 pub struct GalaxyConfigUi {
     pub arm_configs: [ArmConfig; 4],
+    pub disk_config: ComponentConfig,
+    pub dust_config: ComponentConfig,
+    pub star_config: ComponentConfig,
 }
 
 impl Default for GalaxyConfigUi {
@@ -38,6 +118,18 @@ impl Default for GalaxyConfigUi {
                     offset: 270,
                 },
             ],
+            disk_config: ComponentConfig {
+                component_type: ComponentType::Disk,
+                ..default()
+            },
+            dust_config: ComponentConfig {
+                component_type: ComponentType::Dust,
+                ..default()
+            },
+            star_config: ComponentConfig {
+                component_type: ComponentType::Stars,
+                ..default()
+            },
         }
     }
 }
@@ -59,6 +151,8 @@ fn apply_ui_updates(
     if galaxy_config_ui.is_changed() {
         let mut arms = 0;
 
+        let old = galaxy_config.clone();
+
         for i in 0..4 {
             let ui = galaxy_config_ui.arm_configs[i];
 
@@ -68,6 +162,13 @@ fn apply_ui_updates(
             }
         }
         galaxy_config.n_arms = arms as i32;
+        galaxy_config.disk_params = galaxy_config_ui.disk_config.clone();
+        galaxy_config.dust_params = galaxy_config_ui.dust_config.clone();
+        galaxy_config.stars_params = galaxy_config_ui.star_config.clone();
+
+        if !old.eq(&galaxy_config) {
+            galaxy_config.should_rebake = true;
+        }
     }
 }
 
@@ -97,6 +198,7 @@ impl GalaxyConfig {
 impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
+            should_rebake: true,
             radius: 500.0, // in parsecs
             max_stars: 1000,
             spacing: 40.0,
@@ -110,6 +212,9 @@ impl Default for GalaxyConfig {
             winding_b: 1.0,
             winding_n: 6.0,
             padding_coeff: 1.5,
+            disk_params: default(),
+            dust_params: default(),
+            stars_params: default(),
         }
     }
 }

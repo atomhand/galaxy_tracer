@@ -1,3 +1,4 @@
+use crate::prelude::*;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
@@ -16,8 +17,6 @@ fn configure_visuals_system(mut contexts: EguiContexts) {
         ..Default::default()
     });
 }
-
-use crate::galaxy_config::{ArmConfig, ComponentConfig, ComponentType, GalaxyConfig};
 
 fn arm_component_ui(id: i32, arm_config: &mut ArmConfig, ui: &mut egui::Ui) {
     egui::CollapsingHeader::new(format!("Arm config {}", id)).show(ui, |ui| {

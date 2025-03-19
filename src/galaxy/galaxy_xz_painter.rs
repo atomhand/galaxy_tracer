@@ -1,4 +1,4 @@
-use crate::galaxy_config::{ComponentConfig, GalaxyConfig};
+use crate::prelude::*;
 use bevy::prelude::*;
 use std::f32::consts::PI;
 

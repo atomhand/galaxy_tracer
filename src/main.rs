@@ -1,18 +1,14 @@
 #![feature(f16)]
 #![feature(test)]
 use bevy::prelude::*;
+use bevy::window::{PresentMode, WindowTheme};
 use bevy_egui::EguiPlugin;
 
-use bevy::window::{PresentMode, WindowTheme};
-
-mod benchmarks;
-mod camera;
-mod galaxy_config;
-mod galaxy_xz_painter;
-mod render;
+mod galaxy;
+mod graphics;
 mod ui;
-pub use galaxy_config::GalaxyConfig;
-mod galaxy_texture;
+
+mod prelude;
 
 fn main() {
     App::new()
@@ -31,11 +27,9 @@ fn main() {
         }))
         .add_plugins(EguiPlugin)
         .add_plugins((
-            galaxy_config::GalaxyConfigPlugin,
-            camera::CameraPlugin,
-            render::RenderPlugin,
+            galaxy::GalaxyConfigPlugin,
             ui::UiPlugin,
-            galaxy_texture::GalaxyTexturePlugin,
+            graphics::GraphicsPlugin,
         ))
         .run();
 }

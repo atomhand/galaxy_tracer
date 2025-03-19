@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod benchmarks {
     extern crate test;
-    use crate::{galaxy_config::GalaxyConfig, galaxy_texture::get_texture};
+    use crate::graphics::galaxy_texture::get_texture;
+    use crate::prelude::*;
     use test::Bencher;
 
     #[bench]

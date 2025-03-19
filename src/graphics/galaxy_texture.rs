@@ -1,4 +1,4 @@
-use super::galaxy_xz_painter::GalaxyPainter;
+use crate::prelude::*;
 use bevy::prelude::*;
 use rayon::prelude::*;
 pub struct GalaxyTexturePlugin;
@@ -16,8 +16,6 @@ impl Plugin for GalaxyTexturePlugin {
             .add_systems(Update, update_texture);
     }
 }
-
-use crate::GalaxyConfig;
 
 use bevy::render::{
     render_asset::RenderAssetUsages,

@@ -1,6 +1,5 @@
+use crate::prelude::*;
 use bevy::{input::mouse::MouseWheel, prelude::*};
-
-use super::galaxy_config::GalaxyConfig;
 
 pub struct CameraPlugin;
 

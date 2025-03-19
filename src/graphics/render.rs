@@ -1,4 +1,4 @@
-use super::galaxy_config::GalaxyConfig;
+use crate::prelude::*;
 use bevy::{
     prelude::*,
     reflect::TypePath,
@@ -40,7 +40,7 @@ fn place_galaxy_volume(
 
 fn update_volume_mat(
     galaxy_mat: Query<&MeshMaterial3d<GalaxyVolumeMaterial>, With<GalaxyRenderer>>,
-    galaxy_texture: Res<crate::galaxy_texture::GalaxyTexture>,
+    galaxy_texture: Res<super::GalaxyTexture>,
     galaxy_config: Res<GalaxyConfig>,
     mut galaxy_materials: ResMut<Assets<GalaxyVolumeMaterial>>,
 ) {
@@ -129,7 +129,7 @@ struct ComponentParams {
     tilt: f32,
     ks: f32,
 }
-use crate::galaxy_config::ComponentConfig;
+
 impl ComponentParams {
     fn read(component: &ComponentConfig) -> Self {
         Self {

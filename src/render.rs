@@ -44,6 +44,8 @@ fn update_volume_mat(
     galaxy_config: Res<GalaxyConfig>,
     mut galaxy_materials: ResMut<Assets<GalaxyVolumeMaterial>>,
 ) {
+    // it would be good to divorce parameter updates from texture updates I guess
+    // the texture update is quite cheap so it's not huge deal though
     if galaxy_texture.is_changed() {
         let Ok(galaxy) = galaxy_mat.get_single() else {
             return;
@@ -52,21 +54,11 @@ fn update_volume_mat(
             return;
         };
 
-        mat.galaxy_params = GalaxyParams {
-            padding_coefficient: galaxy_config.padding_coeff,
-            radius: galaxy_config.radius,
-            num_arms: galaxy_config.n_arms,
-            arm_offsets: Vec4::from_array(galaxy_config.arm_offsets),
-            winding_b: galaxy_config.winding_b,
-            winding_n: galaxy_config.winding_n,
-            pad: Vec3::ZERO,
-        };
-        mat.bulge_params.r0 = galaxy_config.bulge_radius;
-        mat.bulge_params.strength =galaxy_config.bulge_strength;
-        mat.bulge_params.intensity_mod = galaxy_config.bulge_intensity;
-        mat.disk_params = ComponentParams::from(galaxy_config.disk_params.clone());
-        mat.dust_params = ComponentParams::from(galaxy_config.dust_params.clone());
-        mat.stars_params = ComponentParams::from(galaxy_config.stars_params.clone());
+        mat.galaxy_params = GalaxyParams::read(&galaxy_config);
+        mat.bulge_params = BulgeParams::read(&galaxy_config);
+        mat.disk_params = ComponentParams::read(&galaxy_config.disk_params);
+        mat.dust_params = ComponentParams::read(&galaxy_config.dust_params);
+        mat.stars_params = ComponentParams::read(&galaxy_config.stars_params);
 
         mat.xz_texture = galaxy_texture.tex.clone();
     }
@@ -87,6 +79,20 @@ struct GalaxyParams {
     pad: Vec3,
 }
 
+impl GalaxyParams {
+    fn read(config : &GalaxyConfig) -> Self {
+        Self {
+            padding_coefficient: config.padding_coeff,
+            radius: config.radius,
+            num_arms: config.n_arms,
+            arm_offsets: Vec4::from_array(config.arm_offsets),
+            winding_b: config.winding_b,
+            winding_n: config.winding_n,
+            pad: Vec3::ZERO,
+        }
+    }
+}
+
 #[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug)]
 #[repr(C)]
 struct BulgeParams {
@@ -94,6 +100,17 @@ struct BulgeParams {
     r0: f32, // (inverse) width
     intensity_mod : f32,
 }
+
+impl BulgeParams {
+    fn read(config : &GalaxyConfig) -> Self {
+        Self {
+            strength : config.bulge_strength,
+            r0 : config.bulge_radius,
+            intensity_mod : config.bulge_intensity
+        }
+    }
+}
+
 #[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug)]
 #[repr(C)]
 struct ComponentParams {
@@ -110,20 +127,20 @@ struct ComponentParams {
     ks: f32,
 }
 use crate::galaxy_config::ComponentConfig;
-impl From<ComponentConfig> for ComponentParams {
-    fn from(other: ComponentConfig) -> Self {
+impl ComponentParams {
+    fn read(component: &ComponentConfig) -> Self {
         Self {
-            strength: other.strength,
-            arm_width: other.arm_width,
-            y0: other.y_offset,
-            r0: other.radial_start,
-            r1: other.radial_dropoff,
-            angular_offset: other.delta_angle,
-            winding: other.winding_coefficient,
-            noise_scale: other.noise_scale,
-            noise_offset: other.noise_offset,
-            tilt: other.noise_tilt,
-            ks: other.noise_freq,
+            strength: component.strength,
+            arm_width: component.arm_width,
+            y0: component.y_offset,
+            r0: component.radial_start,
+            r1: component.radial_dropoff,
+            angular_offset: component.delta_angle,
+            winding: component.winding_coefficient,
+            noise_scale: component.noise_scale,
+            noise_offset: component.noise_offset,
+            tilt: component.noise_tilt,
+            ks: component.noise_freq,
         }
     }
 }
@@ -148,23 +165,11 @@ pub struct GalaxyVolumeMaterial {
 impl GalaxyVolumeMaterial {
     pub fn new(galaxy_config: &GalaxyConfig) -> Self {
         Self {
-            galaxy_params: GalaxyParams {
-                padding_coefficient: galaxy_config.padding_coeff,
-                radius: galaxy_config.radius,
-                num_arms: galaxy_config.n_arms,
-                arm_offsets: Vec4::from_array(galaxy_config.arm_offsets),
-                winding_b: galaxy_config.winding_b,
-                winding_n: galaxy_config.winding_n,
-                pad: Vec3::ZERO,
-            },
-            bulge_params: BulgeParams {
-                strength: galaxy_config.bulge_strength,
-                r0: galaxy_config.bulge_radius,
-                intensity_mod : galaxy_config.bulge_intensity,
-            },
-            disk_params: ComponentParams::from(galaxy_config.disk_params.clone()),
-            dust_params: ComponentParams::from(galaxy_config.dust_params.clone()),
-            stars_params: ComponentParams::from(galaxy_config.stars_params.clone()),
+            galaxy_params: GalaxyParams::read(galaxy_config),
+            bulge_params: BulgeParams::read(galaxy_config),
+            disk_params: ComponentParams::read(&galaxy_config.disk_params),
+            dust_params: ComponentParams::read(&galaxy_config.dust_params),
+            stars_params: ComponentParams::read(&galaxy_config.stars_params),
             alpha_mode: AlphaMode::Add,
             xz_texture: None,
         }

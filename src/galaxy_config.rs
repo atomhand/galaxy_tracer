@@ -4,8 +4,6 @@ use bevy::prelude::*;
 pub struct GalaxyConfig {
     pub generation : i32,
 
-
-
     pub texture_dimension: u32,
     pub radius: f32,
     pub n_arms: i32,
@@ -16,6 +14,8 @@ pub struct GalaxyConfig {
     pub spacing: f32,
     pub padding_coeff: f32,
 
+    pub arm_configs : [ArmConfig; 4],
+
     pub bulge_strength : f32,
     pub bulge_radius : f32,
     pub bulge_intensity : f32,
@@ -24,6 +24,9 @@ pub struct GalaxyConfig {
     pub dust_params: ComponentConfig,
     pub stars_params: ComponentConfig,
 }
+
+#[derive(Resource,Default)]
+struct GalaxyConfigOld(GalaxyConfig);
 
 #[derive(Clone, PartialEq)]
 pub enum ComponentType {
@@ -97,137 +100,48 @@ impl ComponentConfig {
         noise_freq: 2.0,
     };
 }
-
-#[derive(Resource)]
-pub struct GalaxyConfigUi {
-    pub texture_size: u32,
-    pub winding_b: f32,
-    pub winding_n: f32,
-    pub radius: f32,
-    pub arm_configs: [ArmConfig; 4],
-    pub disk_config: ComponentConfig,
-    pub dust_config: ComponentConfig,
-    pub star_config: ComponentConfig,
-    pub bulge_strength : f32,
-    pub bulge_radius : f32,
-    pub bulge_intensity : f32,
-}
-
-impl Default for GalaxyConfigUi {
-    fn default() -> Self {
-        Self {
-            texture_size: 10,
-            winding_b: 1.0,
-            winding_n: 6.0,
-            radius: 500.0,
-            bulge_strength : 30.,
-            bulge_radius : 5.,
-            bulge_intensity : 1.,
-            arm_configs: [
-                ArmConfig {
-                    enabled: true,
-                    offset: 0,
-                },
-                ArmConfig {
-                    enabled: true,
-                    offset: 90,
-                },
-                ArmConfig {
-                    enabled: true,
-                    offset: 180,
-                },
-                ArmConfig {
-                    enabled: true,
-                    offset: 270,
-                },
-            ],
-            disk_config: ComponentConfig {
-                component_type: ComponentType::Disk,
-                ..default()
-            },
-            dust_config: ComponentConfig {
-                component_type: ComponentType::Dust,
-                ..default()
-            },
-            star_config: ComponentConfig {
-                component_type: ComponentType::Stars,
-                ..default()
-            },
-        }
-    }
-}
-
 pub struct GalaxyConfigPlugin;
 
 impl Plugin for GalaxyConfigPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GalaxyConfig::default())
-            .insert_resource(GalaxyConfigUi::default())
+            .insert_resource(GalaxyConfigOld::default())
             .add_systems(Update, apply_ui_updates);
     }
 }
 
 fn apply_ui_updates(
-    galaxy_config_ui: Res<GalaxyConfigUi>,
+    mut galaxy_config_old: ResMut<GalaxyConfigOld>,
     mut galaxy_config: ResMut<GalaxyConfig>,
 ) {
-    if galaxy_config_ui.is_changed() {
-        let mut arms = 0;
+    if galaxy_config.is_changed() {
+        galaxy_config_old.0.generation = galaxy_config.generation;
 
-        let old = galaxy_config.clone();
-
-        galaxy_config.texture_dimension = 2u32.pow(galaxy_config_ui.texture_size).clamp(16,2048);
-
-        galaxy_config.winding_n = galaxy_config_ui.winding_n;
-        galaxy_config.winding_b = galaxy_config_ui.winding_b;
-        galaxy_config.radius = galaxy_config_ui.radius;
-
-        galaxy_config.bulge_strength = galaxy_config_ui.bulge_strength;
-        galaxy_config.bulge_radius = galaxy_config_ui.bulge_radius;
-        galaxy_config.bulge_intensity = galaxy_config_ui.bulge_intensity;
-
-        for i in 0..4 {
-            let ui = galaxy_config_ui.arm_configs[i];
-
-            if ui.enabled {
-                galaxy_config.arm_offsets[arms] = (ui.offset as f32).to_radians();
-                arms += 1;
-            }
-        }
-        galaxy_config.n_arms = arms as i32;
-        galaxy_config.disk_params = galaxy_config_ui.disk_config.clone();
-        galaxy_config.dust_params = galaxy_config_ui.dust_config.clone();
-        galaxy_config.stars_params = galaxy_config_ui.star_config.clone();
-
-        if !old.eq(&galaxy_config) {
+        if *galaxy_config != galaxy_config_old.0 {
             galaxy_config.generation += 1;
+
+            let mut arms = 0;
+            for i in 0..4 {
+                let ui = galaxy_config.arm_configs[i];
+    
+                if ui.enabled {
+                    galaxy_config.arm_offsets[arms] = (ui.offset as f32).to_radians();
+                    arms += 1;
+                }
+            }
+            galaxy_config.n_arms = arms as i32;
+
+            galaxy_config_old.0 = galaxy_config.clone();
         }
     }
 }
 
-// NOTE
-// The world space coordinate system is scaled to parsecs, for now
-// In the future it would probably be wise to use separate coordinate systems for the galaxy and systems
-//  --- The transitions will get a bit fiddly tho which is why I have not bothered for now
-//  --- I'm assuming precision errors will eventually become a problem and force my hand
-
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq)]
 pub struct ArmConfig {
     pub enabled: bool,
     pub offset: i32, // in degrees
 }
 
-impl GalaxyConfig {
-    pub const AU_SCALE: f32 = 0.1; // scale of 1 AU to a Parsec
-    pub const CELESTIAL_BODIES_SCALE: f32 = 20.0; // boost to the radius of celestial bodies relative to distance
-    pub const PLANETS_SCALE: f32 = 1.0; // radius of a jupiter-sized planet relative to a sun-size star
-    pub const SOLAR_RADIUS: f32 = 0.00465 * Self::AU_SCALE * Self::CELESTIAL_BODIES_SCALE; // Radius of Sol in Au
-    pub const MAX_SYSTEM_BODIES: usize = 12; // Used for UI slots and stuff
-
-    pub const HYPERLANE_VISUAL_STAR_CLEARANCE: f32 = 10.0;
-
-    pub const GALACTIC_INTEGER_SCALE: i32 = 10000;
-}
 impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
@@ -240,6 +154,24 @@ impl Default for GalaxyConfig {
             max_stars: 1000,
             spacing: 40.0,
             n_arms: 3,
+            arm_configs: [
+                ArmConfig{
+                    enabled : true,
+                    offset : 0
+                },
+                ArmConfig{
+                    enabled : true,
+                    offset : 90
+                },
+                ArmConfig{
+                    enabled : true,
+                    offset : 180
+                },
+                ArmConfig{
+                    enabled : true,
+                    offset : 270
+                },
+            ],
             arm_offsets: [
                 0.0,
                 90f32.to_radians(),

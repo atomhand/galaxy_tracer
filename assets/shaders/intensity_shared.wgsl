@@ -151,9 +151,17 @@ struct ComponentParams {
 @group(2) @binding(4) var<uniform> stars_params: ComponentParams;
 @group(2) @binding(5) var material_galaxy_texture: texture_2d<f32>;
 @group(2) @binding(6) var material_galaxy_sampler: sampler;
+@group(2) @binding(7) var lut_texture: texture_2d_array<f32>;
+@group(2) @binding(8) var lut_sampler: sampler;
+
+const LUT_ID_WINDING : i32 = 0;
 
 fn pos_to_uv(p : vec2<f32>) -> vec2<f32> {
     return p / (galaxy.radius * 2.0 * galaxy.padding_coefficient) + 0.5;
+}
+
+fn lookup_winding(d : f32) -> f32 {
+    return textureSample(lut_texture,lut_sampler, vec2<f32>(d,0.5), LUT_ID_WINDING).x;
 }
 
 fn get_height_modulation(height : f32, y0 : f32) -> f32 {
@@ -279,7 +287,7 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
 
     p2 = clamp(pow(5*p2, dust_params.tilt), -10.0, 10.0);
 
-    let s : f32 = 100.0;//0.01;
+    let s : f32 = 0.01;
 
     return base_intensity * p2 * s * dust_params.strength;
 }
@@ -311,7 +319,7 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     // It's feasible to calculate this live, but caching it to the texture gets a very acceptable result
     // The winding angle is only variant with respect to d, so a 1d LUT would be even better
     // .. it was just convenient to pack it into the main texture for now because I had a spare channel
-    let base_winding : f32 = -xz_sample.w;//-get_winding(d);
+    let base_winding : f32 = -lookup_winding(d);//-xz_sample.w;//-get_winding(d);
 
     let disk_xz: f32  = reconstruct_intensity(p, xz_sample.x, disk_params.y0);
     let disk_winding_angle : f32 = base_winding * disk_params.winding;//-disk_sample.y;
@@ -321,14 +329,14 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     // -- At the same time it will be necessary to increase the default strength values by a lot (GAMER uses several hundreds)
 
     let disk_col = vec3<f32>(0.4,0.6,1.0);
-    let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz);
+    let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz) * galaxy.exposure;;
 
     let dust_xz = reconstruct_intensity(p, xz_sample.y, dust_params.y0);//textureSample(material_galaxy_texture, material_galaxy_sampler, uv, i + galaxy.num_arms).x;
     let dust_winding_angle : f32 = base_winding * dust_params.winding;
     let dust_intensity : f32 = get_dust_intensity(p, dust_winding_angle, dust_xz);
     //}
 
-    let bulge_intensity = get_bulge_intensity(p) * stepsize;
+    let bulge_intensity = get_bulge_intensity(p) * stepsize * galaxy.exposure;
     let bulge_col = vec3<f32>(1.,0.9,0.45) * bulge_params.intensity_mod;
 
     // let stars_xz = reconstruct_intensity(p,xz_sample.z, 1.0);
@@ -336,6 +344,6 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     let dust_col : vec3<f32> = vec3<f32>(1.0,0.6,0.4);
     let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
 
-    let col = in_col + disk_col * disk_intensity * galaxy.exposure + bulge_col * bulge_intensity * galaxy.exposure;
+    let col = in_col + disk_col * disk_intensity + bulge_col * bulge_intensity;
     return col * extinction;
 }

@@ -4,7 +4,7 @@ use bevy::prelude::*;
 pub struct GalaxyConfig {
     pub generation : i32,
 
-
+    pub texture_root : u32,
     pub texture_dimension: u32,
     pub radius: f32,
     pub n_arms: i32,
@@ -86,7 +86,7 @@ impl Default for ComponentConfig {
 impl ComponentConfig {
     pub const MIN: Self = Self {
         component_type: ComponentType::Disk,
-        strength: 1.0,
+        strength: 0.0,
         arm_width: 0.001,
         y_offset: 0.001,
         radial_start: 0.0,
@@ -131,6 +131,8 @@ fn apply_ui_updates(
         if *galaxy_config != galaxy_config_old.0 {
             galaxy_config.generation += 1;
 
+            galaxy_config.texture_dimension = 2u32.pow(galaxy_config.texture_root);
+
             let mut arms = 0;
             for i in 0..4 {
                 let ui = galaxy_config.arm_configs[i];
@@ -157,6 +159,7 @@ impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
             generation : 1,
+            texture_root : 9,
             texture_dimension: 512,
             bulge_strength : 30.0,
             bulge_radius : 5.0,
@@ -198,7 +201,7 @@ impl Default for GalaxyConfig {
                 strength : 900.0,
                 arm_width : 0.3,
                 y_offset : 0.02,
-                radial_dropoff : 0.,
+                radial_dropoff : 0.01,
                 radial_start : 0.4,
                 //noise_tilt : 0.3,
                 //wirl : 0.1,
@@ -210,6 +213,7 @@ impl Default for GalaxyConfig {
                 arm_width : 0.25,
                 y_offset : 0.02,
                 radial_start : 0.45,
+                radial_dropoff : 0.01,
                 noise_scale : 3.0,
                 .. default()
             },

@@ -128,15 +128,17 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                     egui::Slider::new(&mut galaxy_config.radius, 100.0..=1000.0).text("Radius"),
                 );
                 ui.add(
-                    egui::Slider::new(&mut galaxy_config.texture_dimension, 4..=11).custom_formatter(|n, _| {
+                    egui::Slider::new(&mut galaxy_config.texture_root, 4..=11).custom_formatter(|n, _| {
                         let n = n as u32;
                         format!("{}",2u32.pow(n))
                     })
                         .text("Texture Size"),
                 );
+                let mut inv_exposure = 1.0 / galaxy_config.exposure;
                 ui.add(
-                    egui::Slider::new(&mut galaxy_config.exposure, 0.01..=1.0).text("Exposure"),
+                    egui::Slider::new(&mut inv_exposure, 1.0..=1000.0).text("Exposure (Inverse)"),
                 );
+                galaxy_config.exposure = 1.0 / inv_exposure;
 
                 ui.add(
                     egui::Slider::new(&mut galaxy_config.winding_b, 0.5..=3.0).text("windingB"),

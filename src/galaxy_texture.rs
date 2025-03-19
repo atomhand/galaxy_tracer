@@ -6,6 +6,7 @@ pub struct GalaxyTexturePlugin;
 #[derive(Resource, Default)]
 pub struct GalaxyTexture {
     pub tex: Option<Handle<Image>>,
+    pub luts : Option<Handle<Image>>,
     generation : i32,
 }
 
@@ -22,6 +23,51 @@ use bevy::render::{
     render_asset::RenderAssetUsages,
     render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
+
+pub fn get_lut(config : &GalaxyConfig) -> Image {
+    let width = config.texture_dimension.next_power_of_two();
+    let layers = 4;
+
+    let disk_painter = GalaxyPainter::new(&config, &config.disk_params);
+
+    let chunk_size : usize = 4;
+    let mut texture_data = vec![0u8; (width * layers) as usize * chunk_size];
+
+    texture_data
+        .par_chunks_exact_mut(chunk_size)
+        .enumerate()
+        .for_each(|(i, chunk)| {
+            let x = i % width as usize;
+            let layer = i / width as usize;
+
+            let val = match layer {
+                0 => disk_painter.get_raw_winding(x as f32 / width as f32),
+                1 => 0.0,
+                2 => 0.0,
+                3 => disk_painter.get_raw_winding(x as f32 / width as f32),
+                _ => 0.0
+            };
+
+            let slice = [
+                val.to_le_bytes(),
+            ]
+            .concat();
+
+            chunk.copy_from_slice(&slice);
+        });
+
+    Image::new(
+        Extent3d {
+            width: width,
+            height: 1,
+            depth_or_array_layers: layers,
+        },
+        TextureDimension::D2,
+        texture_data,
+        TextureFormat::R32Float,
+        RenderAssetUsages::RENDER_WORLD,
+    )
+}
 
 pub fn get_texture(config: &GalaxyConfig) -> Image {
     let dimension = config.texture_dimension.next_power_of_two();
@@ -82,6 +128,9 @@ fn update_texture(
         info!("Galaxy config updated, rebaking galaxy");
         let handle = images.add(get_texture(&config));
         tex_holder.tex = Some(handle);
+
+        let lut_handle = images.add(get_lut(&config));
+        tex_holder.luts = Some(lut_handle);
         tex_holder.generation = config.generation;
     }
 }

@@ -61,6 +61,7 @@ fn update_volume_mat(
         mat.stars_params = ComponentParams::read(&galaxy_config.stars_params);
 
         mat.xz_texture = galaxy_texture.tex.clone();
+        mat.lut = galaxy_texture.luts.clone();
     }
 }
 
@@ -162,6 +163,9 @@ pub struct GalaxyVolumeMaterial {
     #[texture(5)]
     #[sampler(6)]
     xz_texture: Option<Handle<Image>>,
+    #[texture(7, dimension="2d_array")]
+    #[sampler(8)]
+    lut : Option<Handle<Image>>,
     alpha_mode: AlphaMode,
 }
 impl GalaxyVolumeMaterial {
@@ -174,6 +178,7 @@ impl GalaxyVolumeMaterial {
             stars_params: ComponentParams::read(&galaxy_config.stars_params),
             alpha_mode: AlphaMode::Add,
             xz_texture: None,
+            lut : None,
         }
     }
 }

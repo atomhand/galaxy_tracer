@@ -26,16 +26,9 @@ impl GalaxyPainter<'_> {
     }
     pub fn pos_winding(&self, p: Vec2) -> f32 {
         let rad = p.length() / self.galaxy.radius;
-        let r = rad + 0.05;
-
-        let t = f32::atan(f32::exp(-0.25 / (0.5 * r)) / self.galaxy.winding_b)
-            * 2.0
-            * self.galaxy.winding_n;
-        //let t= atan(exp(1.0/r) / wb) * 2.0 * wn;
-
-        return t;
+        return self.get_raw_winding(rad);
     }
-    fn get_raw_winding(&self, rad: f32) -> f32 {
+    pub fn get_raw_winding(&self, rad: f32) -> f32 {
         let r = rad + 0.05;
 
         let t = f32::atan(f32::exp(-0.25 / (0.5 * r)) / self.galaxy.winding_b)

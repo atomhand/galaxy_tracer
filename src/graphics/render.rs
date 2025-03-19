@@ -121,16 +121,16 @@ impl BulgeParams {
 struct ComponentParams {
     strength: f32,
     arm_width: f32, // inverse
-    y0: f32,
-    r0: f32, // radial intensity start
-    r1: f32, // radial falloff start
+    y_thickness: f32,
+    radial_extent: f32, // radial intensity start
+    central_falloff: f32, // radial falloff start
     angular_offset: f32,
-    winding: f32,
+    winding_factor: f32,
     noise_scale: f32,
     noise_offset: f32,
-    tilt: f32,
-    ks: f32,
-    noise_enabled: f32,
+    noise_tilt: f32,
+    noise_persistence: f32,
+    noise_octaves: f32,
 }
 
 impl ComponentParams {
@@ -138,16 +138,16 @@ impl ComponentParams {
         Self {
             strength: component.strength,
             arm_width: component.arm_width,
-            y0: component.y_offset,
-            r0: component.radial_start,
-            r1: component.radial_dropoff,
-            angular_offset: component.delta_angle,
-            winding: component.winding_coefficient,
+            y_thickness: component.y_thickness,
+            radial_extent: component.radial_extent,
+            central_falloff: component.radial_dropoff,
+            angular_offset: component.angular_offset,
+            winding_factor: component.winding_factor,
             noise_scale: component.noise_scale,
             noise_offset: component.noise_offset,
-            tilt: component.noise_tilt,
-            ks: component.noise_freq,
-            noise_enabled: component.noise_octaves as f32,
+            noise_tilt: component.noise_tilt,
+            noise_persistence: component.noise_persistence,
+            noise_octaves: component.noise_octaves as f32,
         }
     }
 }

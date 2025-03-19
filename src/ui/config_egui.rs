@@ -42,16 +42,16 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
         );
         ui.add(
             egui::Slider::new(&mut config.arm_width, minval.arm_width..=maxval.arm_width)
-                .text("Inverse Arm Width"),
+                .text("Arm Width (Inverse)"),
         );
         ui.add(
-            egui::Slider::new(&mut config.y_offset, minval.y_offset..=maxval.y_offset)
-                .text("Y Offset"),
+            egui::Slider::new(&mut config.y_thickness, minval.y_thickness..=maxval.y_thickness)
+                .text("Thickness (Y)"),
         );
         ui.add(
             egui::Slider::new(
-                &mut config.radial_start,
-                minval.radial_start..=maxval.radial_start,
+                &mut config.radial_extent,
+                minval.radial_extent..=maxval.radial_extent,
             )
             .text("Radial Extent"),
         );
@@ -64,28 +64,28 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
         );
         ui.add(
             egui::Slider::new(
-                &mut config.delta_angle,
-                minval.delta_angle..=maxval.delta_angle,
+                &mut config.angular_offset,
+                minval.angular_offset..=maxval.angular_offset,
             )
-            .text("Delta Angle"),
+            .text("Angular Offset"),
         );
         ui.add(
             egui::Slider::new(
-                &mut config.winding_coefficient,
-                minval.winding_coefficient..=maxval.winding_coefficient,
+                &mut config.winding_factor,
+                minval.winding_factor..=maxval.winding_factor,
             )
-            .text("Winding Coeff."),
+            .text("Winding Factor"),
         );
         // speciual case for stars, ugly hack but w/e
         if config.component_type == ComponentType::Stars {
-            ui.add(egui::Slider::new(&mut config.noise_scale, 1.0..=100.0).text("Noise Scale"));
+            ui.add(egui::Slider::new(&mut config.noise_scale, 1.0..=100.0).text("Noise Frequency"));
         } else {
             ui.add(
                 egui::Slider::new(
                     &mut config.noise_scale,
                     minval.noise_scale..=maxval.noise_scale,
                 )
-                .text("Noise Scale"),
+                .text("Noise Frequency"),
             );
         }
         ui.add(
@@ -104,10 +104,10 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
         );
         ui.add(
             egui::Slider::new(
-                &mut config.noise_freq,
-                minval.noise_freq..=maxval.noise_freq,
+                &mut config.noise_persistence,
+                minval.noise_persistence..=maxval.noise_persistence,
             )
-            .text("Noise Freq"),
+            .text("Noise Persistence"),
         );
 
         ui.add(

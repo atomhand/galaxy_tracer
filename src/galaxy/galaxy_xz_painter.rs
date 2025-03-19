@@ -48,7 +48,7 @@ impl GalaxyPainter<'_> {
     fn arm_modifier(&self, p: Vec2, winding: f32, arm_id: i32) -> f32 {
         let disp = self.galaxy.arm_offsets[arm_id as usize]; // angular offset
 
-        let angular_offset = self.component.delta_angle.to_radians();
+        let angular_offset = self.component.angular_offset.to_radians();
         let theta = -(f32::atan2(p.x, p.y) + angular_offset);
 
         let v = self.find_theta_difference(winding, theta + disp);
@@ -65,7 +65,7 @@ impl GalaxyPainter<'_> {
     }
 
     pub fn get_xz_intensity(&self, p: Vec2) -> f32 {
-        let r0 = self.component.radial_start;
+        let r0 = self.component.radial_extent;
         let inner = self.component.radial_dropoff; // central falloff parameter
 
         let d = p.length() / self.galaxy.radius; // distance to galactic central axis
@@ -74,7 +74,7 @@ impl GalaxyPainter<'_> {
         let central_falloff = (smoothstep(0.0, 1.0 * inner, d)).powi(4);
         let r = self.get_radial_intensity(d, r0);
 
-        let winding = self.get_raw_winding(d) * self.component.winding_coefficient;
+        let winding = self.get_raw_winding(d) * self.component.winding_factor;
         let arm_mod = self.all_arms_modifier(winding, p);
 
         return central_falloff * arm_mod * r;

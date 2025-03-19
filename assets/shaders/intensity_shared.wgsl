@@ -89,7 +89,10 @@ fn Perlin3D(  P : vec3<f32>) -> f32
 
 }
 
-// END NOISE FUNCTIONS
+// END BRIAN SHARPE NOISE FUNCTIONS
+
+// NOISE UTILITIES BASED on GAMER source code
+// ---- Again, ideally these would be in an include file, but they are temporarily residing here so long as Bevy stochastically fails to find nested WGSL imports
 
 fn get_twirl(p : vec3<f32>, winding_angle : f32) -> vec3<f32> {
     let rot : vec2<f32> = vec2<f32>(cos(winding_angle),sin(winding_angle));
@@ -117,6 +120,8 @@ fn perlin_cloud_noise(p : vec3<f32>, winding_angle : f32, octaves : i32, scale :
     let r = get_twirl(p,winding_angle);
     return octave_noise_3d(octaves,persistence,scale, r);
 }
+
+// END Noise utilities
 
 // These structs are duplicated in render.rs, so make sure to update both
 struct GalaxyParams {

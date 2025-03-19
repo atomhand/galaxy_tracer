@@ -126,7 +126,7 @@ struct GalaxyParams {
 }
 struct BulgeParams {
     strength : f32,
-    r0 : f32, // (inverse) width
+    radius : f32, // width
 }
 struct ComponentParams {
     strength : f32,
@@ -143,7 +143,7 @@ struct ComponentParams {
 }
 
 @group(2) @binding(0) var<uniform> galaxy: GalaxyParams;
-@group(2) @binding(1) var<uniform> bulge: BulgeParams;
+@group(2) @binding(1) var<uniform> bulge_params: BulgeParams;
 @group(2) @binding(2) var<uniform> disk_params: ComponentParams;
 @group(2) @binding(3) var<uniform> dust_params: ComponentParams;
 @group(2) @binding(4) var<uniform> stars_params: ComponentParams;
@@ -253,7 +253,7 @@ fn reconstruct_intensity(p : vec3<f32>, xz_intensity : f32, weight : f32) -> f32
     return xz_intensity * h * weight;
 }
 
-fn disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
+fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
     if(base_intensity < 0.0005) {
         return 0.0;
     }
@@ -268,7 +268,7 @@ fn disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f
     return base_intensity * p2 * disk_params.strength;
 }
 
-fn dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
+fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
     if(base_intensity < 0.0005) {
         return 0.0;
     }
@@ -281,6 +281,19 @@ fn dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f
     let s : f32 = 100.0;//0.01;
 
     return base_intensity * p2 * s * dust_params.strength;
+}
+
+fn get_bulge_intensity(p : vec3<f32>) -> f32 {
+    let rho_0: f32 = bulge_params.strength;
+
+    //let rad : f32 = (length(p)+0.01)*bulge_params.r0 + 0.01;
+
+    let rad_scale = galaxy.radius * bulge_params.radius * 0.1;
+
+    let rad : f32 = (length(p)+0.01)/rad_scale + 0.01;
+    var i : f32 = rho_0 * (pow(rad,-0.855)*exp(-pow(rad,1.0/4.0f)) - 0.05f);
+
+    return max(0.0,i);
 }
 
 fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
@@ -303,18 +316,21 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     let disk_winding_angle : f32 = base_winding * disk_params.winding;//-disk_sample.y;
 
     let disk_col = vec3<f32>(3.54387,3.44474,3.448229);
-    let disk_intensity : f32 = disk_intensity(p, disk_winding_angle, disk_xz);
+    let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz);
 
     let dust_xz = reconstruct_intensity(p, xz_sample.y, 1.0);//textureSample(material_galaxy_texture, material_galaxy_sampler, uv, i + galaxy.num_arms).x;
     let dust_winding_angle : f32 = base_winding * dust_params.winding;
-    let dust_intensity : f32 = dust_intensity(p, dust_winding_angle, dust_xz);
+    let dust_intensity : f32 = get_dust_intensity(p, dust_winding_angle, dust_xz);
     //}
+
+    let bulge_intensity = get_bulge_intensity(p);
+    let bulge_col = vec3<f32>(4.0, 2.416, 0);
 
     // let stars_xz = reconstruct_intensity(p,xz_sample.z, 1.0);
 
     let dust_col : vec3<f32> = vec3<f32>(1.0,1.0,1.0);
     let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
 
-    let col = in_col + disk_col * disk_intensity;
+    let col = in_col + disk_col * disk_intensity + bulge_col * bulge_intensity;
     return col * extinction;
 }

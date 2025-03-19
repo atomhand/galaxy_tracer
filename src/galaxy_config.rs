@@ -2,7 +2,10 @@ use bevy::prelude::*;
 
 #[derive(Resource, Clone, PartialEq)]
 pub struct GalaxyConfig {
-    pub should_rebake: bool,
+    pub generation : i32,
+
+
+
     pub texture_dimension: u32,
     pub radius: f32,
     pub n_arms: i32,
@@ -12,6 +15,10 @@ pub struct GalaxyConfig {
     pub max_stars: i32,
     pub spacing: f32,
     pub padding_coeff: f32,
+
+    pub bulge_strength : f32,
+    pub bulge_radius : f32,
+
     pub disk_params: ComponentConfig,
     pub dust_params: ComponentConfig,
     pub stars_params: ComponentConfig,
@@ -67,7 +74,7 @@ impl ComponentConfig {
         y_offset: 0.001,
         radial_start: 0.0,
         radial_dropoff: 0.1,
-        delta_angle: -1.0,
+        delta_angle: -180.0,
         winding_coefficient: 0.0,
         noise_scale: 0.1,
         noise_offset: -1.0,
@@ -81,7 +88,7 @@ impl ComponentConfig {
         y_offset: 0.05,
         radial_start: 1.0,
         radial_dropoff: 0.6,
-        delta_angle: 1.0,
+        delta_angle: 180.0,
         winding_coefficient: 0.5,
         noise_scale: 2.0,
         noise_offset: 1.0,
@@ -100,6 +107,8 @@ pub struct GalaxyConfigUi {
     pub disk_config: ComponentConfig,
     pub dust_config: ComponentConfig,
     pub star_config: ComponentConfig,
+    pub bulge_strength : f32,
+    pub bulge_radius : f32,
 }
 
 impl Default for GalaxyConfigUi {
@@ -109,6 +118,8 @@ impl Default for GalaxyConfigUi {
             winding_b: 1.0,
             winding_n: 6.0,
             radius: 500.0,
+            bulge_strength : 0.5,
+            bulge_radius : 0.2,
             arm_configs: [
                 ArmConfig {
                     enabled: true,
@@ -168,6 +179,9 @@ fn apply_ui_updates(
         galaxy_config.winding_b = galaxy_config_ui.winding_b;
         galaxy_config.radius = galaxy_config_ui.radius;
 
+        galaxy_config.bulge_strength = galaxy_config_ui.bulge_strength;
+        galaxy_config.bulge_radius = galaxy_config_ui.bulge_radius;
+
         for i in 0..4 {
             let ui = galaxy_config_ui.arm_configs[i];
 
@@ -182,7 +196,7 @@ fn apply_ui_updates(
         galaxy_config.stars_params = galaxy_config_ui.star_config.clone();
 
         if !old.eq(&galaxy_config) {
-            galaxy_config.should_rebake = true;
+            galaxy_config.generation += 1;
         }
     }
 }
@@ -213,8 +227,10 @@ impl GalaxyConfig {
 impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
-            should_rebake: true,
+            generation : 1,
             texture_dimension: 1024,
+            bulge_strength : 0.5,
+            bulge_radius : 0.3,
             radius: 500.0, // in parsecs
             max_stars: 1000,
             spacing: 40.0,

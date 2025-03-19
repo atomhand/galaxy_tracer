@@ -61,6 +61,8 @@ fn update_volume_mat(
             winding_n: galaxy_config.winding_n,
             pad: Vec3::ZERO,
         };
+        mat.bulge_params.r0 = galaxy_config.bulge_radius;
+        mat.bulge_params.strength =galaxy_config.bulge_strength;
         mat.disk_params = ComponentParams::from(galaxy_config.disk_params.clone());
         mat.dust_params = ComponentParams::from(galaxy_config.dust_params.clone());
         mat.stars_params = ComponentParams::from(galaxy_config.stars_params.clone());
@@ -154,8 +156,8 @@ impl GalaxyVolumeMaterial {
                 pad: Vec3::ZERO,
             },
             bulge_params: BulgeParams {
-                strength: 1.0,
-                r0: 0.2,
+                strength: galaxy_config.bulge_strength,
+                r0: galaxy_config.bulge_radius,
             },
             disk_params: ComponentParams::from(galaxy_config.disk_params.clone()),
             dust_params: ComponentParams::from(galaxy_config.dust_params.clone()),

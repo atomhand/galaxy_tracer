@@ -6,6 +6,7 @@ pub struct GalaxyTexturePlugin;
 #[derive(Resource, Default)]
 pub struct GalaxyTexture {
     pub tex: Option<Handle<Image>>,
+    generation : i32,
 }
 
 impl Plugin for GalaxyTexturePlugin {
@@ -77,10 +78,10 @@ fn update_texture(
     mut config: ResMut<GalaxyConfig>,
     mut tex_holder: ResMut<GalaxyTexture>,
 ) {
-    if config.should_rebake || tex_holder.tex.is_none() {
+    if config.generation != tex_holder.generation || tex_holder.tex.is_none() {
         info!("Galaxy config updated, rebaking galaxy");
         let handle = images.add(get_texture(&config));
         tex_holder.tex = Some(handle);
-        config.should_rebake = false;
+        tex_holder.generation = config.generation;
     }
 }

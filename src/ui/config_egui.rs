@@ -55,14 +55,14 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
                 &mut config.radial_start,
                 minval.radial_start..=maxval.radial_start,
             )
-            .text("Radial Start"),
+            .text("Radial Extent"),
         );
         ui.add(
             egui::Slider::new(
                 &mut config.radial_dropoff,
                 minval.radial_dropoff..=maxval.radial_dropoff,
             )
-            .text("Radial Dropoff"),
+            .text("Central Falloff"),
         );
         ui.add(
             egui::Slider::new(
@@ -142,7 +142,19 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_ui_config: ResMut<GalaxyConf
                     egui::Slider::new(&mut galaxy_ui_config.winding_n, 0.5..=10.0).text("windingN"),
                 );
             });
+            egui::CollapsingHeader::new("Bulge Parameters").show(ui, |ui| {
+                ui.add(
+                    egui::Slider::new(&mut galaxy_ui_config.bulge_strength, 0.01..=0.1).text("Strength"),
+                );
 
+                // Mild Hack:
+                // Transform the (ordinarily inverted) bulge Strength param to a range that is a bit more convenient to reason about
+                //let mut str = 1.0 / galaxy_ui_config.bulge_radius;
+                ui.add(
+                    egui::Slider::new(&mut galaxy_ui_config.bulge_radius, 0.01..=1.0).text("Scale Factor"),
+                );
+                //galaxy_ui_config.bulge_radius = 1.0 / str;
+            });
             ui.separator();
             for i in 0..4 {
                 let arm_config = &mut galaxy_ui_config.arm_configs[i as usize];

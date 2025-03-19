@@ -2,9 +2,9 @@ use bevy::prelude::*;
 
 #[derive(Resource, Clone, PartialEq)]
 pub struct GalaxyConfig {
-    pub generation : i32,
+    pub generation: i32,
 
-    pub texture_root : u32,
+    pub texture_root: u32,
     pub texture_dimension: u32,
     pub radius: f32,
     pub n_arms: i32,
@@ -12,17 +12,17 @@ pub struct GalaxyConfig {
 
     pub winding_b: f32,
     pub winding_n: f32,
-    pub exposure : f32,
+    pub exposure: f32,
 
     pub max_stars: i32,
     pub spacing: f32,
     pub padding_coeff: f32,
 
-    pub arm_configs : [ArmConfig; 4],
+    pub arm_configs: [ArmConfig; 4],
 
-    pub bulge_strength : f32,
-    pub bulge_radius : f32,
-    pub bulge_intensity : f32,
+    pub bulge_strength: f32,
+    pub bulge_radius: f32,
+    pub bulge_intensity: f32,
 
     pub disk_params: ComponentConfig,
     pub dust_params: ComponentConfig,
@@ -35,8 +35,8 @@ struct GalaxyConfigOld(GalaxyConfig);
 impl Default for GalaxyConfigOld {
     fn default() -> Self {
         Self(GalaxyConfig {
-            generation : -1,
-            .. default()
+            generation: -1,
+            ..default()
         })
     }
 }
@@ -136,7 +136,7 @@ fn apply_ui_updates(
             let mut arms = 0;
             for i in 0..4 {
                 let ui = galaxy_config.arm_configs[i];
-    
+
                 if ui.enabled {
                     galaxy_config.arm_offsets[arms] = (ui.offset as f32).to_radians();
                     arms += 1;
@@ -158,33 +158,33 @@ pub struct ArmConfig {
 impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
-            generation : 1,
-            texture_root : 9,
+            generation: 1,
+            texture_root: 9,
             texture_dimension: 512,
-            bulge_strength : 30.0,
-            bulge_radius : 5.0,
-            bulge_intensity : 1.0,
-            exposure : 0.01,
+            bulge_strength: 30.0,
+            bulge_radius: 5.0,
+            bulge_intensity: 1.0,
+            exposure: 0.01,
             radius: 500.0, // in parsecs
             max_stars: 1000,
             spacing: 40.0,
             n_arms: 3,
             arm_configs: [
-                ArmConfig{
-                    enabled : true,
-                    offset : 0
+                ArmConfig {
+                    enabled: true,
+                    offset: 0,
                 },
-                ArmConfig{
-                    enabled : false,
-                    offset : 90
+                ArmConfig {
+                    enabled: false,
+                    offset: 90,
                 },
-                ArmConfig{
-                    enabled : true,
-                    offset : 180
+                ArmConfig {
+                    enabled: true,
+                    offset: 180,
                 },
-                ArmConfig{
-                    enabled : false,
-                    offset : 270
+                ArmConfig {
+                    enabled: false,
+                    offset: 270,
                 },
             ],
             arm_offsets: [
@@ -196,30 +196,30 @@ impl Default for GalaxyConfig {
             winding_b: 0.5,
             winding_n: 4.0,
             padding_coeff: 1.5,
-            disk_params: ComponentConfig{
-                component_type : ComponentType::Disk,
-                strength : 900.0,
-                arm_width : 0.3,
-                y_offset : 0.02,
-                radial_dropoff : 0.01,
-                radial_start : 0.4,
+            disk_params: ComponentConfig {
+                component_type: ComponentType::Disk,
+                strength: 900.0,
+                arm_width: 0.3,
+                y_offset: 0.02,
+                radial_dropoff: 0.01,
+                radial_start: 0.4,
                 //noise_tilt : 0.3,
                 //wirl : 0.1,
-                .. default()
+                ..default()
             },
-            dust_params: ComponentConfig{
-                component_type : ComponentType::Dust,
-                strength : 250.0,
-                arm_width : 0.25,
-                y_offset : 0.02,
-                radial_start : 0.45,
-                radial_dropoff : 0.01,
-                noise_scale : 3.0,
-                .. default()
+            dust_params: ComponentConfig {
+                component_type: ComponentType::Dust,
+                strength: 250.0,
+                arm_width: 0.25,
+                y_offset: 0.02,
+                radial_start: 0.45,
+                radial_dropoff: 0.01,
+                noise_scale: 3.0,
+                ..default()
             },
-            stars_params: ComponentConfig{
-                component_type : ComponentType::Stars,
-                .. default()
+            stars_params: ComponentConfig {
+                component_type: ComponentType::Stars,
+                ..default()
             },
         }
     }

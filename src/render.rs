@@ -77,12 +77,12 @@ struct GalaxyParams {
     winding_b: f32,
     winding_n: f32,
     padding_coefficient: f32,
-    exposure : f32,
+    exposure: f32,
     pad: Vec2,
 }
 
 impl GalaxyParams {
-    fn read(config : &GalaxyConfig) -> Self {
+    fn read(config: &GalaxyConfig) -> Self {
         Self {
             padding_coefficient: config.padding_coeff,
             radius: config.radius,
@@ -90,7 +90,7 @@ impl GalaxyParams {
             arm_offsets: Vec4::from_array(config.arm_offsets),
             winding_b: config.winding_b,
             winding_n: config.winding_n,
-            exposure : config.exposure,
+            exposure: config.exposure,
             pad: Vec2::ZERO,
         }
     }
@@ -101,15 +101,15 @@ impl GalaxyParams {
 struct BulgeParams {
     strength: f32,
     r0: f32, // (inverse) width
-    intensity_mod : f32,
+    intensity_mod: f32,
 }
 
 impl BulgeParams {
-    fn read(config : &GalaxyConfig) -> Self {
+    fn read(config: &GalaxyConfig) -> Self {
         Self {
-            strength : config.bulge_strength,
-            r0 : config.bulge_radius,
-            intensity_mod : config.bulge_intensity
+            strength: config.bulge_strength,
+            r0: config.bulge_radius,
+            intensity_mod: config.bulge_intensity,
         }
     }
 }
@@ -163,9 +163,9 @@ pub struct GalaxyVolumeMaterial {
     #[texture(5)]
     #[sampler(6)]
     xz_texture: Option<Handle<Image>>,
-    #[texture(7, dimension="2d_array")]
+    #[texture(7, dimension = "2d_array")]
     #[sampler(8)]
-    lut : Option<Handle<Image>>,
+    lut: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
 }
 impl GalaxyVolumeMaterial {
@@ -178,7 +178,7 @@ impl GalaxyVolumeMaterial {
             stars_params: ComponentParams::read(&galaxy_config.stars_params),
             alpha_mode: AlphaMode::Add,
             xz_texture: None,
-            lut : None,
+            lut: None,
         }
     }
 }

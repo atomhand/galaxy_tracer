@@ -6,8 +6,8 @@ pub struct GalaxyTexturePlugin;
 #[derive(Resource, Default)]
 pub struct GalaxyTexture {
     pub tex: Option<Handle<Image>>,
-    pub luts : Option<Handle<Image>>,
-    generation : i32,
+    pub luts: Option<Handle<Image>>,
+    generation: i32,
 }
 
 impl Plugin for GalaxyTexturePlugin {
@@ -24,13 +24,13 @@ use bevy::render::{
     render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
-pub fn get_lut(config : &GalaxyConfig) -> Image {
+pub fn get_lut(config: &GalaxyConfig) -> Image {
     let width = config.texture_dimension.next_power_of_two();
     let layers = 4;
 
     let disk_painter = GalaxyPainter::new(&config, &config.disk_params);
 
-    let chunk_size : usize = 4;
+    let chunk_size: usize = 4;
     let mut texture_data = vec![0u8; (width * layers) as usize * chunk_size];
 
     texture_data
@@ -45,13 +45,10 @@ pub fn get_lut(config : &GalaxyConfig) -> Image {
                 1 => 0.0,
                 2 => 0.0,
                 3 => 0.0,
-                _ => 0.0
+                _ => 0.0,
             };
 
-            let slice = [
-                val.to_le_bytes(),
-            ]
-            .concat();
+            let slice = [val.to_le_bytes()].concat();
 
             chunk.copy_from_slice(&slice);
         });
@@ -121,7 +118,7 @@ pub fn get_texture(config: &GalaxyConfig) -> Image {
 
 fn update_texture(
     mut images: ResMut<Assets<Image>>,
-    mut config: ResMut<GalaxyConfig>,
+    config: Res<GalaxyConfig>,
     mut tex_holder: ResMut<GalaxyTexture>,
 ) {
     if config.generation != tex_holder.generation || tex_holder.tex.is_none() {

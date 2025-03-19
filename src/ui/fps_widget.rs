@@ -37,7 +37,7 @@ fn setup_widget(mut commands: Commands) {
         ))
         .id();
 
-    for i in 0..1 {
+    for _ in 0..1 {
         // create our UI root node
         // this is the wrapper/container for the text
         let root = commands

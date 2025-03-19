@@ -28,7 +28,7 @@ fn arm_component_ui(id: i32, arm_config: &mut ArmConfig, ui: &mut egui::Ui) {
 }
 
 fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
-    let heading = match (config.component_type) {
+    let heading = match config.component_type {
         ComponentType::Disk => "Disk Config",
         ComponentType::Dust => "Dust Config",
         ComponentType::Stars => "Stars Config",
@@ -124,14 +124,13 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
             ui.heading("Configuration");
 
             egui::CollapsingHeader::new("Galaxy Parameters").show(ui, |ui| {
+                ui.add(egui::Slider::new(&mut galaxy_config.radius, 100.0..=1000.0).text("Radius"));
                 ui.add(
-                    egui::Slider::new(&mut galaxy_config.radius, 100.0..=1000.0).text("Radius"),
-                );
-                ui.add(
-                    egui::Slider::new(&mut galaxy_config.texture_root, 4..=11).custom_formatter(|n, _| {
-                        let n = n as u32;
-                        format!("{}",2u32.pow(n))
-                    })
+                    egui::Slider::new(&mut galaxy_config.texture_root, 4..=11)
+                        .custom_formatter(|n, _| {
+                            let n = n as u32;
+                            format!("{}", 2u32.pow(n))
+                        })
                         .text("Texture Size"),
                 );
                 let mut inv_exposure = 1.0 / galaxy_config.exposure;
@@ -140,16 +139,15 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                 );
                 galaxy_config.exposure = 1.0 / inv_exposure;
 
-                ui.add(
-                    egui::Slider::new(&mut galaxy_config.winding_b, 0.5..=3.0).text("windingB"),
-                );
+                ui.add(egui::Slider::new(&mut galaxy_config.winding_b, 0.5..=3.0).text("windingB"));
                 ui.add(
                     egui::Slider::new(&mut galaxy_config.winding_n, 0.5..=10.0).text("windingN"),
                 );
             });
             egui::CollapsingHeader::new("Bulge Parameters").show(ui, |ui| {
                 ui.add(
-                    egui::Slider::new(&mut galaxy_config.bulge_strength, 1.0..=50.0).text("Strength"),
+                    egui::Slider::new(&mut galaxy_config.bulge_strength, 1.0..=50.0)
+                        .text("Strength"),
                 );
                 /*
                 ui.add(
@@ -160,7 +158,8 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                 // Transform the (ordinarily inverted) bulge Strength param to a range that is a bit more convenient to reason about
                 //let mut str = 1.0 / galaxy_ui_config.bulge_radius;
                 ui.add(
-                    egui::Slider::new(&mut galaxy_config.bulge_radius, 1.0..=20.0).text("Scale Factor"),
+                    egui::Slider::new(&mut galaxy_config.bulge_radius, 1.0..=20.0)
+                        .text("Scale Factor"),
                 );
                 //galaxy_ui_config.bulge_radius = 1.0 / str;
             });

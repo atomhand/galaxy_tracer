@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod benchmarks {
-    use bevy::prelude::*;
     extern crate test;
     use crate::{galaxy_config::GalaxyConfig, galaxy_texture::get_texture};
     use test::Bencher;

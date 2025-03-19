@@ -220,7 +220,7 @@ fn reconstruct_intensity(p : vec3<f32>, xz_intensity : f32, y_thickness : f32) -
 }
 
 fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
-    if(base_intensity < 0.0005) {
+    if(base_intensity < 0.0005 || disk_params.strength == 0.0) {
         return 0.0;
     }
 
@@ -242,7 +242,7 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
 }
 
 fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
-    if(base_intensity < 0.0005) {
+    if(base_intensity < 0.0005 || dust_params.strength == 0.0) {
         return 0.0;
     }
 
@@ -264,7 +264,7 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
 }
 
 fn get_dust_intensity_ridged(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
-    if(base_intensity < 0.0005) {
+    if(base_intensity < 0.0005 || dust_params.strength == 0.0) {
         return 0.0;
     }
 

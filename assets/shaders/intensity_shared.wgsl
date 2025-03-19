@@ -122,7 +122,8 @@ struct GalaxyParams {
     winding_b : f32,
     winding_n : f32,
     padding_coefficient : f32,
-    padding : vec3<f32>,
+    exposure : f32,
+    padding : vec2<f32>,
 }
 struct BulgeParams {
     strength : f32,
@@ -319,7 +320,7 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     // scale disk intensity/dust extinction with stepsize
     // -- At the same time it will be necessary to increase the default strength values by a lot (GAMER uses several hundreds)
 
-    let disk_col = vec3<f32>(3.54387,3.44474,3.448229);
+    let disk_col = vec3<f32>(0.4,0.6,1.0);
     let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz);
 
     let dust_xz = reconstruct_intensity(p, xz_sample.y, dust_params.y0);//textureSample(material_galaxy_texture, material_galaxy_sampler, uv, i + galaxy.num_arms).x;
@@ -332,9 +333,9 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
 
     // let stars_xz = reconstruct_intensity(p,xz_sample.z, 1.0);
 
-    let dust_col : vec3<f32> = vec3<f32>(1.0,1.0,1.0);
+    let dust_col : vec3<f32> = vec3<f32>(1.0,0.6,0.4);
     let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
 
-    let col = in_col + disk_col * disk_intensity + bulge_col * bulge_intensity;
+    let col = in_col + disk_col * disk_intensity * galaxy.exposure + bulge_col * bulge_intensity * galaxy.exposure;
     return col * extinction;
 }

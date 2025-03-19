@@ -76,7 +76,8 @@ struct GalaxyParams {
     winding_b: f32,
     winding_n: f32,
     padding_coefficient: f32,
-    pad: Vec3,
+    exposure : f32,
+    pad: Vec2,
 }
 
 impl GalaxyParams {
@@ -88,7 +89,8 @@ impl GalaxyParams {
             arm_offsets: Vec4::from_array(config.arm_offsets),
             winding_b: config.winding_b,
             winding_n: config.winding_n,
-            pad: Vec3::ZERO,
+            exposure : config.exposure,
+            pad: Vec2::ZERO,
         }
     }
 }

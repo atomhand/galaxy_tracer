@@ -134,6 +134,9 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                     })
                         .text("Texture Size"),
                 );
+                ui.add(
+                    egui::Slider::new(&mut galaxy_config.exposure, 0.01..=1.0).text("Exposure"),
+                );
 
                 ui.add(
                     egui::Slider::new(&mut galaxy_config.winding_b, 0.5..=3.0).text("windingB"),

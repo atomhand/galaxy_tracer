@@ -44,7 +44,7 @@ pub fn get_lut(config : &GalaxyConfig) -> Image {
                 0 => disk_painter.get_raw_winding(x as f32 / width as f32),
                 1 => 0.0,
                 2 => 0.0,
-                3 => disk_painter.get_raw_winding(x as f32 / width as f32),
+                3 => 0.0,
                 _ => 0.0
             };
 

@@ -19,10 +19,12 @@ fn configure_visuals_system(mut contexts: EguiContexts) {
 }
 
 fn arm_component_ui(id: i32, arm_config: &mut ArmConfig, ui: &mut egui::Ui) {
-    egui::CollapsingHeader::new(format!("Arm config {}", id)).show(ui, |ui| {
-        ui.checkbox(&mut arm_config.enabled, "Enabled");
-        ui.add(egui::Slider::new(&mut arm_config.offset, 0..=360).text("Angular Offset"));
-    });
+    egui::CollapsingHeader::new(format!("Arm config {}", id))
+        .default_open(true)
+        .show(ui, |ui| {
+            ui.checkbox(&mut arm_config.enabled, "Enabled");
+            ui.add(egui::Slider::new(&mut arm_config.offset, 0..=360).text("Angular Offset"));
+        });
 }
 
 fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
@@ -45,8 +47,11 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
                 .text("Arm Width (Inverse)"),
         );
         ui.add(
-            egui::Slider::new(&mut config.y_thickness, minval.y_thickness..=maxval.y_thickness)
-                .text("Thickness (Y)"),
+            egui::Slider::new(
+                &mut config.y_thickness,
+                minval.y_thickness..=maxval.y_thickness,
+            )
+            .text("Thickness (Y)"),
         );
         ui.add(
             egui::Slider::new(
@@ -127,55 +132,63 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
     egui::SidePanel::left("side_panel")
         .default_width(200.0)
         .show(ctx, |ui| {
-            ui.heading("Configuration");
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                ui.heading("Configuration");
 
-            egui::CollapsingHeader::new("Galaxy Parameters").show(ui, |ui| {
-                ui.add(egui::Slider::new(&mut galaxy_config.radius, 100.0..=1000.0).text("Radius"));
-                ui.add(
-                    egui::Slider::new(&mut galaxy_config.texture_root, 4..=11)
-                        .custom_formatter(|n, _| {
-                            let n = n as u32;
-                            format!("{}", 2u32.pow(n))
-                        })
-                        .text("Texture Size"),
-                );
-                let mut inv_exposure = 1.0 / galaxy_config.exposure;
-                ui.add(
-                    egui::Slider::new(&mut inv_exposure, 1.0..=1000.0).text("Exposure (Inverse)"),
-                );
-                galaxy_config.exposure = 1.0 / inv_exposure;
+                egui::CollapsingHeader::new("Galaxy Parameters").show(ui, |ui| {
+                    ui.add(
+                        egui::Slider::new(&mut galaxy_config.radius, 100.0..=1000.0).text("Radius"),
+                    );
+                    ui.add(
+                        egui::Slider::new(&mut galaxy_config.texture_root, 4..=11)
+                            .custom_formatter(|n, _| {
+                                let n = n as u32;
+                                format!("{}", 2u32.pow(n))
+                            })
+                            .text("Texture Size"),
+                    );
+                    let mut inv_exposure = 1.0 / galaxy_config.exposure;
+                    ui.add(
+                        egui::Slider::new(&mut inv_exposure, 1.0..=1000.0)
+                            .text("Exposure (Inverse)"),
+                    );
+                    galaxy_config.exposure = 1.0 / inv_exposure;
 
-                ui.add(egui::Slider::new(&mut galaxy_config.winding_b, 0.5..=3.0).text("windingB"));
-                ui.add(
-                    egui::Slider::new(&mut galaxy_config.winding_n, 0.5..=10.0).text("windingN"),
-                );
+                    ui.add(
+                        egui::Slider::new(&mut galaxy_config.winding_b, 0.5..=3.0).text("windingB"),
+                    );
+                    ui.add(
+                        egui::Slider::new(&mut galaxy_config.winding_n, 0.5..=10.0)
+                            .text("windingN"),
+                    );
 
-                ui.checkbox(&mut galaxy_config.diagnostic_mode, "Performance Diagnostic");
+                    ui.checkbox(&mut galaxy_config.diagnostic_mode, "Performance Diagnostic");
+                });
+
+                ui.separator();
+                egui::CollapsingHeader::new("Arms").show(ui, |ui| {
+                    for i in 0..4 {
+                        let arm_config = &mut galaxy_config.arm_configs[i as usize];
+                        arm_component_ui(i, arm_config, ui);
+                    }
+                });
+                ui.separator();
+
+                egui::CollapsingHeader::new("Bulge Parameters").show(ui, |ui| {
+                    ui.add(
+                        egui::Slider::new(&mut galaxy_config.bulge_strength, 1.0..=50.0)
+                            .text("Strength"),
+                    );
+                    ui.add(
+                        egui::Slider::new(&mut galaxy_config.bulge_radius, 1.0..=20.0)
+                            .text("Scale Factor"),
+                    );
+                });
+                ui.separator();
+
+                component_ui(&mut galaxy_config.disk_params, ui);
+                component_ui(&mut galaxy_config.dust_params, ui);
+                component_ui(&mut galaxy_config.stars_params, ui);
             });
-
-            ui.separator();
-            egui::CollapsingHeader::new("Arms").show(ui, |ui| {
-                for i in 0..4 {
-                    let arm_config = &mut galaxy_config.arm_configs[i as usize];
-                    arm_component_ui(i, arm_config, ui);
-                }
-            });
-            ui.separator();
-
-            egui::CollapsingHeader::new("Bulge Parameters").show(ui, |ui| {
-                ui.add(
-                    egui::Slider::new(&mut galaxy_config.bulge_strength, 1.0..=50.0)
-                        .text("Strength"),
-                );
-                ui.add(
-                    egui::Slider::new(&mut galaxy_config.bulge_radius, 1.0..=20.0)
-                        .text("Scale Factor"),
-                );
-            });
-            ui.separator();
-
-            component_ui(&mut galaxy_config.disk_params, ui);
-            component_ui(&mut galaxy_config.dust_params, ui);
-            component_ui(&mut galaxy_config.stars_params, ui);
         });
 }

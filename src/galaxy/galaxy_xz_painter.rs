@@ -39,19 +39,10 @@ impl GalaxyPainter<'_> {
         return t;
     }
 
-    fn find_theta_difference(&self, t1: f32, t2: f32) -> f32 {
-        let v1 = (t1 - t2).abs();
-        let v2 = (t1 - t2 - 2.0 * PI).abs();
-        let v3 = (t1 - t2 + 2.0 * PI).abs();
-        let v4 = (t1 - t2 - 2.0 * PI * 2.0).abs();
-        let v5 = (t1 - t2 + 2.0 * PI * 2.0).abs();
-
-        let mut v = f32::min(v1, v2);
-        v = f32::min(v, v3);
-        v = f32::min(v, v4);
-        v = f32::min(v, v5);
-
-        return v;
+    fn find_theta_difference(&self, t1: f32, t2: f32) -> f32 {        
+        let diff: f32  = (t1 - t2).abs() / PI;
+        let normalized_diff : f32 = ((diff + 1.0) % 2.0) - 1.0;
+        return (normalized_diff).abs();
     }
 
     fn arm_modifier(&self, p: Vec2, winding: f32, arm_id: i32) -> f32 {
@@ -60,7 +51,7 @@ impl GalaxyPainter<'_> {
         let angular_offset = self.component.delta_angle.to_radians();
         let theta = -(f32::atan2(p.x, p.y) + angular_offset);
 
-        let v = (self.find_theta_difference(winding, theta + disp)).abs() / PI;
+        let v = self.find_theta_difference(winding, theta + disp);
 
         return (1.0 - v).powf(self.component.arm_width * 15.0);
     }

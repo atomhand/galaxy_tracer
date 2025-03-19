@@ -4,6 +4,7 @@ fn Interpolation_C2( x : vec3<f32> ) -> vec3<f32> {
 }
 
 // CREDIT BRIAN SHARPE 
+// https://github.com/BrianSharpe/GPU-Noise-Lib/
 
 struct Hash {
     lowz : vec4<f32>,

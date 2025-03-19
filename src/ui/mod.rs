@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use bevy::input::mouse::MouseWheel;
+use bevy::prelude::*;
 
 mod camera;
 mod config_egui;
@@ -16,7 +16,7 @@ impl Plugin for UiPlugin {
         ))
         // Egui mouse input culling (see below)
         .add_systems(
-            PreUpdate, 
+            PreUpdate,
             absorb_egui_inputs
                 .after(bevy_egui::input::write_egui_input_system)
                 .before(bevy_egui::begin_pass_system),

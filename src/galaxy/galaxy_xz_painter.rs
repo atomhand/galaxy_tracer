@@ -39,9 +39,9 @@ impl GalaxyPainter<'_> {
         return t;
     }
 
-    fn find_theta_difference(&self, t1: f32, t2: f32) -> f32 {        
-        let diff: f32  = (t1 - t2).abs() / PI;
-        let normalized_diff : f32 = ((diff + 1.0) % 2.0) - 1.0;
+    fn find_theta_difference(&self, t1: f32, t2: f32) -> f32 {
+        let diff: f32 = (t1 - t2).abs() / PI;
+        let normalized_diff: f32 = ((diff + 1.0) % 2.0) - 1.0;
         return (normalized_diff).abs();
     }
 

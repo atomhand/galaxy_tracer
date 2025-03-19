@@ -56,7 +56,7 @@ fn update_volume_mat(
 
         mat.galaxy_params = GalaxyParams::read(&galaxy_config);
         mat.diagnostic_mode = galaxy_config.diagnostic_mode;
-        
+
         mat.bulge_params = BulgeParams::read(&galaxy_config);
         mat.disk_params = ComponentParams::read(&galaxy_config.disk_params);
         mat.dust_params = ComponentParams::read(&galaxy_config.dust_params);
@@ -122,7 +122,7 @@ struct ComponentParams {
     strength: f32,
     arm_width: f32, // inverse
     y_thickness: f32,
-    radial_extent: f32, // radial intensity start
+    radial_extent: f32,   // radial intensity start
     central_falloff: f32, // radial falloff start
     angular_offset: f32,
     winding_factor: f32,
@@ -172,7 +172,7 @@ pub struct GalaxyVolumeMaterial {
     #[sampler(8)]
     lut: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
-    diagnostic_mode : bool,
+    diagnostic_mode: bool,
 }
 impl GalaxyVolumeMaterial {
     pub fn new(galaxy_config: &GalaxyConfig) -> Self {
@@ -185,19 +185,16 @@ impl GalaxyVolumeMaterial {
             alpha_mode: AlphaMode::Add,
             xz_texture: None,
             lut: None,
-            diagnostic_mode : galaxy_config.diagnostic_mode
+            diagnostic_mode: galaxy_config.diagnostic_mode,
         }
     }
 }
 
-use bevy::pbr::{MaterialPipeline,MaterialPipelineKey};
+use bevy::pbr::{MaterialPipeline, MaterialPipelineKey};
 use bevy::render::{
     mesh::MeshVertexBufferLayoutRef,
-    render_resource::{
-         RenderPipelineDescriptor, SpecializedMeshPipelineError,
-    },
+    render_resource::{RenderPipelineDescriptor, SpecializedMeshPipelineError},
 };
-
 
 impl Material for GalaxyVolumeMaterial {
     fn fragment_shader() -> ShaderRef {

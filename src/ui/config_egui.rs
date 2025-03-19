@@ -110,6 +110,8 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
             )
             .text("Noise Freq"),
         );
+
+        ui.checkbox(&mut config.noise_toggle, "Noise Enabled");
     });
     ui.separator();
 }

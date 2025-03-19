@@ -62,6 +62,7 @@ pub struct ComponentConfig {
     pub noise_offset: f32,
     pub noise_tilt: f32,
     pub noise_freq: f32,
+    pub noise_toggle: bool,
 }
 
 impl Default for ComponentConfig {
@@ -79,6 +80,7 @@ impl Default for ComponentConfig {
             noise_offset: 0.0,
             noise_tilt: 1.0,
             noise_freq: 1.0,
+            noise_toggle: true,
         }
     }
 }
@@ -97,6 +99,7 @@ impl ComponentConfig {
         noise_offset: -1.0,
         noise_tilt: -1.0,
         noise_freq: 0.1,
+        noise_toggle: false,
     };
     pub const MAX: Self = Self {
         component_type: ComponentType::Disk,
@@ -111,6 +114,7 @@ impl ComponentConfig {
         noise_offset: 1.0,
         noise_tilt: 1.0,
         noise_freq: 2.0,
+        noise_toggle: true,
     };
 }
 pub struct GalaxyConfigPlugin;

@@ -128,6 +128,7 @@ struct ComponentParams {
     noise_offset: f32,
     tilt: f32,
     ks: f32,
+    noise_enabled: f32,
 }
 
 impl ComponentParams {
@@ -144,6 +145,7 @@ impl ComponentParams {
             noise_offset: component.noise_offset,
             tilt: component.noise_tilt,
             ks: component.noise_freq,
+            noise_enabled: if component.noise_toggle { 1.0 } else { 0.0 },
         }
     }
 }

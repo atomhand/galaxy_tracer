@@ -150,7 +150,8 @@ struct ComponentParams {
     noise_scale : f32,
     noise_offset : f32,
     tilt : f32,
-    ks : f32
+    ks : f32,
+    noise_enabled : f32,
 }
 
 @group(2) @binding(0) var<uniform> galaxy: GalaxyParams;
@@ -195,7 +196,10 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     }
 
     let octaves : i32 = 5;
-    var p2 = abs(perlin_cloud_noise(p, winding_angle, octaves, disk_params.noise_scale, disk_params.ks));
+    var p2 = 0.5;
+    if disk_params.noise_enabled > 0.0 {
+        p2 = abs(perlin_cloud_noise(p, winding_angle, octaves, disk_params.noise_scale, disk_params.ks));
+    }
 
     p2 = max(p2, 0.01);
     p2 = pow(p2,disk_params.tilt);
@@ -209,7 +213,10 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     }
 
     let octaves = 5;
-    var p2 = perlin_cloud_noise(p, winding_angle, octaves, dust_params.noise_scale, dust_params.ks);
+    var p2 = 0.5;
+    if dust_params.noise_enabled > 0.0 {
+        p2 = perlin_cloud_noise(p, winding_angle, octaves, dust_params.noise_scale, dust_params.ks);
+    }
 
     p2 = max(p2-dust_params.noise_offset,0.0);
     p2 = clamp(pow(5*p2, dust_params.tilt), -10.0, 10.0);

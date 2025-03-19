@@ -222,6 +222,7 @@ impl Default for GalaxyConfig {
                 radial_start: 0.45,
                 radial_dropoff: 0.05,
                 noise_scale: 3.0,
+                delta_angle : -45.,
                 ..default()
             },
             stars_params: ComponentConfig {

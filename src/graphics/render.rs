@@ -55,6 +55,8 @@ fn update_volume_mat(
         };
 
         mat.galaxy_params = GalaxyParams::read(&galaxy_config);
+        mat.diagnostic_mode = galaxy_config.diagnostic_mode;
+        
         mat.bulge_params = BulgeParams::read(&galaxy_config);
         mat.disk_params = ComponentParams::read(&galaxy_config.disk_params);
         mat.dust_params = ComponentParams::read(&galaxy_config.dust_params);
@@ -151,6 +153,7 @@ impl ComponentParams {
 }
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+#[bind_group_data(GalaxyMaterialKey)]
 pub struct GalaxyVolumeMaterial {
     #[uniform(0)]
     galaxy_params: GalaxyParams,
@@ -169,6 +172,7 @@ pub struct GalaxyVolumeMaterial {
     #[sampler(8)]
     lut: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
+    diagnostic_mode : bool,
 }
 impl GalaxyVolumeMaterial {
     pub fn new(galaxy_config: &GalaxyConfig) -> Self {
@@ -181,9 +185,19 @@ impl GalaxyVolumeMaterial {
             alpha_mode: AlphaMode::Add,
             xz_texture: None,
             lut: None,
+            diagnostic_mode : galaxy_config.diagnostic_mode
         }
     }
 }
+
+use bevy::pbr::{MaterialPipeline,MaterialPipelineKey};
+use bevy::render::{
+    mesh::MeshVertexBufferLayoutRef,
+    render_resource::{
+         RenderPipelineDescriptor, SpecializedMeshPipelineError,
+    },
+};
+
 
 impl Material for GalaxyVolumeMaterial {
     fn fragment_shader() -> ShaderRef {
@@ -194,5 +208,34 @@ impl Material for GalaxyVolumeMaterial {
     }
     fn alpha_mode(&self) -> AlphaMode {
         self.alpha_mode
+    }
+
+    fn specialize(
+        _pipeline: &MaterialPipeline<Self>,
+        descriptor: &mut RenderPipelineDescriptor,
+        _layout: &MeshVertexBufferLayoutRef,
+        key: MaterialPipelineKey<Self>,
+    ) -> Result<(), SpecializedMeshPipelineError> {
+        if key.bind_group_data.diagnostic_mode {
+            let fragment = descriptor.fragment.as_mut().unwrap();
+            fragment.shader_defs.push("DIAGNOSTIC".into());
+        }
+        Ok(())
+    }
+}
+// This key is used to identify a specific permutation of this material pipeline.
+// In this case, we specialize on whether or not to configure the "IS_RED" shader def.
+// Specialization keys should be kept as small / cheap to hash as possible,
+// as they will be used to look up the pipeline for each drawn entity with this material type.
+#[derive(Eq, PartialEq, Hash, Clone)]
+pub struct GalaxyMaterialKey {
+    diagnostic_mode: bool,
+}
+
+impl From<&GalaxyVolumeMaterial> for GalaxyMaterialKey {
+    fn from(material: &GalaxyVolumeMaterial) -> Self {
+        Self {
+            diagnostic_mode: material.diagnostic_mode,
+        }
     }
 }

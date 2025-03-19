@@ -23,7 +23,6 @@ fn arm_component_ui(id: i32, arm_config: &mut ArmConfig, ui: &mut egui::Ui) {
         ui.checkbox(&mut arm_config.enabled, "Enabled");
         ui.add(egui::Slider::new(&mut arm_config.offset, 0..=360).text("Angular Offset"));
     });
-    ui.separator();
 }
 
 fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
@@ -150,31 +149,30 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                 ui.add(
                     egui::Slider::new(&mut galaxy_config.winding_n, 0.5..=10.0).text("windingN"),
                 );
+
+                ui.checkbox(&mut galaxy_config.diagnostic_mode, "Performance Diagnostic");
             });
+
+            ui.separator();
+            egui::CollapsingHeader::new("Arms").show(ui, |ui| {
+                for i in 0..4 {
+                    let arm_config = &mut galaxy_config.arm_configs[i as usize];
+                    arm_component_ui(i, arm_config, ui);
+                }
+            });
+            ui.separator();
+
             egui::CollapsingHeader::new("Bulge Parameters").show(ui, |ui| {
                 ui.add(
                     egui::Slider::new(&mut galaxy_config.bulge_strength, 1.0..=50.0)
                         .text("Strength"),
                 );
-                /*
-                ui.add(
-                    egui::Slider::new(&mut galaxy_ui_config.bulge_intensity, 0.01..=1.0).text("Intensity"),
-                );
-                */
-                // Mild Hack:
-                // Transform the (ordinarily inverted) bulge Strength param to a range that is a bit more convenient to reason about
-                //let mut str = 1.0 / galaxy_ui_config.bulge_radius;
                 ui.add(
                     egui::Slider::new(&mut galaxy_config.bulge_radius, 1.0..=20.0)
                         .text("Scale Factor"),
                 );
-                //galaxy_ui_config.bulge_radius = 1.0 / str;
             });
             ui.separator();
-            for i in 0..4 {
-                let arm_config = &mut galaxy_config.arm_configs[i as usize];
-                arm_component_ui(i, arm_config, ui);
-            }
 
             component_ui(&mut galaxy_config.disk_params, ui);
             component_ui(&mut galaxy_config.dust_params, ui);

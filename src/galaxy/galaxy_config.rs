@@ -24,6 +24,8 @@ pub struct GalaxyConfig {
     pub bulge_radius: f32,
     pub bulge_intensity: f32,
 
+    pub diagnostic_mode : bool,
+
     pub disk_params: ComponentConfig,
     pub dust_params: ComponentConfig,
     pub stars_params: ComponentConfig,
@@ -162,6 +164,7 @@ pub struct ArmConfig {
 impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
+            diagnostic_mode : false,
             generation: 1,
             texture_root: 9,
             texture_dimension: 512,

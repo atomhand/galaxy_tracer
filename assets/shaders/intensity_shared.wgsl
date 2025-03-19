@@ -196,7 +196,10 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     }
 
     var p2 = 0.5;
-    let octaves = min(10,i32(dust_params.noise_enabled));
+    let octaves = min(10,i32(disk_params.noise_enabled));
+#ifdef DIAGNOSTIC
+    return f32(octaves) / 10.0;
+#else
     if octaves > 0 {
         let octaves = min(5,i32(disk_params.noise_enabled));
         p2 = abs(perlin_cloud_noise(p, winding_angle, octaves, disk_params.noise_scale, disk_params.ks));
@@ -206,6 +209,7 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     p2 = pow(p2,disk_params.tilt);
     p2 += disk_params.noise_offset;
     return base_intensity * p2 * disk_params.strength;
+#endif
 }
 
 fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
@@ -215,6 +219,9 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
 
     var p2 = 0.5;
     let octaves = min(10,i32(dust_params.noise_enabled));
+#ifdef DIAGNOSTIC
+    return f32(octaves) / 10.0;
+#else
     if octaves > 0 {
         p2 = perlin_cloud_noise(p, winding_angle, octaves, dust_params.noise_scale, dust_params.ks);
     }
@@ -224,6 +231,7 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
 
     let s : f32 = 0.01;
     return base_intensity * p2 * s * dust_params.strength;
+#endif
 }
 
 fn get_bulge_intensity(p : vec3<f32>) -> f32 {
@@ -251,7 +259,7 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
 
     //  blue
     let disk_col = vec3<f32>(0.4,0.6,1.0);
-    let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz) * galaxy.exposure;;
+    let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz);
 
     let dust_xz = reconstruct_intensity(p, xz_sample.y, dust_params.y0);
     let dust_winding_angle : f32 = base_winding * dust_params.winding;
@@ -266,6 +274,10 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     let dust_col : vec3<f32> = vec3<f32>(1.0,0.6,0.4);
     let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
 
-    let col = in_col + disk_col * disk_intensity + bulge_col * bulge_intensity;
+#ifdef DIAGNOSTIC
+    return in_col + vec3<f32>((disk_intensity + dust_intensity), 0.0, 0.0) * stepsize;
+#else
+    let col = in_col + disk_col * disk_intensity * galaxy.exposure + bulge_col * bulge_intensity;
     return col * extinction;
+#endif
 }

@@ -144,14 +144,18 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_ui_config: ResMut<GalaxyConf
             });
             egui::CollapsingHeader::new("Bulge Parameters").show(ui, |ui| {
                 ui.add(
-                    egui::Slider::new(&mut galaxy_ui_config.bulge_strength, 0.01..=0.1).text("Strength"),
+                    egui::Slider::new(&mut galaxy_ui_config.bulge_strength, 1.0..=50.0).text("Strength"),
                 );
-
+                /*
+                ui.add(
+                    egui::Slider::new(&mut galaxy_ui_config.bulge_intensity, 0.01..=1.0).text("Intensity"),
+                );
+                */
                 // Mild Hack:
                 // Transform the (ordinarily inverted) bulge Strength param to a range that is a bit more convenient to reason about
                 //let mut str = 1.0 / galaxy_ui_config.bulge_radius;
                 ui.add(
-                    egui::Slider::new(&mut galaxy_ui_config.bulge_radius, 0.01..=1.0).text("Scale Factor"),
+                    egui::Slider::new(&mut galaxy_ui_config.bulge_radius, 1.0..=20.0).text("Scale Factor"),
                 );
                 //galaxy_ui_config.bulge_radius = 1.0 / str;
             });

@@ -63,6 +63,7 @@ fn update_volume_mat(
         };
         mat.bulge_params.r0 = galaxy_config.bulge_radius;
         mat.bulge_params.strength =galaxy_config.bulge_strength;
+        mat.bulge_params.intensity_mod = galaxy_config.bulge_intensity;
         mat.disk_params = ComponentParams::from(galaxy_config.disk_params.clone());
         mat.dust_params = ComponentParams::from(galaxy_config.dust_params.clone());
         mat.stars_params = ComponentParams::from(galaxy_config.stars_params.clone());
@@ -91,6 +92,7 @@ struct GalaxyParams {
 struct BulgeParams {
     strength: f32,
     r0: f32, // (inverse) width
+    intensity_mod : f32,
 }
 #[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug)]
 #[repr(C)]
@@ -158,6 +160,7 @@ impl GalaxyVolumeMaterial {
             bulge_params: BulgeParams {
                 strength: galaxy_config.bulge_strength,
                 r0: galaxy_config.bulge_radius,
+                intensity_mod : galaxy_config.bulge_intensity,
             },
             disk_params: ComponentParams::from(galaxy_config.disk_params.clone()),
             dust_params: ComponentParams::from(galaxy_config.dust_params.clone()),

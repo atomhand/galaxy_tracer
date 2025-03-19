@@ -18,6 +18,7 @@ pub struct GalaxyConfig {
 
     pub bulge_strength : f32,
     pub bulge_radius : f32,
+    pub bulge_intensity : f32,
 
     pub disk_params: ComponentConfig,
     pub dust_params: ComponentConfig,
@@ -76,7 +77,7 @@ impl ComponentConfig {
         radial_dropoff: 0.1,
         delta_angle: -180.0,
         winding_coefficient: 0.0,
-        noise_scale: 0.1,
+        noise_scale: 0.01,
         noise_offset: -1.0,
         noise_tilt: -1.0,
         noise_freq: 0.1,
@@ -90,7 +91,7 @@ impl ComponentConfig {
         radial_dropoff: 0.6,
         delta_angle: 180.0,
         winding_coefficient: 0.5,
-        noise_scale: 2.0,
+        noise_scale: 1.0,
         noise_offset: 1.0,
         noise_tilt: 1.0,
         noise_freq: 2.0,
@@ -109,6 +110,7 @@ pub struct GalaxyConfigUi {
     pub star_config: ComponentConfig,
     pub bulge_strength : f32,
     pub bulge_radius : f32,
+    pub bulge_intensity : f32,
 }
 
 impl Default for GalaxyConfigUi {
@@ -118,8 +120,9 @@ impl Default for GalaxyConfigUi {
             winding_b: 1.0,
             winding_n: 6.0,
             radius: 500.0,
-            bulge_strength : 0.5,
-            bulge_radius : 0.2,
+            bulge_strength : 30.,
+            bulge_radius : 5.,
+            bulge_intensity : 1.,
             arm_configs: [
                 ArmConfig {
                     enabled: true,
@@ -181,6 +184,7 @@ fn apply_ui_updates(
 
         galaxy_config.bulge_strength = galaxy_config_ui.bulge_strength;
         galaxy_config.bulge_radius = galaxy_config_ui.bulge_radius;
+        galaxy_config.bulge_intensity = galaxy_config_ui.bulge_intensity;
 
         for i in 0..4 {
             let ui = galaxy_config_ui.arm_configs[i];
@@ -231,6 +235,7 @@ impl Default for GalaxyConfig {
             texture_dimension: 1024,
             bulge_strength : 0.5,
             bulge_radius : 0.3,
+            bulge_intensity : 1.0,
             radius: 500.0, // in parsecs
             max_stars: 1000,
             spacing: 40.0,

@@ -127,6 +127,7 @@ struct GalaxyParams {
 struct BulgeParams {
     strength : f32,
     radius : f32, // width
+    intensity_mod : f32,
 }
 struct ComponentParams {
     strength : f32,
@@ -157,7 +158,7 @@ fn pos_to_uv(p : vec2<f32>) -> vec2<f32> {
 fn get_height_modulation(height : f32, y0 : f32) -> f32 {
     // only overwritten by Bulge
 
-    let h = abs(height / y0);
+    let h = abs(height / (y0*galaxy.radius));
     if (h>2.0) {
         return 0.0;
     }
@@ -246,11 +247,10 @@ fn get_xz_intensity_old(p : vec2<f32>, angular_offset : f32) -> f32 {
     return central_falloff * arm_mod * r;
 }
 
-fn reconstruct_intensity(p : vec3<f32>, xz_intensity : f32, weight : f32) -> f32 {
-    let y0 = 0.01; // height of the component above the galaxy plane (called z0 in the program)
-    let h = get_height_modulation(abs(p.y), y0);
+fn reconstruct_intensity(p : vec3<f32>, xz_intensity : f32, y0 : f32) -> f32 {
+    let h = get_height_modulation(p.y, y0);
 
-    return xz_intensity * h * weight;
+    return xz_intensity * h;
 }
 
 fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
@@ -258,7 +258,7 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
         return 0.0;
     }
 
-    let octaves : i32 = 10;
+    let octaves : i32 = 5;
     var p2 = abs(perlin_cloud_noise(p, winding_angle, octaves, disk_params.noise_scale, disk_params.ks));
     p2 = max(p2, 0.01);
 
@@ -272,7 +272,7 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     if(base_intensity < 0.0005) {
         return 0.0;
     }
-    let octaves = 9;
+    let octaves = 5;
     var p2 = perlin_cloud_noise(p, winding_angle, octaves, dust_params.noise_scale, dust_params.ks);
     p2 = max(p2-dust_params.noise_offset,0.0);
 
@@ -286,11 +286,11 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
 fn get_bulge_intensity(p : vec3<f32>) -> f32 {
     let rho_0: f32 = bulge_params.strength;
 
-    //let rad : f32 = (length(p)+0.01)*bulge_params.r0 + 0.01;
+    let rad : f32 = (length(p)/galaxy.radius+0.01)*bulge_params.radius + 0.01;
 
-    let rad_scale = galaxy.radius * bulge_params.radius * 0.1;
+    //let rad_scale = galaxy.radius * bulge_params.radius * 0.1;
 
-    let rad : f32 = (length(p)+0.01)/rad_scale + 0.01;
+    //let rad : f32 = (length(p)+0.01)/rad_scale + 0.01;
     var i : f32 = rho_0 * (pow(rad,-0.855)*exp(-pow(rad,1.0/4.0f)) - 0.05f);
 
     return max(0.0,i);
@@ -312,19 +312,23 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     // .. it was just convenient to pack it into the main texture for now because I had a spare channel
     let base_winding : f32 = -xz_sample.w;//-get_winding(d);
 
-    let disk_xz: f32  = reconstruct_intensity(p, xz_sample.x, 1.0);
+    let disk_xz: f32  = reconstruct_intensity(p, xz_sample.x, disk_params.y0);
     let disk_winding_angle : f32 = base_winding * disk_params.winding;//-disk_sample.y;
+
+    // TODO
+    // scale disk intensity/dust extinction with stepsize
+    // -- At the same time it will be necessary to increase the default strength values by a lot (GAMER uses several hundreds)
 
     let disk_col = vec3<f32>(3.54387,3.44474,3.448229);
     let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz);
 
-    let dust_xz = reconstruct_intensity(p, xz_sample.y, 1.0);//textureSample(material_galaxy_texture, material_galaxy_sampler, uv, i + galaxy.num_arms).x;
+    let dust_xz = reconstruct_intensity(p, xz_sample.y, dust_params.y0);//textureSample(material_galaxy_texture, material_galaxy_sampler, uv, i + galaxy.num_arms).x;
     let dust_winding_angle : f32 = base_winding * dust_params.winding;
     let dust_intensity : f32 = get_dust_intensity(p, dust_winding_angle, dust_xz);
     //}
 
-    let bulge_intensity = get_bulge_intensity(p);
-    let bulge_col = vec3<f32>(4.0, 2.416, 0);
+    let bulge_intensity = get_bulge_intensity(p) * stepsize;
+    let bulge_col = vec3<f32>(1.,0.9,0.45) * bulge_params.intensity_mod;
 
     // let stars_xz = reconstruct_intensity(p,xz_sample.z, 1.0);
 

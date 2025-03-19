@@ -62,7 +62,7 @@ pub struct ComponentConfig {
     pub noise_offset: f32,
     pub noise_tilt: f32,
     pub noise_freq: f32,
-    pub noise_toggle: bool,
+    pub noise_octaves: u32,
 }
 
 impl Default for ComponentConfig {
@@ -80,7 +80,7 @@ impl Default for ComponentConfig {
             noise_offset: 0.0,
             noise_tilt: 1.0,
             noise_freq: 1.0,
-            noise_toggle: true,
+            noise_octaves: 5,
         }
     }
 }
@@ -92,14 +92,14 @@ impl ComponentConfig {
         arm_width: 0.001,
         y_offset: 0.001,
         radial_start: 0.0,
-        radial_dropoff: 0.1,
+        radial_dropoff: 0.05,
         delta_angle: -180.0,
         winding_coefficient: 0.0,
         noise_scale: 0.01,
         noise_offset: -1.0,
         noise_tilt: -1.0,
         noise_freq: 0.1,
-        noise_toggle: false,
+        noise_octaves: 0,
     };
     pub const MAX: Self = Self {
         component_type: ComponentType::Disk,
@@ -114,7 +114,7 @@ impl ComponentConfig {
         noise_offset: 1.0,
         noise_tilt: 1.0,
         noise_freq: 2.0,
-        noise_toggle: true,
+        noise_octaves: 10,
     };
 }
 pub struct GalaxyConfigPlugin;
@@ -205,7 +205,7 @@ impl Default for GalaxyConfig {
                 strength: 900.0,
                 arm_width: 0.3,
                 y_offset: 0.02,
-                radial_dropoff: 0.01,
+                radial_dropoff: 0.05,
                 radial_start: 0.4,
                 //noise_tilt : 0.3,
                 //wirl : 0.1,
@@ -217,7 +217,7 @@ impl Default for GalaxyConfig {
                 arm_width: 0.25,
                 y_offset: 0.02,
                 radial_start: 0.45,
-                radial_dropoff: 0.01,
+                radial_dropoff: 0.05,
                 noise_scale: 3.0,
                 ..default()
             },

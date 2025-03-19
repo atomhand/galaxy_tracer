@@ -195,9 +195,10 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
         return 0.0;
     }
 
-    let octaves : i32 = 5;
     var p2 = 0.5;
-    if disk_params.noise_enabled > 0.0 {
+    let octaves = min(10,i32(dust_params.noise_enabled));
+    if octaves > 0 {
+        let octaves = min(5,i32(disk_params.noise_enabled));
         p2 = abs(perlin_cloud_noise(p, winding_angle, octaves, disk_params.noise_scale, disk_params.ks));
     }
 
@@ -212,9 +213,9 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
         return 0.0;
     }
 
-    let octaves = 5;
     var p2 = 0.5;
-    if dust_params.noise_enabled > 0.0 {
+    let octaves = min(10,i32(dust_params.noise_enabled));
+    if octaves > 0 {
         p2 = perlin_cloud_noise(p, winding_angle, octaves, dust_params.noise_scale, dust_params.ks);
     }
 

@@ -145,7 +145,7 @@ impl ComponentParams {
             noise_offset: component.noise_offset,
             tilt: component.noise_tilt,
             ks: component.noise_freq,
-            noise_enabled: if component.noise_toggle { 1.0 } else { 0.0 },
+            noise_enabled: component.noise_octaves as f32,
         }
     }
 }

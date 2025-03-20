@@ -221,8 +221,8 @@ impl Default for GalaxyConfig {
                 radial_dropoff: 0.05,
                 radial_extent: 0.4,
                 noise_octaves: 10,
-                noise_tilt : 0.3,
-                noise_winding_factor : 0.1,
+                noise_tilt: 0.3,
+                noise_winding_factor: 0.1,
                 ..default()
             },
             dust_params: ComponentConfig {
@@ -236,7 +236,7 @@ impl Default for GalaxyConfig {
                 angular_offset: -45.,
                 noise_offset: 1.0,
                 noise_octaves: 5,
-                noise_winding_factor : 0.25,
+                noise_winding_factor: 0.25,
                 ..default()
             },
             stars_params: ComponentConfig {

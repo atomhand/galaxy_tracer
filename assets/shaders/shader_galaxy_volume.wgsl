@@ -46,9 +46,6 @@ fn sphIntersect( ro : vec3<f32> , rd : vec3<f32> ,  r : f32 ) -> vec2<f32>
 
 fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32, t_c : f32) -> vec3<f32> {    
     var col = vec3<f32>(0.0,0.0,0.0);
-    if t1 == -1.0 && t2 == -1.0 {
-        return col;
-    }
 
     let o0 = ro + rd * max(0.0,t_c);
     let o1 = ro + rd * max(0.0,t1);
@@ -88,6 +85,9 @@ fn fragment(
     let rd = normalize(mesh.ray_dir);
     let t = sphIntersect(ro,rd, galaxy.radius * galaxy.padding_coefficient);
 
+    if t.x == -1.0 && t.y == -1.0 {
+        return vec4<f32>(0.0,0.0,0.0,0.0);
+    }
     
     let n = vec3(0.0,1.0,0.0);
     let plane_t : f32= -dot(n,ro) / dot(n, rd);

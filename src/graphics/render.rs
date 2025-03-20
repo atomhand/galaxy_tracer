@@ -194,7 +194,7 @@ pub struct GalaxyVolumeMaterial {
     dust_noise_texture: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
     diagnostic_mode: bool,
-    runtime_noise : bool,
+    runtime_noise: bool,
 }
 impl GalaxyVolumeMaterial {
     pub fn new(galaxy_config: &GalaxyConfig) -> Self {
@@ -210,7 +210,7 @@ impl GalaxyVolumeMaterial {
             disk_noise_texture: None,
             dust_noise_texture: None,
             diagnostic_mode: galaxy_config.diagnostic_mode,
-            runtime_noise : galaxy_config.runtime_noise,
+            runtime_noise: galaxy_config.runtime_noise,
         }
     }
 }

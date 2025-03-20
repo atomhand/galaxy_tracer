@@ -4,6 +4,7 @@ use bevy::prelude::*;
 pub struct GalaxyConfig {
     pub generation: i32,
     pub raymarch_steps: u32,
+    pub runtime_noise : bool,
 
     pub texture_root: u32,
     pub texture_dimension: u32,
@@ -174,6 +175,7 @@ impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
             diagnostic_mode: false,
+            runtime_noise : false,
             raymarch_steps: 128,
             generation: 1,
             texture_root: 9,

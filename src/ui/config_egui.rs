@@ -165,6 +165,7 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                         egui::Slider::new(&mut galaxy_config.raymarch_steps, 1..=256)
                             .text("Raymarch Steps"),
                     );
+                    ui.checkbox(&mut galaxy_config.runtime_noise, "Procedural Noise Evaluation");
                     let mut inv_exposure = 1.0 / galaxy_config.exposure;
                     ui.add(
                         egui::Slider::new(&mut inv_exposure, 1.0..=1000.0)

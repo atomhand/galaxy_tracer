@@ -43,6 +43,7 @@ fn update_volume_mat(
     galaxy_texture: Res<super::GalaxyTexture>,
     galaxy_config: Res<GalaxyConfig>,
     mut galaxy_materials: ResMut<Assets<GalaxyVolumeMaterial>>,
+    noise_images: Res<super::noise_texture::NoiseTextureImages>,
 ) {
     // it would be good to divorce parameter updates from texture updates I guess
     // the texture update is quite cheap so it's not huge deal though
@@ -56,11 +57,15 @@ fn update_volume_mat(
 
         mat.galaxy_params = GalaxyParams::read(&galaxy_config);
         mat.diagnostic_mode = galaxy_config.diagnostic_mode;
+        mat.runtime_noise = galaxy_config.runtime_noise;
 
         mat.bulge_params = BulgeParams::read(&galaxy_config);
         mat.disk_params = ComponentParams::read(&galaxy_config.disk_params);
         mat.dust_params = ComponentParams::read(&galaxy_config.dust_params);
         mat.stars_params = ComponentParams::read(&galaxy_config.stars_params);
+
+        mat.disk_noise_texture = Some(noise_images.disk_component.clone());
+        mat.dust_noise_texture = Some(noise_images.dust_component.clone());
 
         mat.xz_texture = galaxy_texture.tex.clone();
         mat.lut = galaxy_texture.luts.clone();
@@ -181,8 +186,15 @@ pub struct GalaxyVolumeMaterial {
     #[texture(7, dimension = "2d_array")]
     #[sampler(8)]
     lut: Option<Handle<Image>>,
+    #[texture(9, dimension = "3d")]
+    #[sampler(10)]
+    disk_noise_texture: Option<Handle<Image>>,
+    #[texture(11, dimension = "3d")]
+    #[sampler(12)]
+    dust_noise_texture: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
     diagnostic_mode: bool,
+    runtime_noise : bool,
 }
 impl GalaxyVolumeMaterial {
     pub fn new(galaxy_config: &GalaxyConfig) -> Self {
@@ -195,7 +207,10 @@ impl GalaxyVolumeMaterial {
             alpha_mode: AlphaMode::Add,
             xz_texture: None,
             lut: None,
+            disk_noise_texture: None,
+            dust_noise_texture: None,
             diagnostic_mode: galaxy_config.diagnostic_mode,
+            runtime_noise : galaxy_config.runtime_noise,
         }
     }
 }
@@ -227,6 +242,10 @@ impl Material for GalaxyVolumeMaterial {
             let fragment = descriptor.fragment.as_mut().unwrap();
             fragment.shader_defs.push("DIAGNOSTIC".into());
         }
+        if key.bind_group_data.runtime_noise {
+            let fragment = descriptor.fragment.as_mut().unwrap();
+            fragment.shader_defs.push("RUNTIME_NOISE".into());
+        }
         Ok(())
     }
 }
@@ -237,12 +256,14 @@ impl Material for GalaxyVolumeMaterial {
 #[derive(Eq, PartialEq, Hash, Clone)]
 pub struct GalaxyMaterialKey {
     diagnostic_mode: bool,
+    runtime_noise: bool,
 }
 
 impl From<&GalaxyVolumeMaterial> for GalaxyMaterialKey {
     fn from(material: &GalaxyVolumeMaterial) -> Self {
         Self {
             diagnostic_mode: material.diagnostic_mode,
+            runtime_noise: material.runtime_noise,
         }
     }
 }

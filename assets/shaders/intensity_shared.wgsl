@@ -147,9 +147,22 @@ fn octave_noise_3d(octaves: i32, persistence : f32, scale : f32, pos : vec3<f32>
     return sum / amp_sum;
 }
 
-fn perlin_cloud_noise(p : vec3<f32>, winding_angle : f32, octaves : i32, scale : f32, persistence : f32) -> f32 {
+fn disk_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
     let r = get_twirled_unit_pos(p,winding_angle);
-    return octave_noise_3d(octaves,persistence,scale, r);
+#ifdef RUNTIME_NOISE
+    return octave_noise_3d(octaves,disk_params.noise_persistence,disk_params.noise_scale, r);
+#else
+    return textureSample(disk_noise_texture,disk_noise_sampler, r).x;
+#endif    
+}
+
+fn dust_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
+    let pr = get_twirled_unit_pos(p, winding_angle);
+#ifdef RUNTIME_NOISE
+    return max(0.0,ridge_noise(pr * dust_params.noise_scale, dust_params.noise_persistence,octaves,2.5,dust_params.noise_offset, dust_params.noise_tilt));
+#else
+    return max(0.0, textureSample(dust_noise_texture,dust_noise_sampler, pr).x);
+#endif
 }
 
 // END Noise utilities
@@ -195,6 +208,10 @@ struct ComponentParams {
 @group(2) @binding(6) var galaxy_xz_sampler: sampler;
 @group(2) @binding(7) var lut_texture: texture_2d_array<f32>;
 @group(2) @binding(8) var lut_sampler: sampler;
+@group(2) @binding(9) var disk_noise_texture: texture_3d<f32>;
+@group(2) @binding(10) var disk_noise_sampler: sampler;
+@group(2) @binding(11) var dust_noise_texture: texture_3d<f32>;
+@group(2) @binding(12) var dust_noise_sampler: sampler;
 
 const LUT_ID_WINDING : i32 = 0;
 
@@ -233,12 +250,15 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     return f32(octaves) / 10.0;
 #else
     if octaves > 0 {
-        p2 = abs(perlin_cloud_noise(p, winding_angle, octaves, disk_params.noise_scale, disk_params.noise_persistence));
+        p2 = abs(disk_noise(p, winding_angle, octaves));
     }
 
+    // These should be folded into the cached noise texture
+    // (BUt I need to sort the tex format to deal with values outside 0..1 )
     p2 = max(p2, 0.01);
     p2 = pow(p2,disk_params.noise_tilt);
     p2 += disk_params.noise_offset;
+    
     return base_intensity * p2 * disk_params.strength;
 #endif
 }
@@ -254,9 +274,11 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     return f32(octaves) / 10.0;
 #else
     if octaves > 0 {
-        p2 = perlin_cloud_noise(p, winding_angle, octaves, dust_params.noise_scale, dust_params.noise_persistence);
+        p2 = dust_noise(p, winding_angle, octaves);
     }
 
+    // These should be folded into the cached noise texture
+    // (BUt I need to sort the tex format to deal with values outside 0..1 )
     p2 = max(p2-dust_params.noise_offset,0.0);
     p2 = clamp(pow(5*p2, dust_params.noise_tilt), -10.0, 10.0);
 
@@ -276,8 +298,7 @@ fn get_dust_intensity_ridged(p : vec3<f32>, winding_angle : f32, base_intensity 
     return f32(octaves) / 10.0;
 #else
     if octaves > 0 {
-        let pr = get_twirled_unit_pos(p, winding_angle);
-        p2 = max(0.0,ridge_noise(pr * dust_params.noise_scale, dust_params.noise_persistence,octaves,2.5,dust_params.noise_offset, dust_params.noise_tilt));
+        p2 = dust_noise(p,winding_angle,octaves);
     }
 
     let s : f32 = 0.01;

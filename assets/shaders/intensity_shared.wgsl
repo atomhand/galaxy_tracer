@@ -203,7 +203,7 @@ fn pos_to_uv(p : vec2<f32>) -> vec2<f32> {
 }
 
 fn lookup_winding(d : f32) -> f32 {
-    return textureSample(lut_texture,lut_sampler, vec2<f32>(d,0.5), LUT_ID_WINDING).x;
+    return textureSample(lut_texture,lut_sampler, vec2<f32>(d + 0.5 / galaxy.texture_dimension,0.5), LUT_ID_WINDING).x;
 }
 
 fn get_height_modulation(height : f32, y_thickness : f32) -> f32 {

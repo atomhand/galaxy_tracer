@@ -74,7 +74,8 @@ impl GalaxyPainter<'_> {
         let central_falloff = (smoothstep(0.0, 1.0 * inner, d)).powi(4);
         let r = self.get_radial_intensity(d, r0);
 
-        let winding = self.get_raw_winding(d) * self.component.winding_factor;
+        // I think the component winding_factor is only meant to apply to noise?
+        let winding = self.get_raw_winding(d) ; // * self.component.winding_factor;
         let arm_mod = self.all_arms_modifier(winding, p);
 
         return central_falloff * arm_mod * r;

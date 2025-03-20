@@ -158,6 +158,10 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                             .text("Texture Size"),
                     );
                     ui.add(
+                        egui::Slider::new(&mut galaxy_config.padding_coeff, 1.0..=2.0)
+                            .text("Padding Coefficient"),
+                    );
+                    ui.add(
                         egui::Slider::new(&mut galaxy_config.raymarch_steps, 1..=256)
                             .text("Raymarch Steps"),
                     );

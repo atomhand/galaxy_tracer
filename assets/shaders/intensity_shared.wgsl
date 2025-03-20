@@ -163,7 +163,8 @@ struct GalaxyParams {
     winding_n : f32,
     padding_coefficient : f32,
     exposure : f32,
-    padding : vec2<f32>,
+    raymarch_steps : f32,
+    padding : f32,
 }
 struct BulgeParams {
     strength : f32,
@@ -309,11 +310,11 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
 
     //  blue
     let disk_col = vec3<f32>(0.4,0.6,1.0);
-    let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz);
+    let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz) * stepsize;
 
     let dust_xz = reconstruct_intensity(p, xz_sample.y, dust_params.y_thickness);
     let dust_winding_angle : f32 = base_winding * dust_params.winding_factor;
-    let dust_intensity : f32 = get_dust_intensity_ridged(p, dust_winding_angle, dust_xz);
+    let dust_intensity : f32 = get_dust_intensity_ridged(p, dust_winding_angle, dust_xz) * stepsize;
     //}
 
     let bulge_intensity = get_bulge_intensity(p) * stepsize * galaxy.exposure;
@@ -326,7 +327,7 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
 
 #ifdef DIAGNOSTIC
-    return in_col + vec3<f32>((disk_intensity + dust_intensity), 0.0, 0.0) * stepsize;
+    return in_col + vec3<f32>((disk_intensity + dust_intensity), 0.0, 0.0);
 #else
     let col = in_col + disk_col * disk_intensity * galaxy.exposure + bulge_col * bulge_intensity;
     return col * extinction;

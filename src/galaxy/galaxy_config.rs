@@ -3,6 +3,7 @@ use bevy::prelude::*;
 #[derive(Resource, Clone, PartialEq)]
 pub struct GalaxyConfig {
     pub generation: i32,
+    pub raymarch_steps : u32,
 
     pub texture_root: u32,
     pub texture_dimension: u32,
@@ -173,6 +174,7 @@ impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
             diagnostic_mode: false,
+            raymarch_steps: 64,
             generation: 1,
             texture_root: 9,
             texture_dimension: 512,

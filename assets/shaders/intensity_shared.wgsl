@@ -313,7 +313,7 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     let dust_winding_angle : f32 = base_winding * dust_params.winding_factor;
     let dust_intensity : f32 = get_dust_intensity_ridged(p, dust_winding_angle, dust_xz) * stepsize;
 
-    let bulge_intensity = get_bulge_intensity(p) * stepsize * galaxy.exposure;
+    let bulge_intensity = get_bulge_intensity(p) * stepsize * galaxy.exposure * 0.1;
     // yellow
     let bulge_col = vec3<f32>(1.,0.9,0.45);
 

@@ -118,6 +118,8 @@ fn ridge_noise( in_pos : vec3<f32>,in_frequency : f32,octaves : i32, lacunarity 
 
         signal *= weight;
 
+        weight = signal * gain;
+
         weight = saturate(signal * gain);
         
         value += signal * pow(freq,w);
@@ -225,7 +227,7 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     }
 
     var p2 = 0.5;
-    let octaves = min(10,i32(disk_params.noise_octaves));
+    let octaves = i32(disk_params.noise_octaves);
 #ifdef DIAGNOSTIC
     return f32(octaves) / 10.0;
 #else
@@ -246,7 +248,7 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     }
 
     var p2 = 0.5;
-    let octaves = min(10,i32(dust_params.noise_octaves));
+    let octaves = i32(dust_params.noise_octaves);
 #ifdef DIAGNOSTIC
     return f32(octaves) / 10.0;
 #else
@@ -268,7 +270,7 @@ fn get_dust_intensity_ridged(p : vec3<f32>, winding_angle : f32, base_intensity 
     }
 
     var p2 = 0.5;
-    let octaves = min(10,i32(dust_params.noise_octaves));
+    let octaves = i32(dust_params.noise_octaves);
 #ifdef DIAGNOSTIC
     return f32(octaves) / 10.0;
 #else
@@ -278,7 +280,7 @@ fn get_dust_intensity_ridged(p : vec3<f32>, winding_angle : f32, base_intensity 
     }
 
     let s : f32 = 0.01;
-    return base_intensity * p2 * s * dust_params.strength;
+    return p2 * base_intensity * s * dust_params.strength;
 #endif
 }
 
@@ -319,7 +321,8 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     let bulge_col = vec3<f32>(1.,0.9,0.45);
 
     // red
-    let dust_col : vec3<f32> = vec3<f32>(1.0,0.6,0.4);
+    //let dust_col : vec3<f32> = vec3<f32>(1.0,0.6,0.4);
+    let dust_col = vec3<f32>(0.4,0.6,1.0);
     let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
 
 #ifdef DIAGNOSTIC

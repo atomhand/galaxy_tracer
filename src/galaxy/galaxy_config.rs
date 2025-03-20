@@ -53,6 +53,7 @@ pub enum ComponentType {
 #[derive(Clone, PartialEq)]
 pub struct ComponentConfig {
     pub component_type: ComponentType,
+    pub enabled: bool,
     pub strength: f32,
     pub arm_width: f32,
     pub y_thickness: f32,
@@ -65,12 +66,14 @@ pub struct ComponentConfig {
     pub noise_tilt: f32,
     pub noise_persistence: f32,
     pub noise_octaves: u32,
+    pub noise_enabled: bool,
 }
 
 impl Default for ComponentConfig {
     fn default() -> Self {
         Self {
             component_type: ComponentType::Disk,
+            enabled: true,
             strength: 1.0,
             arm_width: 0.5,
             y_thickness: 0.001,
@@ -83,6 +86,7 @@ impl Default for ComponentConfig {
             noise_tilt: 1.0,
             noise_persistence: 1.0,
             noise_octaves: 5,
+            noise_enabled: true,
         }
     }
 }
@@ -90,6 +94,7 @@ impl Default for ComponentConfig {
 impl ComponentConfig {
     pub const MIN: Self = Self {
         component_type: ComponentType::Disk,
+        enabled: false,
         strength: 0.0,
         arm_width: 0.001,
         y_thickness: 0.001,
@@ -102,9 +107,11 @@ impl ComponentConfig {
         noise_tilt: -1.0,
         noise_persistence: 0.1,
         noise_octaves: 0,
+        noise_enabled: false,
     };
     pub const MAX: Self = Self {
         component_type: ComponentType::Disk,
+        enabled: true,
         strength: 1000.0,
         arm_width: 1.0,
         y_thickness: 0.05,
@@ -117,6 +124,7 @@ impl ComponentConfig {
         noise_tilt: 1.0,
         noise_persistence: 2.0,
         noise_octaves: 10,
+        noise_enabled: true,
     };
 }
 pub struct GalaxyConfigPlugin;

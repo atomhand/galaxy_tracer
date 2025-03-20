@@ -136,7 +136,11 @@ struct ComponentParams {
 impl ComponentParams {
     fn read(component: &ComponentConfig) -> Self {
         Self {
-            strength: component.strength,
+            strength: if component.enabled {
+                component.strength
+            } else {
+                0.0
+            },
             arm_width: component.arm_width,
             y_thickness: component.y_thickness,
             radial_extent: component.radial_extent,
@@ -147,7 +151,11 @@ impl ComponentParams {
             noise_offset: component.noise_offset,
             noise_tilt: component.noise_tilt,
             noise_persistence: component.noise_persistence,
-            noise_octaves: component.noise_octaves as f32,
+            noise_octaves: if component.noise_enabled {
+                component.noise_octaves as f32
+            } else {
+                0.0
+            },
         }
     }
 }

@@ -38,90 +38,100 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
     let maxval = ComponentConfig::MAX;
 
     egui::CollapsingHeader::new(heading).show(ui, |ui| {
+        ui.checkbox(&mut config.enabled, "Component Enabled");
         ui.add(
             egui::Slider::new(&mut config.strength, minval.strength..=maxval.strength)
                 .text("Strength"),
         );
-        ui.add(
-            egui::Slider::new(&mut config.arm_width, minval.arm_width..=maxval.arm_width)
-                .text("Arm Width (Inverse)"),
-        );
-        ui.add(
-            egui::Slider::new(
-                &mut config.y_thickness,
-                minval.y_thickness..=maxval.y_thickness,
-            )
-            .text("Thickness (Y)"),
-        );
-        ui.add(
-            egui::Slider::new(
-                &mut config.radial_extent,
-                minval.radial_extent..=maxval.radial_extent,
-            )
-            .text("Radial Extent"),
-        );
-        ui.add(
-            egui::Slider::new(
-                &mut config.radial_dropoff,
-                minval.radial_dropoff..=maxval.radial_dropoff,
-            )
-            .text("Central Falloff"),
-        );
-        ui.add(
-            egui::Slider::new(
-                &mut config.angular_offset,
-                minval.angular_offset..=maxval.angular_offset,
-            )
-            .text("Angular Offset"),
-        );
-        ui.add(
-            egui::Slider::new(
-                &mut config.winding_factor,
-                minval.winding_factor..=maxval.winding_factor,
-            )
-            .text("Winding Factor"),
-        );
-        // speciual case for stars, ugly hack but w/e
-        if config.component_type == ComponentType::Stars {
-            ui.add(egui::Slider::new(&mut config.noise_scale, 1.0..=100.0).text("Noise Frequency"));
-        } else {
+
+        ui.label("Shape");
+        ui.group(|ui| {
+            ui.add(
+                egui::Slider::new(&mut config.arm_width, minval.arm_width..=maxval.arm_width)
+                    .text("Arm Width (Inverse)"),
+            );
             ui.add(
                 egui::Slider::new(
-                    &mut config.noise_scale,
-                    minval.noise_scale..=maxval.noise_scale,
+                    &mut config.y_thickness,
+                    minval.y_thickness..=maxval.y_thickness,
                 )
-                .text("Noise Frequency"),
+                .text("Thickness (Y)"),
             );
-        }
-        ui.add(
-            egui::Slider::new(
-                &mut config.noise_offset,
-                minval.noise_offset..=maxval.noise_offset,
-            )
-            .text("Noise Offset"),
-        );
-        ui.add(
-            egui::Slider::new(
-                &mut config.noise_tilt,
-                minval.noise_tilt..=maxval.noise_tilt,
-            )
-            .text("Noise Tilt"),
-        );
-        ui.add(
-            egui::Slider::new(
-                &mut config.noise_persistence,
-                minval.noise_persistence..=maxval.noise_persistence,
-            )
-            .text("Noise Persistence"),
-        );
+            ui.add(
+                egui::Slider::new(
+                    &mut config.radial_extent,
+                    minval.radial_extent..=maxval.radial_extent,
+                )
+                .text("Radial Extent"),
+            );
+            ui.add(
+                egui::Slider::new(
+                    &mut config.radial_dropoff,
+                    minval.radial_dropoff..=maxval.radial_dropoff,
+                )
+                .text("Central Falloff"),
+            );
+            ui.add(
+                egui::Slider::new(
+                    &mut config.angular_offset,
+                    minval.angular_offset..=maxval.angular_offset,
+                )
+                .text("Angular Offset"),
+            );
+            ui.add(
+                egui::Slider::new(
+                    &mut config.winding_factor,
+                    minval.winding_factor..=maxval.winding_factor,
+                )
+                .text("Winding Factor"),
+            );
+        });
+        ui.label("Noise");
 
-        ui.add(
-            egui::Slider::new(
-                &mut config.noise_octaves,
-                minval.noise_octaves..=maxval.noise_octaves,
-            )
-            .text("Noise Octaves"),
-        );
+        ui.group(|ui| {
+            ui.checkbox(&mut config.noise_enabled, "Enabled");
+            // speciual case for stars, ugly hack but w/e
+            if config.component_type == ComponentType::Stars {
+                ui.add(egui::Slider::new(&mut config.noise_scale, 1.0..=100.0).text("Frequency"));
+            } else {
+                ui.add(
+                    egui::Slider::new(
+                        &mut config.noise_scale,
+                        minval.noise_scale..=maxval.noise_scale,
+                    )
+                    .text("Frequency"),
+                );
+            }
+            ui.add(
+                egui::Slider::new(
+                    &mut config.noise_offset,
+                    minval.noise_offset..=maxval.noise_offset,
+                )
+                .text("Offset"),
+            );
+            ui.add(
+                egui::Slider::new(
+                    &mut config.noise_tilt,
+                    minval.noise_tilt..=maxval.noise_tilt,
+                )
+                .text("Tilt"),
+            );
+            ui.add(
+                egui::Slider::new(
+                    &mut config.noise_persistence,
+                    minval.noise_persistence..=maxval.noise_persistence,
+                )
+                .text("Persistence"),
+            );
+
+            ui.add(
+                egui::Slider::new(
+                    &mut config.noise_octaves,
+                    minval.noise_octaves..=maxval.noise_octaves,
+                )
+                .text("Octaves"),
+            );
+        });
     });
     ui.separator();
 }

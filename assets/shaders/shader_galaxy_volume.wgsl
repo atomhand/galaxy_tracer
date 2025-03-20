@@ -44,24 +44,39 @@ fn sphIntersect( ro : vec3<f32> , rd : vec3<f32> ,  r : f32 ) -> vec2<f32>
     return vec2(-b - h, -b + h);
 }
 
-fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {    
+fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32, t_c : f32) -> vec3<f32> {    
     var col = vec3<f32>(0.0,0.0,0.0);
     if t1 == -1.0 && t2 == -1.0 {
         return col;
     }
 
+    let o0 = ro + rd * max(0.0,t_c);
     let o1 = ro + rd * max(0.0,t1);
 
-    let STEPS = galaxy.raymarch_steps;
-    
-    let t = (t2 - max(0.0,t1))/STEPS;
-    let step_weight = t / 10.0;
+    let STEPS = galaxy.raymarch_steps / 2.0;
 
+    let k = 1.5;
+    let exposure = 0.1;
+
+    // distributed from plane intersection to sphere intersection
+    let step_0 = (t2-t_c);
+    var sprev = 1.0;
     for(var i =0; i<i32(STEPS); i++) {
-        let p = o1 + rd * (STEPS-f32(i)) * t;
-        col = ray_step(p, col, step_weight);
-
+        let s = pow(1.0 - f32(i)/STEPS,k); // clustered towards 0
+        let p = o0 + rd * s * step_0;
+        col = ray_step(p, col, abs(s-sprev) * step_0 * exposure);
+        sprev = s;
     }
+    // distributed from ro to plane intersection
+    sprev = 1.0 + sprev;
+    let step_1 = (t_c-t1);
+    for(var i =0; i<i32(STEPS); i++) {
+        let s = 1.0 - pow(f32(i)/STEPS, k); // clustered towards 1
+        let p = o1 + rd * s * step_1;
+        col = ray_step(p, col, abs(s-sprev) * step_1 * exposure);
+        sprev = s;
+    }
+
     return col;    
 }
 
@@ -73,13 +88,11 @@ fn fragment(
     let rd = normalize(mesh.ray_dir);
     let t = sphIntersect(ro,rd, galaxy.radius * galaxy.padding_coefficient);
 
-    /*
+    
     let n = vec3(0.0,1.0,0.0);
-    let d = 500.0;
-    let t1 : f32= -(dot(n,ro)+d) / dot(n, rd);
-    let t2 : f32 = -(dot(n,ro)-d) / dot(n, rd);
-    */
+    let plane_t : f32= -dot(n,ro) / dot(n, rd);
+    
 
-    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), t.x, t.y);
+    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), 0.0, t.y, plane_t);
     return vec4<f32>(a,1.0);        
 }

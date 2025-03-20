@@ -71,7 +71,7 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     let ro = mesh.camera_origin;
     let rd = normalize(mesh.ray_dir);
-    let t = sphIntersect(ro,rd, galaxy.radius);
+    let t = sphIntersect(ro,rd, galaxy.radius * galaxy.padding_coefficient);
 
     /*
     let n = vec3(0.0,1.0,0.0);

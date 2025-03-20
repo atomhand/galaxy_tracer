@@ -174,7 +174,7 @@ impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
             diagnostic_mode: false,
-            raymarch_steps: 64,
+            raymarch_steps: 128,
             generation: 1,
             texture_root: 9,
             texture_dimension: 512,

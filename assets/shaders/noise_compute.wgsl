@@ -13,7 +13,7 @@ fn cache_octave_noise(@builtin(global_invocation_id) invocation_id: vec3<u32>, @
 
     // fn octave_noise_3d(octaves: i32, persistence : f32, scale : f32, pos : vec3<f32> ) -> f3
 
-    let pos = vec3<f32>(location) / vec3<f32>(64.0,64.0,64.0);
+    let pos = vec3<f32>(location) / (vec3<f32>(num_workgroups) * 8.0);
 
     let octaves = 10;
     let persistence = 1.0;
@@ -32,7 +32,7 @@ fn cache_octave_noise(@builtin(global_invocation_id) invocation_id: vec3<u32>, @
 fn cache_ridge_noise(@builtin(global_invocation_id) invocation_id: vec3<u32>, @builtin(num_workgroups) num_workgroups: vec3<u32>) {
     let location = vec3<i32>(i32(invocation_id.x), i32(invocation_id.y), i32(invocation_id.z));
 
-    let pos = vec3<f32>(location) / vec3<f32>(64.0,64.0,64.0);
+    let pos = vec3<f32>(location) / (vec3<f32>(num_workgroups) * 8.0);
 
     let persistence = 1.0;
     let octaves = 9;

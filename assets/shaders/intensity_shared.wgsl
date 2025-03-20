@@ -230,7 +230,6 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     return f32(octaves) / 10.0;
 #else
     if octaves > 0 {
-        let octaves = min(5,i32(disk_params.noise_octaves));
         p2 = abs(perlin_cloud_noise(p, winding_angle, octaves, disk_params.noise_scale, disk_params.noise_persistence));
     }
 

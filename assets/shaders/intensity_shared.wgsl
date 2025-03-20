@@ -305,9 +305,6 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     let disk_xz: f32  = reconstruct_intensity(p, xz_sample.x, disk_params.y_thickness);
     let disk_winding_angle : f32 = base_winding * disk_params.winding_factor;//-disk_sample.y;
 
-    // IN PROGRESS TODO
-    // scale disk intensity/dust extinction with stepsize
-
     //  blue
     let disk_col = vec3<f32>(0.4,0.6,1.0);
     let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz) * stepsize;
@@ -315,14 +312,12 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     let dust_xz = reconstruct_intensity(p, xz_sample.y, dust_params.y_thickness);
     let dust_winding_angle : f32 = base_winding * dust_params.winding_factor;
     let dust_intensity : f32 = get_dust_intensity_ridged(p, dust_winding_angle, dust_xz) * stepsize;
-    //}
 
     let bulge_intensity = get_bulge_intensity(p) * stepsize * galaxy.exposure;
     // yellow
     let bulge_col = vec3<f32>(1.,0.9,0.45);
 
-    // red
-    //let dust_col : vec3<f32> = vec3<f32>(1.0,0.6,0.4);
+    // yellow absorption spectra = appears red
     let dust_col = vec3<f32>(0.4,0.6,1.0);
     let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
 

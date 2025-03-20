@@ -78,13 +78,6 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
                 )
                 .text("Angular Offset"),
             );
-            ui.add(
-                egui::Slider::new(
-                    &mut config.winding_factor,
-                    minval.winding_factor..=maxval.winding_factor,
-                )
-                .text("Winding Factor"),
-            );
         });
         ui.label("Noise");
 
@@ -108,6 +101,13 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
                     minval.noise_offset..=maxval.noise_offset,
                 )
                 .text("Offset"),
+            );
+            ui.add(
+                egui::Slider::new(
+                    &mut config.noise_winding_factor,
+                    minval.noise_winding_factor..=maxval.noise_winding_factor,
+                )
+                .text("Winding Factor"),
             );
             ui.add(
                 egui::Slider::new(

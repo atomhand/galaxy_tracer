@@ -146,7 +146,7 @@ impl ComponentParams {
             radial_extent: component.radial_extent,
             central_falloff: component.radial_dropoff,
             angular_offset: component.angular_offset,
-            winding_factor: component.winding_factor,
+            winding_factor: component.noise_winding_factor,
             noise_scale: component.noise_scale,
             noise_offset: component.noise_offset,
             noise_tilt: component.noise_tilt,

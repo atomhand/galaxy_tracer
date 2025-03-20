@@ -175,8 +175,7 @@ impl FromWorld for NoiseTexturePipeline {
 
 enum NoiseUpdateState {
     Loading,
-    Init,
-    Update(usize),
+    Ready,
 }
 
 struct NoiseUpdateNode {
@@ -200,7 +199,17 @@ impl render_graph::Node for NoiseUpdateNode {
             NoiseUpdateState::Loading => {
                 match pipeline_cache.get_compute_pipeline_state(pipeline.octave_noise_pipeline) {
                     CachedPipelineState::Ok(_) => {
-                        self.state = NoiseUpdateState::Init;
+                        match pipeline_cache
+                            .get_compute_pipeline_state(pipeline.ridge_noise_pipeline)
+                        {
+                            CachedPipelineState::Ok(_) => {
+                                self.state = NoiseUpdateState::Ready;
+                            }
+                            CachedPipelineState::Err(err) => {
+                                panic!("Intializing assets/{SHADER_ASSET_PATH}:\n{err}")
+                            }
+                            _ => {}
+                        }
                     }
                     CachedPipelineState::Err(err) => {
                         panic!("Intializing assets/{SHADER_ASSET_PATH}:\n{err}")
@@ -208,17 +217,9 @@ impl render_graph::Node for NoiseUpdateNode {
                     _ => {}
                 }
             }
-            NoiseUpdateState::Init => {
-                if let CachedPipelineState::Ok(_) =
-                    pipeline_cache.get_compute_pipeline_state(pipeline.octave_noise_pipeline)
-                {
-                    //self.state = NoiseUpdateState::Update(1);
-                    self.state = NoiseUpdateState::Init;
-                }
+            NoiseUpdateState::Ready => {
+                // Don't think we need to do anything here
             }
-            //NoiseUpdateState::Update(0) => self.state = NoiseUpdateState::Update(1),
-            //NoiseUpdateState::Update(1) => self.state = NoiseUpdateState::Update(0),
-            NoiseUpdateState::Update(_) => unreachable!(),
         }
     }
 
@@ -239,7 +240,7 @@ impl render_graph::Node for NoiseUpdateNode {
         // select the pipeline based on the current state
         match self.state {
             NoiseUpdateState::Loading => {}
-            NoiseUpdateState::Init => {
+            NoiseUpdateState::Ready => {
                 let octave_noise_pipeline = pipeline_cache
                     .get_compute_pipeline(pipeline.octave_noise_pipeline)
                     .unwrap();
@@ -261,19 +262,19 @@ impl render_graph::Node for NoiseUpdateNode {
                     SIZE.1 / WORKGROUP_SIZE,
                     SIZE.2 / WORKGROUP_SIZE,
                 );
-            }
-            NoiseUpdateState::Update(index) => {
-                let ridge_noise_pipeline = pipeline_cache
-                    .get_compute_pipeline(pipeline.ridge_noise_pipeline)
-                    .unwrap();
-                pass.set_bind_group(0, &bind_groups[index], &[]);
-                pass.set_pipeline(ridge_noise_pipeline);
-                pass.dispatch_workgroups(
-                    SIZE.0 / WORKGROUP_SIZE,
-                    SIZE.1 / WORKGROUP_SIZE,
-                    SIZE.2 / WORKGROUP_SIZE,
-                );
-            }
+            } /*
+              NoiseUpdateState::Update(index) => {
+                  let ridge_noise_pipeline = pipeline_cache
+                      .get_compute_pipeline(pipeline.ridge_noise_pipeline)
+                      .unwrap();
+                  pass.set_bind_group(0, &bind_groups[index], &[]);
+                  pass.set_pipeline(ridge_noise_pipeline);
+                  pass.dispatch_workgroups(
+                      SIZE.0 / WORKGROUP_SIZE,
+                      SIZE.1 / WORKGROUP_SIZE,
+                      SIZE.2 / WORKGROUP_SIZE,
+                  );
+              } */
         }
 
         Ok(())

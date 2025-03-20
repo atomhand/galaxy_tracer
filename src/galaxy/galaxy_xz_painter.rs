@@ -75,7 +75,7 @@ impl GalaxyPainter<'_> {
         let r = self.get_radial_intensity(d, r0);
 
         // I think the component winding_factor is only meant to apply to noise?
-        let winding = self.get_raw_winding(d) ; // * self.component.winding_factor;
+        let winding = self.get_raw_winding(d); // * self.component.winding_factor;
         let arm_mod = self.all_arms_modifier(winding, p);
 
         return central_falloff * arm_mod * r;

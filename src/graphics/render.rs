@@ -80,7 +80,7 @@ struct GalaxyParams {
     winding_n: f32,
     padding_coefficient: f32,
     exposure: f32,
-    raymarch_steps : f32,
+    raymarch_steps: f32,
     pad: f32,
 }
 
@@ -94,7 +94,7 @@ impl GalaxyParams {
             winding_b: config.winding_b,
             winding_n: config.winding_n,
             exposure: config.exposure,
-            raymarch_steps : config.raymarch_steps as f32,
+            raymarch_steps: config.raymarch_steps as f32,
             pad: 0.0,
         }
     }

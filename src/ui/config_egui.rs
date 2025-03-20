@@ -158,7 +158,8 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                             .text("Texture Size"),
                     );
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.raymarch_steps, 1..=256).text("Raymarch Steps"),
+                        egui::Slider::new(&mut galaxy_config.raymarch_steps, 1..=256)
+                            .text("Raymarch Steps"),
                     );
                     let mut inv_exposure = 1.0 / galaxy_config.exposure;
                     ui.add(

@@ -164,7 +164,7 @@ struct GalaxyParams {
     padding_coefficient : f32,
     exposure : f32,
     raymarch_steps : f32,
-    padding : f32,
+    texture_dimension : f32,
 }
 struct BulgeParams {
     strength : f32,
@@ -199,7 +199,7 @@ struct ComponentParams {
 const LUT_ID_WINDING : i32 = 0;
 
 fn pos_to_uv(p : vec2<f32>) -> vec2<f32> {
-    return p / (galaxy.radius * 2.0 * galaxy.padding_coefficient) + 0.5;
+    return p / (galaxy.radius * 2.0 * galaxy.padding_coefficient) + 0.5 + vec2<f32>(0.5,0.5)/galaxy.texture_dimension;
 }
 
 fn lookup_winding(d : f32) -> f32 {

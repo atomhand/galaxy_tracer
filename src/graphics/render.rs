@@ -81,7 +81,7 @@ struct GalaxyParams {
     padding_coefficient: f32,
     exposure: f32,
     raymarch_steps: f32,
-    pad: f32,
+    texture_dimension: f32,
 }
 
 impl GalaxyParams {
@@ -95,7 +95,7 @@ impl GalaxyParams {
             winding_n: config.winding_n,
             exposure: config.exposure,
             raymarch_steps: config.raymarch_steps as f32,
-            pad: 0.0,
+            texture_dimension: config.texture_dimension as f32,
         }
     }
 }

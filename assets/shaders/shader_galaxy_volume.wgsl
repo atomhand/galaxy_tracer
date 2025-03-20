@@ -21,7 +21,8 @@ struct VertexOutput {
 fn vertex(vertex: Vertex) -> VertexOutput {
     let model = get_world_from_local(vertex.instance_index);
 
-    let world_space = vertex.position.xyz * vec3<f32>(galaxy.radius*1.25,50.0,galaxy.radius*1.25);
+    let scaled_r = galaxy.radius * galaxy.padding_coefficient;
+    let world_space = vertex.position.xyz * vec3<f32>(scaled_r,50.0,scaled_r);
     let position = view.clip_from_world * model * vec4<f32>(world_space, 1.0);
 
     var out: VertexOutput;
@@ -63,6 +64,7 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {
     for(var i =0; i<i32(STEPS); i++) {
         let p = o1 + rd * (STEPS-f32(i)) * t;
         col = ray_step(p, col, step_weight);
+
     }
     return col;
     
@@ -72,16 +74,18 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {
 fn fragment(
     mesh: VertexOutput,
 ) -> @location(0) vec4<f32> {
-    //let t = sphIntersect(mesh.camera_origin, normalize(mesh.ray_dir), galaxy.radius);
-
     let ro = mesh.camera_origin;
     let rd = normalize(mesh.ray_dir);
+    let t = sphIntersect(ro,rd, galaxy.radius);
+
+/*
     let n = vec3(0.0,1.0,0.0);
-    let d = 25.0;
+    let d = 500.0;
     let t1 : f32= -(dot(n,ro)+d) / dot(n, rd);
     let t2 : f32 = -(dot(n,ro)-d) / dot(n, rd);
+    */
 
     //let a = (t.y-max(0.0,t.x))/(radius*2.0)*0.1;
-    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), t1, t2);
+    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), t.x, t.y);
     return vec4<f32>(a,1.0);        
 }

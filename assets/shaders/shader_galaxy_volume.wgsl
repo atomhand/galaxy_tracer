@@ -1,5 +1,3 @@
-
-
 // https://github.com/bevyengine/bevy/blob/c75d14586999dc1ef1ff6099adbc1f0abdb46edf/crates/bevy_render/src/view/view.wgsl
 #import bevy_pbr::mesh_view_bindings::view
 #import bevy_pbr::mesh_functions::get_world_from_local
@@ -46,8 +44,7 @@ fn sphIntersect( ro : vec3<f32> , rd : vec3<f32> ,  r : f32 ) -> vec2<f32>
     return vec2(-b - h, -b + h);
 }
 
-fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {
-    
+fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {    
     var col = vec3<f32>(0.0,0.0,0.0);
     if t1 == -1.0 && t2 == -1.0 {
         return col;
@@ -56,18 +53,16 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {
     let o1 = ro + rd * max(0.0,t1);
 
     let STEPS = galaxy.raymarch_steps;
-
     
     let t = (t2 - max(0.0,t1))/STEPS;
-    let step_weight = abs(t) / 10.0;
+    let step_weight = t / 10.0;
 
     for(var i =0; i<i32(STEPS); i++) {
         let p = o1 + rd * (STEPS-f32(i)) * t;
         col = ray_step(p, col, step_weight);
 
     }
-    return col;
-    
+    return col;    
 }
 
 @fragment
@@ -78,14 +73,13 @@ fn fragment(
     let rd = normalize(mesh.ray_dir);
     let t = sphIntersect(ro,rd, galaxy.radius);
 
-/*
+    /*
     let n = vec3(0.0,1.0,0.0);
     let d = 500.0;
     let t1 : f32= -(dot(n,ro)+d) / dot(n, rd);
     let t2 : f32 = -(dot(n,ro)-d) / dot(n, rd);
     */
 
-    //let a = (t.y-max(0.0,t.x))/(radius*2.0)*0.1;
     let a = march(mesh.camera_origin, normalize(mesh.ray_dir), t.x, t.y);
     return vec4<f32>(a,1.0);        
 }

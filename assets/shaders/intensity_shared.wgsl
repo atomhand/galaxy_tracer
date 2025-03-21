@@ -152,7 +152,7 @@ fn disk_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
 #ifdef RUNTIME_NOISE
     return octave_noise_3d(octaves,disk_params.noise_persistence,disk_params.noise_scale, r);
 #else
-    return textureSample(disk_noise_texture,disk_noise_sampler, r).x;
+    return textureSample(disk_noise_texture,disk_noise_sampler, r * disk_params.noise_scale).x;
 #endif    
 }
 
@@ -161,7 +161,7 @@ fn dust_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
 #ifdef RUNTIME_NOISE
     return max(0.0,ridge_noise(pr * dust_params.noise_scale, dust_params.noise_persistence,octaves,2.5,dust_params.noise_offset, dust_params.noise_tilt));
 #else
-    return max(0.0, textureSample(dust_noise_texture,dust_noise_sampler, pr).x);
+    return max(0.0, textureSample(dust_noise_texture,dust_noise_sampler, pr * dust_params.noise_scale).x);
 #endif
 }
 

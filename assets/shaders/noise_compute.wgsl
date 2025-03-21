@@ -3,7 +3,7 @@
 
 struct NoiseSettingsUniform {
     persistence : f32,
-    scale : f32,
+    frequency : f32,
     offset : f32,
     tilt : f32,
     octaves: f32,
@@ -24,7 +24,7 @@ fn cache_octave_noise(@builtin(global_invocation_id) invocation_id: vec3<u32>, @
 
     let pos = vec3<f32>(location) / (vec3<f32>(num_workgroups) * 8.0);
 
-    let noise = octave_noise_3d(i32(disk_settings.octaves), disk_settings.persistence, disk_settings.scale, pos);
+    let noise = octave_noise_3d(i32(disk_settings.octaves), disk_settings.persistence, disk_settings.frequency, pos);
 
     // Some issues with caching an output outside the 0..1 range
     // should be resolvable
@@ -40,7 +40,7 @@ fn cache_ridge_noise(@builtin(global_invocation_id) invocation_id: vec3<u32>, @b
 
     let pos = vec3<f32>(location) / (vec3<f32>(num_workgroups) * 8.0);
 
-    let noise =ridge_noise(pos * dust_settings.scale, dust_settings.persistence, i32(dust_settings.octaves), 2.5, dust_settings.offset, dust_settings.tilt);
+    let noise =ridge_noise(pos * dust_settings.frequency, dust_settings.persistence, i32(dust_settings.octaves), 2.5, dust_settings.offset, dust_settings.tilt);
 
     textureStore(ridge_output, location, vec4<f32>(noise,0.0,0.0,0.0));
 }

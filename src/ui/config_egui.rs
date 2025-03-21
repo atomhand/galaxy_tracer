@@ -97,6 +97,13 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
             }
             ui.add(
                 egui::Slider::new(
+                    &mut config.noise_texture_frequency,
+                    minval.noise_texture_frequency..=maxval.noise_texture_frequency,
+                )
+                .text("Frequency (Texture)"),
+            );
+            ui.add(
+                egui::Slider::new(
                     &mut config.noise_offset,
                     minval.noise_offset..=maxval.noise_offset,
                 )

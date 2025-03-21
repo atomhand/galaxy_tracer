@@ -106,14 +106,14 @@ fn prepare_noise_settings_buffers(
 ) {
     let disk_settings = noise_settings_buffer.disk_settings.get_mut();
     disk_settings.persistence = galaxy_config.disk_params.noise_persistence;
-    disk_settings.scale = galaxy_config.disk_params.noise_scale;
+    disk_settings.frequency = galaxy_config.disk_params.noise_texture_frequency;
     disk_settings.octaves = galaxy_config.disk_params.noise_octaves as f32;
     disk_settings.tilt = galaxy_config.disk_params.noise_tilt;
     disk_settings.offset = galaxy_config.disk_params.noise_offset;
 
     let dust_settings = noise_settings_buffer.dust_settings.get_mut();
     dust_settings.persistence = galaxy_config.dust_params.noise_persistence;
-    dust_settings.scale = galaxy_config.dust_params.noise_scale;
+    dust_settings.frequency = galaxy_config.dust_params.noise_texture_frequency;
     dust_settings.octaves = galaxy_config.dust_params.noise_octaves as f32;
     dust_settings.tilt = galaxy_config.dust_params.noise_tilt;
     dust_settings.offset = galaxy_config.dust_params.noise_offset;
@@ -171,7 +171,7 @@ fn prepare_bind_group(
 #[repr(C)]
 struct NoiseSettingsUniform {
     persistence: f32,
-    scale: f32,
+    frequency: f32,
     offset: f32,
     tilt: f32,
     octaves: f32,

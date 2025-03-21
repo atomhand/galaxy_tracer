@@ -1,6 +1,7 @@
 use bevy::prelude::*;
+use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
 
-#[derive(Resource, Clone, PartialEq)]
+#[derive(Resource, Clone, PartialEq, ExtractResource)]
 pub struct GalaxyConfig {
     pub generation: i32,
     pub raymarch_steps: u32,
@@ -135,7 +136,8 @@ impl Plugin for GalaxyConfigPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GalaxyConfig::default())
             .insert_resource(GalaxyConfigOld::default())
-            .add_systems(Update, apply_ui_updates);
+            .add_systems(Update, apply_ui_updates)
+            .add_plugins(ExtractResourcePlugin::<GalaxyConfig>::default());
     }
 }
 

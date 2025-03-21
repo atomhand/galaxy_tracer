@@ -1,3 +1,4 @@
+use crate::prelude::*;
 use bevy::{
     image::{ImageAddressMode, ImageSampler, ImageSamplerDescriptor},
     prelude::*,
@@ -5,17 +6,21 @@ use bevy::{
         extract_resource::{ExtractResource, ExtractResourcePlugin},
         render_asset::{RenderAssetUsages, RenderAssets},
         render_graph::{self, RenderGraph, RenderLabel},
-        render_resource::{binding_types::texture_3d, binding_types::texture_storage_2d, *},
-        renderer::{RenderContext, RenderDevice},
+        render_resource::{
+            binding_types::texture_3d, binding_types::texture_storage_2d,
+            binding_types::uniform_buffer, *,
+        },
+        renderer::{RenderContext, RenderDevice, RenderQueue},
         texture::GpuImage,
         Render, RenderApp, RenderSet,
     },
 };
+use bytemuck::{Pod, Zeroable};
 use std::borrow::Cow;
 
 const SHADER_ASSET_PATH: &str = "shaders/noise_compute.wgsl";
 
-const SIZE: (u32, u32, u32) = (256, 8, 256);
+const SIZE: (u32, u32, u32) = (64, 16, 64);
 const WORKGROUP_SIZE: u32 = 8;
 
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
@@ -57,10 +62,16 @@ impl Plugin for NoiseTexturePlugin {
         app.add_plugins(ExtractResourcePlugin::<NoiseTextureImages>::default());
 
         let render_app = app.sub_app_mut(RenderApp);
-        render_app.add_systems(
-            Render,
-            prepare_bind_group.in_set(RenderSet::PrepareBindGroups),
-        );
+        render_app
+            .init_resource::<NoiseSettingsBuffers>()
+            .add_systems(
+                Render,
+                prepare_bind_group.in_set(RenderSet::PrepareBindGroups),
+            )
+            .add_systems(
+                Render,
+                prepare_noise_settings_buffers.in_set(RenderSet::PrepareResources),
+            );
 
         let mut render_graph = render_app.world_mut().resource_mut::<RenderGraph>();
         render_graph.add_node(NoiseTextureLabel, NoiseUpdateNode::default());
@@ -81,6 +92,40 @@ pub struct NoiseTextureImages {
     pub dust_component: Handle<Image>,
 }
 
+#[derive(Resource, Default)]
+struct NoiseSettingsBuffers {
+    disk_settings: UniformBuffer<NoiseSettingsUniform>,
+    dust_settings: UniformBuffer<NoiseSettingsUniform>,
+}
+
+fn prepare_noise_settings_buffers(
+    render_device: Res<RenderDevice>,
+    render_queue: Res<RenderQueue>,
+    galaxy_config: Res<GalaxyConfig>,
+    mut noise_settings_buffer: ResMut<NoiseSettingsBuffers>,
+) {
+    let disk_settings = noise_settings_buffer.disk_settings.get_mut();
+    disk_settings.persistence = galaxy_config.disk_params.noise_persistence;
+    disk_settings.scale = galaxy_config.disk_params.noise_scale;
+    disk_settings.octaves = galaxy_config.disk_params.noise_octaves as f32;
+    disk_settings.tilt = galaxy_config.disk_params.noise_tilt;
+    disk_settings.offset = galaxy_config.disk_params.noise_offset;
+
+    let dust_settings = noise_settings_buffer.dust_settings.get_mut();
+    dust_settings.persistence = galaxy_config.dust_params.noise_persistence;
+    dust_settings.scale = galaxy_config.dust_params.noise_scale;
+    dust_settings.octaves = galaxy_config.dust_params.noise_octaves as f32;
+    dust_settings.tilt = galaxy_config.dust_params.noise_tilt;
+    dust_settings.offset = galaxy_config.dust_params.noise_offset;
+
+    noise_settings_buffer
+        .disk_settings
+        .write_buffer(&render_device, &render_queue);
+    noise_settings_buffer
+        .dust_settings
+        .write_buffer(&render_device, &render_queue);
+}
+
 #[derive(Resource)]
 struct NoiseTextureImageBindGroups([BindGroup; 1]);
 
@@ -89,6 +134,7 @@ fn prepare_bind_group(
     pipeline: Res<NoiseTexturePipeline>,
     gpu_images: Res<RenderAssets<GpuImage>>,
     noise_texture_images: Res<NoiseTextureImages>,
+    noise_settings_buffers: Res<NoiseSettingsBuffers>,
     render_device: Res<RenderDevice>,
 ) {
     let view_a = gpu_images
@@ -98,10 +144,18 @@ fn prepare_bind_group(
         .get(&noise_texture_images.dust_component)
         .unwrap();
 
+    let uniform_a = noise_settings_buffers.disk_settings.binding().unwrap();
+    let uniform_b = noise_settings_buffers.dust_settings.binding().unwrap();
+
     let bind_group_0 = render_device.create_bind_group(
         None,
         &pipeline.texture_bind_group_layout,
-        &BindGroupEntries::sequential((&view_a.texture_view, &view_b.texture_view)),
+        &BindGroupEntries::sequential((
+            &view_a.texture_view,
+            &view_b.texture_view,
+            uniform_a.clone(),
+            uniform_b.clone(),
+        )),
     );
     /*
     let bind_group_1 = render_device.create_bind_group(
@@ -111,6 +165,16 @@ fn prepare_bind_group(
     );
     */
     commands.insert_resource(NoiseTextureImageBindGroups([bind_group_0]));
+}
+
+#[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug, Default)]
+#[repr(C)]
+struct NoiseSettingsUniform {
+    persistence: f32,
+    scale: f32,
+    offset: f32,
+    tilt: f32,
+    octaves: f32,
 }
 
 #[derive(Resource)]
@@ -138,6 +202,8 @@ impl FromWorld for NoiseTexturePipeline {
                         format: TextureFormat::R32Float,
                         view_dimension: TextureViewDimension::D3,
                     },
+                    uniform_buffer::<NoiseSettingsUniform>(false),
+                    uniform_buffer::<NoiseSettingsUniform>(false),
                 ),
             ),
         );

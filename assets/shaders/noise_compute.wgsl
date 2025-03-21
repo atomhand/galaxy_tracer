@@ -40,7 +40,8 @@ fn cache_ridge_noise(@builtin(global_invocation_id) invocation_id: vec3<u32>, @b
 
     let pos = vec3<f32>(location) / (vec3<f32>(num_workgroups) * 8.0);
 
-    let noise =ridge_noise(pos * dust_settings.frequency, dust_settings.persistence, i32(dust_settings.octaves), 2.5, dust_settings.offset, dust_settings.tilt);
+    let lacunarity = 2.0; // 2.5
+    let noise =ridge_noise(pos, dust_settings.frequency, dust_settings.persistence, i32(dust_settings.octaves), lacunarity, dust_settings.offset, dust_settings.tilt);
 
     textureStore(ridge_output, location, vec4<f32>(noise,0.0,0.0,0.0));
 }

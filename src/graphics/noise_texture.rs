@@ -252,7 +252,7 @@ impl FromWorld for NoiseTexturePipeline {
 enum NoiseUpdateState {
     Loading,
     Waiting(i32),
-    Run(i32)
+    Run(i32),
 }
 
 struct NoiseUpdateNode {

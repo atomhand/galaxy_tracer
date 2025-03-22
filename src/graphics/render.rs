@@ -191,11 +191,11 @@ pub struct GalaxyVolumeMaterial {
     dust_detail_texture: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
     diagnostic_mode: bool,
-    flat_mode : bool,
+    flat_mode: bool,
     runtime_noise: bool,
 }
 impl GalaxyVolumeMaterial {
-    pub fn update(&mut self, galaxy_config : &GalaxyConfig) {
+    pub fn update(&mut self, galaxy_config: &GalaxyConfig) {
         self.galaxy_params = GalaxyParams::read(galaxy_config);
         self.bulge_params = BulgeParams::read(galaxy_config);
         self.disk_params = ComponentParams::read(&galaxy_config.disk_params);
@@ -206,10 +206,9 @@ impl GalaxyVolumeMaterial {
         self.runtime_noise = galaxy_config.runtime_noise;
     }
     pub fn new(galaxy_config: &GalaxyConfig) -> Self {
-
         let mut ret = Self {
             alpha_mode: AlphaMode::Add,
-            .. default()
+            ..default()
         };
         ret.update(galaxy_config);
         return ret;
@@ -248,7 +247,8 @@ impl Material for GalaxyVolumeMaterial {
             fragment.shader_defs.push("RUNTIME_NOISE".into());
         }
         if key.bind_group_data.flat_mode {
-            let fragment: &mut bevy::render::render_resource::FragmentState = descriptor.fragment.as_mut().unwrap();
+            let fragment: &mut bevy::render::render_resource::FragmentState =
+                descriptor.fragment.as_mut().unwrap();
             fragment.shader_defs.push("FLAT_DIAGNOSTIC".into());
         }
         Ok(())
@@ -262,7 +262,7 @@ impl Material for GalaxyVolumeMaterial {
 pub struct GalaxyMaterialKey {
     diagnostic_mode: bool,
     runtime_noise: bool,
-    flat_mode : bool,
+    flat_mode: bool,
 }
 
 impl From<&GalaxyVolumeMaterial> for GalaxyMaterialKey {

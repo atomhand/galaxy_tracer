@@ -30,7 +30,6 @@ pub struct GalaxyConfig {
     pub diagnostic_mode: bool,
     pub flat_mode: bool,
 
-
     pub disk_params: ComponentConfig,
     pub dust_params: ComponentConfig,
     pub stars_params: ComponentConfig,
@@ -109,7 +108,7 @@ impl ComponentConfig {
         radial_dropoff: 0.05,
         angular_offset: -180.0,
         noise_winding_factor: 0.0,
-        noise_scale: 0.01,
+        noise_scale: 0.5,
         noise_texture_frequency: 1,
         noise_offset: -1.0,
         noise_tilt: -1.0,
@@ -120,14 +119,14 @@ impl ComponentConfig {
     pub const MAX: Self = Self {
         component_type: ComponentType::Disk,
         enabled: true,
-        strength: 1000.0,
+        strength: 2000.0,
         arm_width: 1.0,
         y_thickness: 0.05,
         radial_extent: 1.0,
         radial_dropoff: 0.6,
         angular_offset: 180.0,
         noise_winding_factor: 0.5,
-        noise_scale: 5.0,
+        noise_scale: 10.0,
         noise_texture_frequency: 5,
         noise_offset: 1.0,
         noise_tilt: 1.0,

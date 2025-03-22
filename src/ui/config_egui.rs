@@ -165,6 +165,19 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                             .text("Texture Size"),
                     );
                     ui.add(
+                        egui::Slider::new(&mut galaxy_config.noise_texture_size.x, 8..=512)
+                            .text("Noise Texture X"),
+                    );
+                    ui.add(
+                        egui::Slider::new(&mut galaxy_config.noise_texture_size.y, 8..=32)
+                            .text("Noise Texture Y"),
+                    );
+                    ui.add(
+                        egui::Slider::new(&mut galaxy_config.noise_texture_size.z, 8..=512)
+                            .text("Noise Texture Z"),
+                    );
+
+                    ui.add(
                         egui::Slider::new(&mut galaxy_config.padding_coeff, 1.0..=2.0)
                             .text("Padding Coefficient"),
                     );

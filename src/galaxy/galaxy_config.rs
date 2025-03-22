@@ -7,6 +7,9 @@ pub struct GalaxyConfig {
     pub raymarch_steps: u32,
     pub runtime_noise: bool,
 
+    pub noise_texture_size: UVec3,
+    pub noise_detail_texture_size: UVec3,
+
     pub texture_root: u32,
     pub texture_dimension: u32,
     pub radius: f32,
@@ -184,6 +187,8 @@ impl Default for GalaxyConfig {
             diagnostic_mode: false,
             flat_mode: false,
             runtime_noise: false,
+            noise_texture_size: UVec3::new(64, 8, 64),
+            noise_detail_texture_size: UVec3::new(64, 64, 64),
             raymarch_steps: 32,
             generation: 1,
             texture_root: 9,

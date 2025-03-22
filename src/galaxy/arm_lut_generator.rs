@@ -6,14 +6,17 @@ fn smoothstep(edge0: f32, edge1: f32, x: f32) -> f32 {
     let s = ((x - edge0) / (edge1 - edge0)).clamp(0.0, 1.0);
     return s * s * (3.0 - 2.0 * s);
 }
-pub struct GalaxyPainter<'a> {
+pub struct ArmLutGenerator<'a> {
     galaxy: &'a GalaxyConfig,
     component: &'a ComponentConfig,
 }
 
-impl GalaxyPainter<'_> {
-    pub fn new<'a>(config: &'a GalaxyConfig, component: &'a ComponentConfig) -> GalaxyPainter<'a> {
-        GalaxyPainter {
+impl ArmLutGenerator<'_> {
+    pub fn new<'a>(
+        config: &'a GalaxyConfig,
+        component: &'a ComponentConfig,
+    ) -> ArmLutGenerator<'a> {
+        ArmLutGenerator {
             galaxy: config,
             component,
         }

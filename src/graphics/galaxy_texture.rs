@@ -26,7 +26,7 @@ pub fn get_lut(config: &GalaxyConfig) -> Image {
     let width = config.texture_dimension.next_power_of_two();
     let layers = 4;
 
-    let disk_painter = GalaxyPainter::new(&config, &config.disk_params);
+    let disk_painter = ArmLutGenerator::new(&config, &config.disk_params);
 
     let chunk_size: usize = 4;
     let mut texture_data = vec![0u8; (width * layers) as usize * chunk_size];
@@ -67,9 +67,9 @@ pub fn get_lut(config: &GalaxyConfig) -> Image {
 pub fn get_texture(config: &GalaxyConfig) -> Image {
     let dimension = config.texture_dimension.next_power_of_two();
 
-    let disk_painter = GalaxyPainter::new(&config, &config.disk_params);
-    let dust_painter = GalaxyPainter::new(&config, &config.dust_params);
-    let stars_painter = GalaxyPainter::new(&config, &config.stars_params);
+    let disk_painter = ArmLutGenerator::new(&config, &config.disk_params);
+    let dust_painter = ArmLutGenerator::new(&config, &config.dust_params);
+    let stars_painter = ArmLutGenerator::new(&config, &config.stars_params);
 
     let mut texture_data = vec![0u8; (dimension * dimension * 8) as usize];
 

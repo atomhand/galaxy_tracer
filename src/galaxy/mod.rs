@@ -1,7 +1,7 @@
+mod arm_lut_generator;
 mod galaxy_config;
-mod galaxy_xz_painter;
 
+pub use arm_lut_generator::ArmLutGenerator;
 pub use galaxy_config::{
     ArmConfig, ComponentConfig, ComponentType, GalaxyConfig, GalaxyConfigPlugin,
 };
-pub use galaxy_xz_painter::GalaxyPainter;

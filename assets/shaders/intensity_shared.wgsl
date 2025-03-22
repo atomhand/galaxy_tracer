@@ -118,8 +118,6 @@ fn ridge_noise( in_pos : vec3<f32>,in_frequency : f32,octaves : i32, lacunarity 
 
         signal *= weight;
 
-        weight = signal * gain;
-
         weight = saturate(signal * gain);
         
         value += signal * pow(freq,w);

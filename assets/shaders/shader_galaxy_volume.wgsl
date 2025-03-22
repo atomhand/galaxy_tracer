@@ -87,16 +87,18 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     let ro = mesh.camera_origin;
     let rd = normalize(mesh.ray_dir);
+    /*
     let t = sphIntersect(ro,rd, galaxy.radius * galaxy.padding_coefficient);
 
     if t.x == -1.0 && t.y == -1.0 {
         return vec4<f32>(0.0,0.0,0.0,0.0);
     }
+    */
     
     let n = vec3(0.0,1.0,0.0);
     let plane_t : f32= -dot(n,ro) / dot(n, rd);
     
 
-    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), 0.0, t.y, plane_t);
+    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), 0.0, plane_t*2.0, plane_t);
     return vec4<f32>(a,1.0);        
 }

@@ -45,7 +45,7 @@ fn cache_ridge_noise(@builtin(global_invocation_id) invocation_id: vec3<u32>, @b
 
     let lacunarity = 2.0; // 2.5
     let octaves = i32(dust_settings.octaves);
-    let first_octaves = octaves / 2 + octaves % 2;
+    let first_octaves = octaves - octaves / 2;
     let noise =ridge_noise(pos, dust_settings.frequency, dust_settings.persistence, first_octaves, lacunarity, dust_settings.offset, dust_settings.tilt);
 
     textureStore(ridge_output, location, vec4<f32>(noise,0.0,0.0));
@@ -53,9 +53,9 @@ fn cache_ridge_noise(@builtin(global_invocation_id) invocation_id: vec3<u32>, @b
     let detail_target_freq : f32 = dust_settings.frequency * pow(lacunarity,f32(first_octaves));
     let detail_persistence = dust_settings.persistence * pow(lacunarity,f32(first_octaves));
 
-    let detail_freq = detail_target_freq / 8.0;
+    let detail_freq = detail_target_freq / 4.0;
 
-    let detail =ridge_noise(pos, detail_freq, detail_persistence, octaves / 2, lacunarity, dust_settings.offset, dust_settings.tilt);
+    let detail =ridge_noise(pos, detail_freq, detail_persistence, octaves /2 , lacunarity, dust_settings.offset, dust_settings.tilt);
 
     textureStore(ridge_detail, location, vec4<f32>(detail,0.0,0.0));
 }

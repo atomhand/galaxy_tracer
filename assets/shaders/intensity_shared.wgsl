@@ -110,7 +110,7 @@ fn ridge_noise( in_pos : vec3<f32>,in_frequency : f32,octaves : i32, lacunarity 
 
     var p = in_pos;
     for(var i =0; i < octaves; i++) {
-        var signal = Perlin3D(p);
+        var signal = Perlin3D(p+ vec3<f32>(i) * 0.72354);
 
         signal = abs(signal);
         signal = offset - signal;
@@ -166,7 +166,7 @@ fn dust_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
     let dims = textureDimensions(disk_noise_texture, 0);
     let y_scale = vec3<f32>(1.0, f32(dims.x)/f32(dims.y),1.0);
 
-    let detail_sampling_freq = 8.0;
+    let detail_sampling_freq = 4.0;
 
     let macro_sample = textureSample(dust_noise_texture,dust_noise_sampler, pr * y_scale * dust_params.noise_scale).xy;
     let micro_sample = textureSample(dust_detail_texture,dust_detail_sampler, pr * y_scale * dust_params.noise_scale * detail_sampling_freq).x;

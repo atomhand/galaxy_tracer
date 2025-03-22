@@ -181,7 +181,7 @@ fn ridge_noise( in_pos : vec3<f32>, scale : f32, persistence : f32,octaves : i32
     for(var i =0; i < octaves; i++) {
         let domain = scale * pow(lacunarity,f32(i));
         let pers = persistence * pow(lacunarity,f32(i));
-        var signal = Perlin3D_Wrapped(p,domain);
+        var signal = Perlin3D_Wrapped(p + vec3<f32>(i) * 0.72354,domain);
 
         signal = offset - abs(signal);
         signal = signal * signal * weight;

@@ -185,7 +185,7 @@ impl Default for GalaxyConfig {
             diagnostic_mode: false,
             flat_mode: false,
             runtime_noise: false,
-            raymarch_steps: 128,
+            raymarch_steps: 32,
             generation: 1,
             texture_root: 9,
             texture_dimension: 512,

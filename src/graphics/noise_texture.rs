@@ -282,7 +282,7 @@ impl render_graph::Node for NoiseUpdateNode {
                             .get_compute_pipeline_state(pipeline.ridge_noise_pipeline)
                         {
                             CachedPipelineState::Ok(_) => {
-                                self.state = NoiseUpdateState::Run(0);
+                                self.state = NoiseUpdateState::Run(galaxy_config.generation);
                             }
                             CachedPipelineState::Err(err) => {
                                 panic!("Intializing assets/{SHADER_ASSET_PATH}:\n{err}")

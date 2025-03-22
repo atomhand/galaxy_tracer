@@ -55,6 +55,9 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32, t_c : f32) -> vec3<
     let k = 1.5;
     let exposure = 0.1;
 
+#ifdef FLAT_DIAGNOSTIC
+    col = ray_step(o0, col, 1.0);
+#else
     // distributed from plane intersection to sphere intersection
     let step_0 = (t2-t_c);
     var sprev = 1.0;
@@ -73,6 +76,7 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32, t_c : f32) -> vec3<
         col = ray_step(p, col, abs(s-sprev) * step_1 * exposure);
         sprev = s;
     }
+#endif
 
     return col;    
 }

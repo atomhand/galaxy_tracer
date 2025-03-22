@@ -20,7 +20,7 @@ use std::borrow::Cow;
 
 const SHADER_ASSET_PATH: &str = "shaders/noise_compute.wgsl";
 
-const SIZE: (u32, u32, u32) = (64, 16, 64);
+const SIZE: (u32, u32, u32) = (256, 16, 256);
 const WORKGROUP_SIZE: u32 = 8;
 
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
@@ -32,7 +32,7 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         },
         TextureDimension::D3,
         &[0, 0, 0, 255],
-        TextureFormat::R32Float,
+        TextureFormat::Rg32Float,
         RenderAssetUsages::RENDER_WORLD,
     );
     // wrapping sampling
@@ -45,10 +45,12 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     image.texture_descriptor.usage =
         TextureUsages::COPY_DST | TextureUsages::STORAGE_BINDING | TextureUsages::TEXTURE_BINDING;
     let image0 = images.add(image.clone());
-    let image1 = images.add(image);
+    let image1 = images.add(image.clone());
+    let image2 = images.add(image);
     commands.insert_resource(NoiseTextureImages {
         disk_component: image0,
         dust_component: image1,
+        dust_detail: image2,
     });
 }
 
@@ -90,6 +92,7 @@ impl Plugin for NoiseTexturePlugin {
 pub struct NoiseTextureImages {
     pub disk_component: Handle<Image>,
     pub dust_component: Handle<Image>,
+    pub dust_detail: Handle<Image>,
 }
 
 #[derive(Resource, Default)]
@@ -143,6 +146,7 @@ fn prepare_bind_group(
     let view_b = gpu_images
         .get(&noise_texture_images.dust_component)
         .unwrap();
+    let view_c = gpu_images.get(&noise_texture_images.dust_detail).unwrap();
 
     let uniform_a = noise_settings_buffers.disk_settings.binding().unwrap();
     let uniform_b = noise_settings_buffers.dust_settings.binding().unwrap();
@@ -153,6 +157,7 @@ fn prepare_bind_group(
         &BindGroupEntries::sequential((
             &view_a.texture_view,
             &view_b.texture_view,
+            &view_c.texture_view,
             uniform_a.clone(),
             uniform_b.clone(),
         )),
@@ -194,12 +199,17 @@ impl FromWorld for NoiseTexturePipeline {
                 (
                     BindingType::StorageTexture {
                         access: StorageTextureAccess::WriteOnly,
-                        format: TextureFormat::R32Float,
+                        format: TextureFormat::Rg32Float,
                         view_dimension: TextureViewDimension::D3,
                     },
                     BindingType::StorageTexture {
                         access: StorageTextureAccess::WriteOnly,
-                        format: TextureFormat::R32Float,
+                        format: TextureFormat::Rg32Float,
+                        view_dimension: TextureViewDimension::D3,
+                    },
+                    BindingType::StorageTexture {
+                        access: StorageTextureAccess::WriteOnly,
+                        format: TextureFormat::Rg32Float,
                         view_dimension: TextureViewDimension::D3,
                     },
                     uniform_buffer::<NoiseSettingsUniform>(false),
@@ -241,7 +251,8 @@ impl FromWorld for NoiseTexturePipeline {
 
 enum NoiseUpdateState {
     Loading,
-    Ready,
+    Waiting(i32),
+    Run(i32)
 }
 
 struct NoiseUpdateNode {
@@ -261,6 +272,8 @@ impl render_graph::Node for NoiseUpdateNode {
         let pipeline = world.resource::<NoiseTexturePipeline>();
         let pipeline_cache = world.resource::<PipelineCache>();
 
+        let galaxy_config = world.resource::<GalaxyConfig>();
+
         match self.state {
             NoiseUpdateState::Loading => {
                 match pipeline_cache.get_compute_pipeline_state(pipeline.octave_noise_pipeline) {
@@ -269,7 +282,7 @@ impl render_graph::Node for NoiseUpdateNode {
                             .get_compute_pipeline_state(pipeline.ridge_noise_pipeline)
                         {
                             CachedPipelineState::Ok(_) => {
-                                self.state = NoiseUpdateState::Ready;
+                                self.state = NoiseUpdateState::Run(0);
                             }
                             CachedPipelineState::Err(err) => {
                                 panic!("Intializing assets/{SHADER_ASSET_PATH}:\n{err}")
@@ -283,8 +296,17 @@ impl render_graph::Node for NoiseUpdateNode {
                     _ => {}
                 }
             }
-            NoiseUpdateState::Ready => {
-                // Don't think we need to do anything here
+            NoiseUpdateState::Waiting(generation) => {
+                if generation < galaxy_config.generation {
+                    self.state = NoiseUpdateState::Run(galaxy_config.generation)
+                }
+            }
+            NoiseUpdateState::Run(generation) => {
+                if generation < galaxy_config.generation {
+                    self.state = NoiseUpdateState::Run(galaxy_config.generation)
+                } else {
+                    self.state = NoiseUpdateState::Waiting(galaxy_config.generation)
+                }
             }
         }
     }
@@ -306,7 +328,9 @@ impl render_graph::Node for NoiseUpdateNode {
         // select the pipeline based on the current state
         match self.state {
             NoiseUpdateState::Loading => {}
-            NoiseUpdateState::Ready => {
+            NoiseUpdateState::Waiting(_) => {}
+            NoiseUpdateState::Run(_) => {
+                info!("Running noise update shader");
                 let octave_noise_pipeline = pipeline_cache
                     .get_compute_pipeline(pipeline.octave_noise_pipeline)
                     .unwrap();

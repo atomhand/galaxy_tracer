@@ -192,6 +192,7 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                     );
 
                     ui.checkbox(&mut galaxy_config.diagnostic_mode, "Performance Diagnostic");
+                    ui.checkbox(&mut galaxy_config.flat_mode, "Flat Render");
                 });
 
                 ui.separator();

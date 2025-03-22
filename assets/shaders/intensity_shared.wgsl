@@ -152,7 +152,9 @@ fn disk_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
 #ifdef RUNTIME_NOISE
     return octave_noise_3d(octaves,disk_params.noise_persistence,disk_params.noise_scale, r);
 #else
-    return textureSample(disk_noise_texture,disk_noise_sampler, r * disk_params.noise_scale).x;
+    let dims = textureDimensions(disk_noise_texture, 0);
+    let y_scale = vec3<f32>(1.0, f32(dims.x)/f32(dims.y),1.0);
+    return textureSample(disk_noise_texture,disk_noise_sampler, r * y_scale * disk_params.noise_scale).x;
 #endif    
 }
 
@@ -161,7 +163,15 @@ fn dust_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
 #ifdef RUNTIME_NOISE
     return max(0.0,ridge_noise(pr * dust_params.noise_scale, dust_params.noise_persistence,octaves,2.5,dust_params.noise_offset, dust_params.noise_tilt));
 #else
-    return max(0.0, textureSample(dust_noise_texture,dust_noise_sampler, pr * dust_params.noise_scale).x);
+    let dims = textureDimensions(disk_noise_texture, 0);
+    let y_scale = vec3<f32>(1.0, f32(dims.x)/f32(dims.y),1.0);
+
+    let detail_sampling_freq = 8.0;
+
+    let macro_sample = textureSample(dust_noise_texture,dust_noise_sampler, pr * y_scale * dust_params.noise_scale).xy;
+    let micro_sample = textureSample(dust_detail_texture,dust_detail_sampler, pr * y_scale * dust_params.noise_scale * detail_sampling_freq).x;
+
+    return max(0.0, (macro_sample.x + macro_sample.y * micro_sample) * 1.25 - 1.0);
 #endif
 }
 
@@ -212,6 +222,8 @@ struct ComponentParams {
 @group(2) @binding(10) var disk_noise_sampler: sampler;
 @group(2) @binding(11) var dust_noise_texture: texture_3d<f32>;
 @group(2) @binding(12) var dust_noise_sampler: sampler;
+@group(2) @binding(13) var dust_detail_texture: texture_3d<f32>;
+@group(2) @binding(14) var dust_detail_sampler: sampler;
 
 const LUT_ID_WINDING : i32 = 0;
 
@@ -220,7 +232,11 @@ fn pos_to_uv(p : vec2<f32>) -> vec2<f32> {
 }
 
 fn lookup_winding(d : f32) -> f32 {
+#ifdef FLAT_DIAGNOSTIC
+    return 0.0;
+#else
     return textureSample(lut_texture,lut_sampler, vec2<f32>(d + 0.5 / galaxy.texture_dimension,0.5), LUT_ID_WINDING).x;
+#endif
 }
 
 fn get_height_modulation(height : f32, y_thickness : f32) -> f32 {
@@ -340,12 +356,16 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
 
     // yellow absorption spectra = appears red
     let dust_col = vec3<f32>(0.4,0.6,1.0);
-    let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
 
+    let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
+#ifdef FLAT_DIAGNOSTIC
+    return vec3<f32>(1.0 - dust_intensity);
+#else
 #ifdef DIAGNOSTIC
     return in_col + vec3<f32>((disk_intensity + dust_intensity), 0.0, 0.0);
 #else
     let col = in_col + disk_col * disk_intensity * galaxy.exposure + bulge_col * bulge_intensity;
     return col * extinction;
+#endif
 #endif
 }

@@ -167,37 +167,31 @@ fn Perlin3D_Wrapped(  P : vec3<f32>, domain :f32) -> f32
 // NOISE UTILITIES BASED on GAMER source code
 // ---- Again, ideally these would be in an include file, but they are temporarily residing here so long as Bevy stochastically fails to find nested WGSL imports
 
+// Combining 2 Ridge noise textures
+//
+
 // see https://github.com/leuat/gamer/blob/ebe1b8addeac5accd4ea6d5b4918c18e99d5a6f5/source/noise/noise.cpp#L4
-fn ridge_noise( in_pos : vec3<f32>, scale : f32, in_frequency : f32,octaves : i32, lacunarity : f32, offset : f32, gain : f32) -> f32 {
+fn ridge_noise( in_pos : vec3<f32>, scale : f32, persistence : f32,octaves : i32, lacunarity : f32, offset : f32, gain : f32) -> vec2<f32> {
     var value = 0.0;
     var weight = 1.0;
 
     let w = - 0.05f;
-    var freq = in_frequency;
-
-    var domain = scale;
 
     var p = in_pos * scale;
     for(var i =0; i < octaves; i++) {
+        let domain = scale * pow(lacunarity,f32(i));
+        let pers = persistence * pow(lacunarity,f32(i));
         var signal = Perlin3D_Wrapped(p,domain);
 
-        signal = abs(signal);
-        signal = offset - signal;
-        signal *= signal;
-
-        signal *= weight;
-
-        weight = signal * gain;
-
+        signal = offset - abs(signal);
+        signal = signal * signal * weight;
         weight = saturate(signal * gain);
         
-        value += signal * pow(freq,w);
+        value += signal * pow(pers,w);
 
         p = p * lacunarity;
-        domain = domain * lacunarity;
-        freq *= lacunarity;
     }
-    return (value * 1.25) - 1.0;
+    return vec2<f32>(value, weight);
 }
 
 fn octave_noise_3d(octaves: i32, persistence : f32, scale : f32, pos : vec3<f32> ) -> f32 {

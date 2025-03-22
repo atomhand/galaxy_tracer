@@ -28,6 +28,8 @@ pub struct GalaxyConfig {
     pub bulge_intensity: f32,
 
     pub diagnostic_mode: bool,
+    pub flat_mode: bool,
+
 
     pub disk_params: ComponentConfig,
     pub dust_params: ComponentConfig,
@@ -181,6 +183,7 @@ impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
             diagnostic_mode: false,
+            flat_mode: false,
             runtime_noise: false,
             raymarch_steps: 128,
             generation: 1,

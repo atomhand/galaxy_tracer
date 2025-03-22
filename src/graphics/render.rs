@@ -57,6 +57,7 @@ fn update_volume_mat(
 
         mat.galaxy_params = GalaxyParams::read(&galaxy_config);
         mat.diagnostic_mode = galaxy_config.diagnostic_mode;
+        mat.flat_mode = galaxy_config.flat_mode;
         mat.runtime_noise = galaxy_config.runtime_noise;
 
         mat.bulge_params = BulgeParams::read(&galaxy_config);
@@ -66,6 +67,7 @@ fn update_volume_mat(
 
         mat.disk_noise_texture = Some(noise_images.disk_component.clone());
         mat.dust_noise_texture = Some(noise_images.dust_component.clone());
+        mat.dust_detail_texture = Some(noise_images.dust_detail.clone());
 
         mat.xz_texture = galaxy_texture.tex.clone();
         mat.lut = galaxy_texture.luts.clone();
@@ -192,8 +194,12 @@ pub struct GalaxyVolumeMaterial {
     #[texture(11, dimension = "3d")]
     #[sampler(12)]
     dust_noise_texture: Option<Handle<Image>>,
+    #[texture(13, dimension = "3d")]
+    #[sampler(14)]
+    dust_detail_texture: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
     diagnostic_mode: bool,
+    flat_mode : bool,
     runtime_noise: bool,
 }
 impl GalaxyVolumeMaterial {
@@ -209,7 +215,9 @@ impl GalaxyVolumeMaterial {
             lut: None,
             disk_noise_texture: None,
             dust_noise_texture: None,
+            dust_detail_texture : None,
             diagnostic_mode: galaxy_config.diagnostic_mode,
+            flat_mode: galaxy_config.flat_mode,
             runtime_noise: galaxy_config.runtime_noise,
         }
     }
@@ -246,6 +254,10 @@ impl Material for GalaxyVolumeMaterial {
             let fragment = descriptor.fragment.as_mut().unwrap();
             fragment.shader_defs.push("RUNTIME_NOISE".into());
         }
+        if key.bind_group_data.flat_mode {
+            let fragment: &mut bevy::render::render_resource::FragmentState = descriptor.fragment.as_mut().unwrap();
+            fragment.shader_defs.push("FLAT_DIAGNOSTIC".into());
+        }
         Ok(())
     }
 }
@@ -257,6 +269,7 @@ impl Material for GalaxyVolumeMaterial {
 pub struct GalaxyMaterialKey {
     diagnostic_mode: bool,
     runtime_noise: bool,
+    flat_mode : bool,
 }
 
 impl From<&GalaxyVolumeMaterial> for GalaxyMaterialKey {
@@ -264,6 +277,7 @@ impl From<&GalaxyVolumeMaterial> for GalaxyMaterialKey {
         Self {
             diagnostic_mode: material.diagnostic_mode,
             runtime_noise: material.runtime_noise,
+            flat_mode: material.flat_mode,
         }
     }
 }

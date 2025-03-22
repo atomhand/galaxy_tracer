@@ -12,15 +12,15 @@ impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<GalaxyVolumeMaterial>::default());
 
-        app.add_systems(Startup, place_galaxy_volume)
-            .add_systems(Update, update_volume_mat);
+        app.add_systems(Startup, setup_galaxy_volume)
+            .add_systems(Update, update_volume_material);
     }
 }
 
 #[derive(Component)]
 struct GalaxyRenderer;
 
-fn place_galaxy_volume(
+fn setup_galaxy_volume(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut galaxy_materials: ResMut<Assets<GalaxyVolumeMaterial>>,
@@ -38,7 +38,7 @@ fn place_galaxy_volume(
     ));
 }
 
-fn update_volume_mat(
+fn update_volume_material(
     galaxy_mat: Query<&MeshMaterial3d<GalaxyVolumeMaterial>, With<GalaxyRenderer>>,
     galaxy_texture: Res<super::GalaxyTexture>,
     galaxy_config: Res<GalaxyConfig>,
@@ -55,15 +55,7 @@ fn update_volume_mat(
             return;
         };
 
-        mat.galaxy_params = GalaxyParams::read(&galaxy_config);
-        mat.diagnostic_mode = galaxy_config.diagnostic_mode;
-        mat.flat_mode = galaxy_config.flat_mode;
-        mat.runtime_noise = galaxy_config.runtime_noise;
-
-        mat.bulge_params = BulgeParams::read(&galaxy_config);
-        mat.disk_params = ComponentParams::read(&galaxy_config.disk_params);
-        mat.dust_params = ComponentParams::read(&galaxy_config.dust_params);
-        mat.stars_params = ComponentParams::read(&galaxy_config.stars_params);
+        mat.update(&galaxy_config);
 
         mat.disk_noise_texture = Some(noise_images.disk_component.clone());
         mat.dust_noise_texture = Some(noise_images.dust_component.clone());
@@ -77,7 +69,7 @@ fn update_volume_mat(
 // GALAXY - VOLUME MATERIAL
 
 // These structs are duplicated in intensity_shared.wgsl, so make sure to update both
-#[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug)]
+#[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug, Default)]
 #[repr(C)]
 struct GalaxyParams {
     arm_offsets: Vec4,
@@ -107,7 +99,7 @@ impl GalaxyParams {
     }
 }
 
-#[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug)]
+#[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug, Default)]
 #[repr(C)]
 struct BulgeParams {
     strength: f32,
@@ -125,7 +117,7 @@ impl BulgeParams {
     }
 }
 
-#[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug)]
+#[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug, Default)]
 #[repr(C)]
 struct ComponentParams {
     strength: f32,
@@ -169,7 +161,7 @@ impl ComponentParams {
     }
 }
 
-#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone, Default)]
 #[bind_group_data(GalaxyMaterialKey)]
 pub struct GalaxyVolumeMaterial {
     #[uniform(0)]
@@ -203,23 +195,24 @@ pub struct GalaxyVolumeMaterial {
     runtime_noise: bool,
 }
 impl GalaxyVolumeMaterial {
+    pub fn update(&mut self, galaxy_config : &GalaxyConfig) {
+        self.galaxy_params = GalaxyParams::read(galaxy_config);
+        self.bulge_params = BulgeParams::read(galaxy_config);
+        self.disk_params = ComponentParams::read(&galaxy_config.disk_params);
+        self.dust_params = ComponentParams::read(&galaxy_config.dust_params);
+        self.stars_params = ComponentParams::read(&galaxy_config.stars_params);
+        self.diagnostic_mode = galaxy_config.diagnostic_mode;
+        self.flat_mode = galaxy_config.flat_mode;
+        self.runtime_noise = galaxy_config.runtime_noise;
+    }
     pub fn new(galaxy_config: &GalaxyConfig) -> Self {
-        Self {
-            galaxy_params: GalaxyParams::read(galaxy_config),
-            bulge_params: BulgeParams::read(galaxy_config),
-            disk_params: ComponentParams::read(&galaxy_config.disk_params),
-            dust_params: ComponentParams::read(&galaxy_config.dust_params),
-            stars_params: ComponentParams::read(&galaxy_config.stars_params),
+
+        let mut ret = Self {
             alpha_mode: AlphaMode::Add,
-            xz_texture: None,
-            lut: None,
-            disk_noise_texture: None,
-            dust_noise_texture: None,
-            dust_detail_texture : None,
-            diagnostic_mode: galaxy_config.diagnostic_mode,
-            flat_mode: galaxy_config.flat_mode,
-            runtime_noise: galaxy_config.runtime_noise,
-        }
+            .. default()
+        };
+        ret.update(galaxy_config);
+        return ret;
     }
 }
 

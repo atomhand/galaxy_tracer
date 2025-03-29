@@ -16,8 +16,6 @@ use bytemuck::{Pod, Zeroable};
 use std::borrow::Cow;
 
 const SHADER_ASSET_PATH: &str = "shaders/noise_compute.wgsl";
-
-const SIZE: (u32, u32, u32) = (256, 16, 256);
 const WORKGROUP_SIZE: u32 = 8;
 
 fn setup_texture(

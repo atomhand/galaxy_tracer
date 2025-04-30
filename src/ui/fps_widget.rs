@@ -8,7 +8,7 @@ impl Plugin for FpsWidgetPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_widget)
             .add_systems(Update, update_widget_system)
-            .add_plugins(FrameTimeDiagnosticsPlugin);
+            .add_plugins(FrameTimeDiagnosticsPlugin::default());
     }
 }
 

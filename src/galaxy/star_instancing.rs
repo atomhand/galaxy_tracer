@@ -27,6 +27,7 @@ impl Plugin for StarInstancingPlugin {
 struct StarInstancingControl {
     generation : i32,
     stars_left_to_place : i32,
+    num_stars : i32,
     current_star_index : u32,
     mesh_handle : Handle<Mesh>,
     material_handle : Handle<StarInstanceMaterial>
@@ -48,6 +49,7 @@ fn init_resource(
         generation : -1,
         stars_left_to_place : 0,
         current_star_index : 0,
+        num_stars : 0,
         mesh_handle,
         material_handle
     });
@@ -74,7 +76,8 @@ fn manage_star_instances(
         }
         // update params
         star_instancing.generation = galaxy_config.generation;
-        star_instancing.stars_left_to_place = galaxy_config.stars_per_arm * galaxy_config.n_arms;
+        star_instancing.num_stars = galaxy_config.stars_per_arm * galaxy_config.n_arms;
+        star_instancing.stars_left_to_place = star_instancing.num_stars ;
         star_instancing.current_star_index = 0;
     }
     if !galaxy_config.stars_params.enabled { return; }

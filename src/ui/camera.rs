@@ -41,12 +41,18 @@ impl Default for CameraMain {
 }
 
 impl CameraMain {
-    fn translation(&self, galaxy_scale: f32) -> Vec3 {
+    fn translation(&self, galaxy_scale: f32, side_view : bool) -> Vec3 {
         let galaxy_zoom = self.zoom * 0.85 + 0.15;
         let adjusted_scale = galaxy_scale * galaxy_zoom;
 
-        let antitilt = 0.6;
-        self.look_pos() + Vec3::new(0., adjusted_scale, -adjusted_scale * antitilt)
+        if side_view {
+            let antitilt = 0.25;
+            self.look_pos() + Vec3::new(0., adjusted_scale * antitilt, -adjusted_scale)
+        } else {
+
+            let antitilt = 0.6;
+            self.look_pos() + Vec3::new(0., adjusted_scale, -adjusted_scale * antitilt)
+        }
     }
 
     fn look_pos(&self) -> Vec3 {
@@ -111,6 +117,8 @@ pub fn camera_control_system(
         key_delta.x -= 1.0;
     }
 
+    let side_view = keys.pressed(KeyCode::Space);
+
     let old_zoom = camera_main.zoom;
 
     // Update
@@ -168,7 +176,7 @@ pub fn camera_control_system(
     //
 
     for _i in 0..2 {
-        transform.translation = camera_main.translation(galaxy_scale);
+        transform.translation = camera_main.translation(galaxy_scale,side_view);
         transform.look_at(camera_main.look_pos(), Vec3::Y);
 
         let Some(mouse_pos) = cursor
@@ -190,7 +198,7 @@ pub fn camera_control_system(
             camera_main.target_pos += drag_offset;
         }
 
-        transform.translation = camera_main.translation(galaxy_scale);
+        transform.translation = camera_main.translation(galaxy_scale,side_view);
         transform.look_at(camera_main.look_pos(), Vec3::Y);
     }
 }

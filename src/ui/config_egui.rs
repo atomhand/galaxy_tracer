@@ -19,7 +19,7 @@ fn configure_visuals_system(mut contexts: EguiContexts) {
 }
 
 fn arm_component_ui(id: i32, arm_config: &mut ArmConfig, ui: &mut egui::Ui) {
-    egui::CollapsingHeader::new(format!("Arm config {}", id))
+    egui::CollapsingHeader::new(format!("Arm config {id}"))
         .default_open(true)
         .show(ui, |ui| {
             ui.checkbox(&mut arm_config.enabled, "Enabled");

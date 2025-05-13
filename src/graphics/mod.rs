@@ -6,8 +6,6 @@ mod render;
 
 mod shader_types;
 
-mod benchmarks;
-
 use galaxy_texture::GalaxyTexture;
 
 pub struct GraphicsPlugin;

@@ -1,5 +1,4 @@
 #![feature(f16)]
-#![feature(test)]
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowTheme};
 use bevy_egui::EguiPlugin;

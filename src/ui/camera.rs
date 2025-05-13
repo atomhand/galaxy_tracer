@@ -68,12 +68,12 @@ pub fn camera_control_system(
 ) {
     let galaxy_scale = galaxy_config.radius * 2.5;
     let (cam, mut transform, mut camera_main) =
-        query.get_single_mut().expect("Error: Require ONE camera");
+        query.single_mut().expect("Error: Require ONE camera");
 
     // HIDE CURSOR
     //windows.single_mut().cursor.visible = false;
 
-    let Ok(window) = windows.get_single() else {
+    let Ok(window) = windows.single() else {
         return;
     };
 

@@ -1,8 +1,7 @@
 use crate::prelude::*;
 use bevy::{
     prelude::*,
-    reflect::TypePath,
-    render::render_resource::{AsBindGroup, ShaderRef, ShaderType},
+    render::render_resource::ShaderType,
 };
 use bytemuck::{Pod, Zeroable};
 

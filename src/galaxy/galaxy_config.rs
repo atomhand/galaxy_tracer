@@ -153,25 +153,23 @@ fn apply_ui_updates(
     mut galaxy_config_old: ResMut<GalaxyConfigOld>,
     mut galaxy_config: ResMut<GalaxyConfig>,
 ) {
-    if galaxy_config.is_changed() {
-        if *galaxy_config != galaxy_config_old.0 {
-            galaxy_config.generation += 1;
+    if galaxy_config.is_changed() && *galaxy_config != galaxy_config_old.0 {
+        galaxy_config.generation += 1;
 
-            galaxy_config.texture_dimension = 2u32.pow(galaxy_config.texture_root);
+        galaxy_config.texture_dimension = 2u32.pow(galaxy_config.texture_root);
 
-            let mut arms = 0;
-            for i in 0..4 {
-                let ui = galaxy_config.arm_configs[i];
+        let mut arms = 0;
+        for i in 0..4 {
+            let ui = galaxy_config.arm_configs[i];
 
-                if ui.enabled {
-                    galaxy_config.arm_offsets[arms] = (ui.offset as f32).to_radians();
-                    arms += 1;
-                }
+            if ui.enabled {
+                galaxy_config.arm_offsets[arms] = (ui.offset as f32).to_radians();
+                arms += 1;
             }
-            galaxy_config.n_arms = arms as i32;
-
-            galaxy_config_old.0 = galaxy_config.clone();
         }
+        galaxy_config.n_arms = arms as i32;
+
+        galaxy_config_old.0 = galaxy_config.clone();
     }
 }
 

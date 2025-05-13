@@ -4,7 +4,7 @@ use std::f32::consts::PI;
 
 fn smoothstep(edge0: f32, edge1: f32, x: f32) -> f32 {
     let s = ((x - edge0) / (edge1 - edge0)).clamp(0.0, 1.0);
-    return s * s * (3.0 - 2.0 * s);
+    s * s * (3.0 - 2.0 * s)
 }
 pub struct ArmLutGenerator<'a> {
     galaxy: &'a GalaxyConfig,
@@ -25,27 +25,26 @@ impl ArmLutGenerator<'_> {
     fn get_radial_intensity(&self, distance: f32, r0: f32) -> f32 {
         // Altho this is a virtual function in the reference codebase, I don't think anything overwrites it
         let r = f32::exp(-distance / (r0 * 0.5f32));
-        return (r - 0.01f32).clamp(0.0, 0.1);
+        (r - 0.01f32).clamp(0.0, 0.1)
     }
     pub fn pos_winding(&self, p: Vec2) -> f32 {
         let rad = p.length() / self.galaxy.radius;
-        return self.get_raw_winding(rad);
+        self.get_raw_winding(rad)
     }
     pub fn get_raw_winding(&self, rad: f32) -> f32 {
         let r = rad + 0.05;
 
-        let t = f32::atan(f32::exp(-0.25 / (0.5 * r)) / self.galaxy.winding_b)
+        //let t =
+        f32::atan(f32::exp(-0.25 / (0.5 * r)) / self.galaxy.winding_b)
             * 2.0
-            * self.galaxy.winding_n;
+            * self.galaxy.winding_n
         //let t= atan(exp(1.0/r) / wb) * 2.0 * wn;
-
-        return t;
     }
 
     fn find_theta_difference(&self, t1: f32, t2: f32) -> f32 {
         let diff: f32 = (t1 - t2).abs() / PI;
         let normalized_diff: f32 = ((diff + 1.0) % 2.0) - 1.0;
-        return (normalized_diff).abs();
+        (normalized_diff).abs()
     }
 
     fn arm_modifier(&self, p: Vec2, winding: f32, arm_id: i32) -> f32 {
@@ -56,7 +55,7 @@ impl ArmLutGenerator<'_> {
 
         let v = self.find_theta_difference(winding, theta + disp);
 
-        return (1.0 - v).powf(self.component.arm_width * 15.0);
+        (1.0 - v).powf(self.component.arm_width * 15.0)
     }
 
     fn all_arms_modifier(&self, winding: f32, p: Vec2) -> f32 {
@@ -64,7 +63,7 @@ impl ArmLutGenerator<'_> {
         for i in 0..self.galaxy.n_arms {
             v = v.max(self.arm_modifier(p, winding, i));
         }
-        return v;
+        v
     }
 
     pub fn get_xz_intensity(&self, p: Vec2) -> f32 {
@@ -81,6 +80,6 @@ impl ArmLutGenerator<'_> {
         let winding = self.get_raw_winding(d); // * self.component.winding_factor;
         let arm_mod = self.all_arms_modifier(winding, p);
 
-        return central_falloff * arm_mod * r;
+        central_falloff * arm_mod * r
     }
 }

@@ -81,6 +81,6 @@ fn update_widget_system(
         let label = "FPS: ";
 
         let fps_str = format!("{fps:.1} ({frame_time:.2} ms)");
-        text.0 = format!("{:>6} {:<8}", label, fps_str); //format!("{value:>4.0}");
+        text.0 = format!("{label:>6} {fps_str:<8}"); //format!("{value:>4.0}");
     }
 }

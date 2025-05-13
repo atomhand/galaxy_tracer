@@ -2,9 +2,8 @@ use crate::prelude::*;
 use bevy::{
     prelude::*,
     reflect::TypePath,
-    render::render_resource::{AsBindGroup, ShaderRef, ShaderType},
+    render::render_resource::{AsBindGroup, ShaderRef},
 };
-use bytemuck::{Pod, Zeroable};
 
 use super::shader_types::*;
 
@@ -51,7 +50,7 @@ fn update_volume_material(
     // it would be good to divorce parameter updates from texture updates I guess
     // the texture update is quite cheap so it's not huge deal though
     if galaxy_texture.is_changed() {
-        let Ok(galaxy) = galaxy_mat.get_single() else {
+        let Ok(galaxy) = galaxy_mat.single() else {
             return;
         };
         let Some(mat) = galaxy_materials.get_mut(&galaxy.0) else {
@@ -121,7 +120,7 @@ impl GalaxyVolumeMaterial {
             ..default()
         };
         ret.update(galaxy_config);
-        return ret;
+        ret
     }
 }
 

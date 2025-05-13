@@ -1,17 +1,13 @@
 use bevy::{
     diagnostic::FrameCount,
-    ecs::schedule::Xnor,
     prelude::*,
     render::{
         Render, RenderApp, RenderSet,
-        camera::{ExtractedCamera, MipBias, TemporalJitter},
-        extract_component::{
-            ComponentUniforms, DynamicUniformIndex, ExtractComponent, ExtractComponentPlugin,
-            UniformComponentPlugin,
+        camera::{MipBias, TemporalJitter},
+        extract_component::{ExtractComponent, ExtractComponentPlugin,
         },
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
-        sync_component::SyncComponentPlugin,
         view::RenderLayers,
     },
 };

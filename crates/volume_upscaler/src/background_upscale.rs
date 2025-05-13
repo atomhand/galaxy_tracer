@@ -13,13 +13,13 @@ use bevy::{
     },
     prelude::*,
     render::{
-        ExtractSchedule, MainWorld, Render, RenderApp, RenderSet,
-        camera::{ExtractedCamera, MipBias, TemporalJitter},
+        Render, RenderApp, RenderSet,
+        camera::ExtractedCamera,
         extract_component::{
             ComponentUniforms, DynamicUniformIndex, ExtractComponent, ExtractComponentPlugin,
             UniformComponentPlugin,
         },
-        render_asset::{RenderAssetUsages, RenderAssets},
+        render_asset::RenderAssets,
         render_graph::{
             NodeRunError, RenderGraphApp, RenderGraphContext, RenderLabel, ViewNode, ViewNodeRunner,
         },
@@ -29,7 +29,7 @@ use bevy::{
         },
         renderer::{RenderContext, RenderDevice},
         texture::{CachedTexture, GpuImage, TextureCache},
-        view::{ExtractedView, Msaa, ViewTarget, ViewUniform, ViewUniformOffset, ViewUniforms},
+        view::{ExtractedView, ViewTarget, ViewUniform, ViewUniformOffset, ViewUniforms},
     },
 };
 

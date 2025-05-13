@@ -58,8 +58,8 @@ fn setup_texture(
 }
 
 fn update_texture(
-    mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
+    commands: Commands,
+    images: ResMut<Assets<Image>>,
     galaxy_config: Res<GalaxyConfig>,
     noise_texture_images: Res<NoiseTextureImages>,
 ) {
@@ -268,8 +268,10 @@ impl FromWorld for NoiseTexturePipeline {
 
 enum NoiseUpdateState {
     Loading,
-    Waiting(i32),
-    Run(i32),
+    Waiting,
+    Run,
+    //Waiting(i32),
+    //Run(i32),
 }
 
 struct NoiseUpdateNode {
@@ -301,7 +303,7 @@ impl render_graph::Node for NoiseUpdateNode {
                         {
                             CachedPipelineState::Ok(_) => {
                                 generation = galaxy_config.generation;
-                                self.state = NoiseUpdateState::Run(galaxy_config.generation);
+                                self.state = NoiseUpdateState::Run;
                             }
                             CachedPipelineState::Err(err) => {
                                 panic!("Intializing assets/{SHADER_ASSET_PATH}:\n{err}")
@@ -315,18 +317,18 @@ impl render_graph::Node for NoiseUpdateNode {
                     _ => {}
                 }
             }
-            NoiseUpdateState::Waiting(_) => {
+            NoiseUpdateState::Waiting => {
                 if generation < galaxy_config.generation {
                     generation = galaxy_config.generation;
-                    self.state = NoiseUpdateState::Run(galaxy_config.generation)
+                    self.state = NoiseUpdateState::Run
                 }
             }
-            NoiseUpdateState::Run(_) => {
+            NoiseUpdateState::Run => {
                 if generation != galaxy_config.generation {
                     generation = galaxy_config.generation;
-                    self.state = NoiseUpdateState::Run(galaxy_config.generation)
+                    self.state = NoiseUpdateState::Run
                 } else {
-                    self.state = NoiseUpdateState::Waiting(galaxy_config.generation)
+                    self.state = NoiseUpdateState::Waiting
                 }
             }
         }
@@ -352,8 +354,8 @@ impl render_graph::Node for NoiseUpdateNode {
         // select the pipeline based on the current state
         match self.state {
             NoiseUpdateState::Loading => {}
-            NoiseUpdateState::Waiting(_) => {}
-            NoiseUpdateState::Run(_) => {
+            NoiseUpdateState::Waiting => {}
+            NoiseUpdateState::Run => {
                 info!("Running noise update shader");
                 let octave_noise_pipeline = pipeline_cache
                     .get_compute_pipeline(pipeline.octave_noise_pipeline)

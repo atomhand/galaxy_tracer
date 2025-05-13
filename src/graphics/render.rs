@@ -36,6 +36,7 @@ fn setup_galaxy_volume(
         Visibility::Inherited,
         MeshMaterial3d(mat),
         GalaxyRenderer,
+        volume_upscaler::background_render_layer(),
         bevy::render::view::NoFrustumCulling,
     ));
 }
@@ -69,7 +70,6 @@ fn update_volume_material(
 }
 
 // GALAXY - VOLUME MATERIAL
-
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone, Default)]
 #[bind_group_data(GalaxyMaterialKey)]

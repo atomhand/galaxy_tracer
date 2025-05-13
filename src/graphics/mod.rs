@@ -18,6 +18,7 @@ impl Plugin for GraphicsPlugin {
             render::RenderPlugin,
             galaxy_texture::GalaxyTexturePlugin,
             noise_texture::NoiseTexturePlugin,
+            volume_upscaler::BackgroundRenderingPlugin
         ));
     }
 }

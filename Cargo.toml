@@ -16,3 +16,8 @@ bevy = "0.16.0"
 bevy_egui = "0.34.1"
 bytemuck = "1.23.0"
 rayon = "1.10.0"
+volume_upscaler = { path = "crates/volume_upscaler" }
+
+[workspace]
+resolver = "2"
+members = ["crates/*"]

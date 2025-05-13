@@ -66,6 +66,20 @@ impl ArmLutGenerator<'_> {
         v
     }
 
+    fn get_height_modulation(&self, height : f32) -> f32 {
+        let h = f32::abs(height / (self.component.y_thickness*self.galaxy.radius));
+        if h>2.0 {
+            return 0.0;
+        }
+    
+        let val = 1.0 / f32::cosh(h);
+        val*val
+    }
+
+    pub fn get_xyz_intensity(&self, p : Vec3) -> f32 {
+        self.get_xz_intensity(p.xz()) * self.get_height_modulation(p.y)
+    }
+
     pub fn get_xz_intensity(&self, p: Vec2) -> f32 {
         let r0 = self.component.radial_extent;
         let inner = self.component.radial_dropoff; // central falloff parameter

@@ -28,6 +28,7 @@ fn main() {
             enable_multipass_for_primary_context: false,
         })
         .add_plugins((
+            galaxy::StarInstancingPlugin,
             galaxy::GalaxyConfigPlugin,
             ui::UiPlugin,
             graphics::GraphicsPlugin,

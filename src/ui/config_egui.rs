@@ -27,7 +27,7 @@ fn arm_component_ui(id: i32, arm_config: &mut ArmConfig, ui: &mut egui::Ui) {
         });
 }
 
-fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
+fn component_ui(config: &mut ComponentConfig, has_noise : bool, ui: &mut egui::Ui) {
     let heading = match config.component_type {
         ComponentType::Disk => "Disk Config",
         ComponentType::Dust => "Dust Config",
@@ -79,66 +79,69 @@ fn component_ui(config: &mut ComponentConfig, ui: &mut egui::Ui) {
                 .text("Angular Offset"),
             );
         });
-        ui.label("Noise");
+        if has_noise {
 
-        ui.group(|ui| {
-            ui.checkbox(&mut config.noise_enabled, "Enabled");
-            // speciual case for stars, ugly hack but w/e
-            if config.component_type == ComponentType::Stars {
-                ui.add(egui::Slider::new(&mut config.noise_scale, 1.0..=100.0).text("Frequency"));
-            } else {
+            ui.label("Noise");
+
+            ui.group(|ui| {
+                ui.checkbox(&mut config.noise_enabled, "Enabled");
+                // speciual case for stars, ugly hack but w/e
+                if config.component_type == ComponentType::Stars {
+                    ui.add(egui::Slider::new(&mut config.noise_scale, 1.0..=100.0).text("Frequency"));
+                } else {
+                    ui.add(
+                        egui::Slider::new(
+                            &mut config.noise_scale,
+                            minval.noise_scale..=maxval.noise_scale,
+                        )
+                        .text("Frequency"),
+                    );
+                }
                 ui.add(
                     egui::Slider::new(
-                        &mut config.noise_scale,
-                        minval.noise_scale..=maxval.noise_scale,
+                        &mut config.noise_texture_frequency,
+                        minval.noise_texture_frequency..=maxval.noise_texture_frequency,
                     )
-                    .text("Frequency"),
+                    .text("Frequency (Texture)"),
                 );
-            }
-            ui.add(
-                egui::Slider::new(
-                    &mut config.noise_texture_frequency,
-                    minval.noise_texture_frequency..=maxval.noise_texture_frequency,
-                )
-                .text("Frequency (Texture)"),
-            );
-            ui.add(
-                egui::Slider::new(
-                    &mut config.noise_offset,
-                    minval.noise_offset..=maxval.noise_offset,
-                )
-                .text("Offset"),
-            );
-            ui.add(
-                egui::Slider::new(
-                    &mut config.noise_winding_factor,
-                    minval.noise_winding_factor..=maxval.noise_winding_factor,
-                )
-                .text("Winding Factor"),
-            );
-            ui.add(
-                egui::Slider::new(
-                    &mut config.noise_tilt,
-                    minval.noise_tilt..=maxval.noise_tilt,
-                )
-                .text("Tilt"),
-            );
-            ui.add(
-                egui::Slider::new(
-                    &mut config.noise_persistence,
-                    minval.noise_persistence..=maxval.noise_persistence,
-                )
-                .text("Persistence"),
-            );
-
-            ui.add(
-                egui::Slider::new(
-                    &mut config.noise_octaves,
-                    minval.noise_octaves..=maxval.noise_octaves,
-                )
-                .text("Octaves"),
-            );
-        });
+                ui.add(
+                    egui::Slider::new(
+                        &mut config.noise_offset,
+                        minval.noise_offset..=maxval.noise_offset,
+                    )
+                    .text("Offset"),
+                );
+                ui.add(
+                    egui::Slider::new(
+                        &mut config.noise_winding_factor,
+                        minval.noise_winding_factor..=maxval.noise_winding_factor,
+                    )
+                    .text("Winding Factor"),
+                );
+                ui.add(
+                    egui::Slider::new(
+                        &mut config.noise_tilt,
+                        minval.noise_tilt..=maxval.noise_tilt,
+                    )
+                    .text("Tilt"),
+                );
+                ui.add(
+                    egui::Slider::new(
+                        &mut config.noise_persistence,
+                        minval.noise_persistence..=maxval.noise_persistence,
+                    )
+                    .text("Persistence"),
+                );
+    
+                ui.add(
+                    egui::Slider::new(
+                        &mut config.noise_octaves,
+                        minval.noise_octaves..=maxval.noise_octaves,
+                    )
+                    .text("Octaves"),
+                );
+            });
+        }
     });
     ui.separator();
 }
@@ -229,9 +232,9 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                 });
                 ui.separator();
 
-                component_ui(&mut galaxy_config.disk_params, ui);
-                component_ui(&mut galaxy_config.dust_params, ui);
-                component_ui(&mut galaxy_config.stars_params, ui);
+                component_ui(&mut galaxy_config.disk_params, true,ui);
+                component_ui(&mut galaxy_config.dust_params, true,ui);
+                component_ui(&mut galaxy_config.stars_params, false,ui);
             });
         });
 }

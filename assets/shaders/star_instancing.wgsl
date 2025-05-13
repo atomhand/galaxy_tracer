@@ -22,8 +22,8 @@ struct VertexOutput {
 
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
-    let billboard_margin_scale = 2.0;
-    let galaxy_scale_factor = 0.2;
+    let billboard_margin_scale = 4.0;
+    let galaxy_scale_factor = 0.1;
 
     let in_color = vec4<f32>(1.0,1.0,1.0,0.1);
 

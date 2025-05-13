@@ -7,9 +7,9 @@ use bevy::{
 
 use super::shader_types::*;
 
-pub struct RenderPlugin;
+pub struct GalaxyVolumePlugin;
 
-impl Plugin for RenderPlugin {
+impl Plugin for GalaxyVolumePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<GalaxyVolumeMaterial>::default());
 
@@ -19,7 +19,7 @@ impl Plugin for RenderPlugin {
 }
 
 #[derive(Component)]
-struct GalaxyRenderer;
+struct GalaxyVolume;
 
 fn setup_galaxy_volume(
     mut commands: Commands,
@@ -34,14 +34,14 @@ fn setup_galaxy_volume(
         Transform::IDENTITY,
         Visibility::Inherited,
         MeshMaterial3d(mat),
-        GalaxyRenderer,
+        GalaxyVolume,
         volume_upscaler::background_render_layer(),
         bevy::render::view::NoFrustumCulling,
     ));
 }
 
 fn update_volume_material(
-    galaxy_mat: Query<&MeshMaterial3d<GalaxyVolumeMaterial>, With<GalaxyRenderer>>,
+    galaxy_mat: Query<&MeshMaterial3d<GalaxyVolumeMaterial>, With<GalaxyVolume>>,
     galaxy_texture: Res<super::GalaxyTexture>,
     galaxy_config: Res<GalaxyConfig>,
     mut galaxy_materials: ResMut<Assets<GalaxyVolumeMaterial>>,

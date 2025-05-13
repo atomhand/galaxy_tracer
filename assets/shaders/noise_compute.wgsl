@@ -1,5 +1,5 @@
 
-#import "shaders/noise_functions.wgsl"::{octave_noise_3d, ridge_noise, ridge_noise_split};
+#import "shaders/wrapped_noise_functions.wgsl"::{octave_noise_3d, ridge_noise, ridge_noise_split};
 
 struct NoiseSettingsUniform {
     persistence : f32,

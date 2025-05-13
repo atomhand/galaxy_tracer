@@ -27,7 +27,7 @@ fn setup_galaxy_volume(
     mut galaxy_materials: ResMut<Assets<GalaxyVolumeMaterial>>,
     galaxy_config: Res<GalaxyConfig>,
 ) {
-    let galaxy_mesh = meshes.add(Cuboid::from_size(Vec3::splat(2.0)));
+    let galaxy_mesh = meshes.add(Rectangle::from_size(Vec2::splat(2.0)));
     let mat = galaxy_materials.add(GalaxyVolumeMaterial::new(&galaxy_config));
     commands.spawn((
         Mesh3d(galaxy_mesh),

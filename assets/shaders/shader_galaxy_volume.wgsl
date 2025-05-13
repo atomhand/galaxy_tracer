@@ -17,11 +17,15 @@ struct VertexOutput {
 
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
+    let camera_right = normalize(vec3<f32>(view.clip_from_world[0].x, view.clip_from_world[1].x, view.clip_from_world[2].x));    
+    let camera_up = normalize(vec3<f32>(view.clip_from_world[0].y, view.clip_from_world[1].y, view.clip_from_world[2].y));
+
     let model = get_world_from_local(vertex.instance_index);
 
     let scaled_r = galaxy.radius * galaxy.padding_coefficient;
-    let world_space = vertex.position.xyz * vec3<f32>(scaled_r,50.0,scaled_r);
-    let position = view.clip_from_world * model * vec4<f32>(world_space, 1.0);
+    //let world_space = vertex.position.xyz * vec3<f32>(scaled_r,50.0,scaled_r);
+    let world_space : vec3<f32> = (camera_right * vertex.position.x + camera_up * vertex.position.y ) * scaled_r;
+    let position = view.clip_from_world * model * vec4<f32>(world_space,1.0);
 
     var out: VertexOutput;
     out.position = position;
@@ -44,40 +48,24 @@ fn sphIntersect( ro : vec3<f32> , rd : vec3<f32> ,  r : f32 ) -> vec2<f32>
     return vec2(-b - h, -b + h);
 }
 
-fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32, t_c : f32) -> vec3<f32> {    
+fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {    
     var col = vec3<f32>(0.0,0.0,0.0);
-
-    let o0 = ro + rd * max(0.0,t_c);
-    let o1 = ro + rd * max(0.0,t1);
-
-    let STEPS = galaxy.raymarch_steps / 2.0;
-
-    let k = 1.5;
+    let STEPS = galaxy.raymarch_steps;
     let exposure = 0.1;
 
 #ifdef FLAT_DIAGNOSTIC
-    col = ray_step(o0, col, 1.0);
+    col = ray_step(ro, col, 1.0);
 #else
-    // distributed from plane intersection to sphere intersection
-    let step_0 = (t2-t_c);
-    var sprev = 1.0;
+    // LINEAR TRACE
+    let start = ro + rd * max(0.0,t2);
+    let end = ro + rd * max(0.0,t1);
+    let step = (end-start) / STEPS;
+    let step_size = length(step);
     for(var i =0; i<i32(STEPS); i++) {
-        let s = pow(1.0 - f32(i)/STEPS,k); // clustered towards 0
-        let p = o0 + rd * s * step_0;
-        col = ray_step(p, col, abs(s-sprev) * step_0 * exposure);
-        sprev = s;
-    }
-    // distributed from ro to plane intersection
-    sprev = 1.0 + sprev;
-    let step_1 = (t_c-t1);
-    for(var i =0; i<i32(STEPS); i++) {
-        let s = 1.0 - pow(f32(i)/STEPS, k); // clustered towards 1
-        let p = o1 + rd * s * step_1;
-        col = ray_step(p, col, abs(s-sprev) * step_1 * exposure);
-        sprev = s;
+        let p = start + step * f32(i);
+        col = ray_step(p,col,step_size * exposure);
     }
 #endif
-
     return col;    
 }
 
@@ -87,18 +75,13 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     let ro = mesh.camera_origin;
     let rd = normalize(mesh.ray_dir);
-    /*
+    
     let t = sphIntersect(ro,rd, galaxy.radius * galaxy.padding_coefficient);
 
     if t.x == -1.0 && t.y == -1.0 {
         return vec4<f32>(0.0,0.0,0.0,0.0);
-    }
-    */
-    
-    let n = vec3(0.0,1.0,0.0);
-    let plane_t : f32= -dot(n,ro) / dot(n, rd);
-    
+    }    
 
-    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), 0.0, plane_t*2.0, plane_t);
+    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), t.x, t.y);
     return vec4<f32>(a,1.0);        
 }

@@ -141,6 +141,12 @@ impl Material for GalaxyVolumeMaterial {
         self.alpha_mode
     }
 
+    // prevents issues when rendering stars and galaxy volume together in the background camera
+    // TODO: would be better to just disable depth write completely
+    fn depth_bias(&self) -> f32 {
+        -1000.0
+    }
+
     fn specialize(
         _pipeline: &MaterialPipeline<Self>,
         descriptor: &mut RenderPipelineDescriptor,

@@ -17,70 +17,91 @@ pub struct StarInstancingPlugin;
 impl Plugin for StarInstancingPlugin {
     fn build(&self, app : &mut App) {
         app.add_plugins(MaterialPlugin::<StarInstanceMaterial>::default())
-        .insert_resource(StarInstancingControl{generation: -1})
-        .add_systems(Update, setup);
+        .add_systems(Startup,init_resource)
+        .add_systems(Update, manage_star_instances);
+
     }
 }
 
 #[derive(Resource)]
 struct StarInstancingControl {
     generation : i32,
+    stars_left_to_place : i32,
+    current_star_index : u32,
+    mesh_handle : Handle<Mesh>,
+    material_handle : Handle<StarInstanceMaterial>
 }
+
+/// Sets up the star instancing resource with the shared material and mesh 
+fn init_resource(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StarInstanceMaterial>>,
+ ) {
+    let mesh_handle = meshes.add(Rectangle::from_size(Vec2::splat(2.0)));
+
+    let material_handle = materials.add(StarInstanceMaterial {
+        alpha_mode : AlphaMode::Add
+    });
+
+    commands.insert_resource(StarInstancingControl {
+        generation : -1,
+        stars_left_to_place : 0,
+        current_star_index : 0,
+        mesh_handle,
+        material_handle
+    });
+ }
 
 #[derive(Component)]
 struct StarInstanceMarker;
 
-/// Sets up an instanced grid of cubes, where each cube is colored based on an image that is
-/// sampled in the vertex shader. The cubes are then animated in a spiral pattern.
-///
-/// This example demonstrates one use of automatic instancing and how to use `MeshTag` to use
-/// external data in a custom material. For example, here we use the "index" of each cube to
-/// determine the texel coordinate to sample from the image in the shader.
-fn setup(
+/// Spawns or despawns star instances
+/// Spawns in fairly small batches to avoid stutter when galaxy config changes
+/// - Might be a flag active during game loading that causes the spawn to run to finish
+fn manage_star_instances(
     mut commands: Commands,
-    assets: Res<AssetServer>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StarInstanceMaterial>>,
     galaxy_config : Res<GalaxyConfig>,
     existing_star_query : Query<Entity,With<StarInstanceMarker>>,
     mut star_instancing : ResMut<StarInstancingControl>
 ) {
+    const BATCH_SIZE : i32= 4096;
+
     if star_instancing.generation != galaxy_config.generation {
-        // cleanup existing entities
+        // cleanup existing stars
         for entity in &existing_star_query {
             commands.entity(entity).despawn();
         }
+        // update params
         star_instancing.generation = galaxy_config.generation;
+        star_instancing.stars_left_to_place = galaxy_config.stars_per_arm * galaxy_config.n_arms;
+        star_instancing.current_star_index = 0;
+    }
+    if !galaxy_config.stars_params.enabled { return; }
+    // Spawn stars for the current batch
+    if star_instancing.stars_left_to_place > 0 {
+        let batch_size = star_instancing.stars_left_to_place.min(BATCH_SIZE);
 
-        if !galaxy_config.stars_params.enabled { return; }
-
-        // billboard mesh
-        let mesh_handle = meshes.add(Rectangle::from_size(Vec2::splat(2.0)));
-
-        let material_handle = materials.add(StarInstanceMaterial {
-            alpha_mode : AlphaMode::Add
-            //image: image.clone(),
-        });
-
-        let mut star_positions = vec![Vec3::ZERO; 65536];
+        let mut star_positions = vec![Vec3::ZERO; batch_size as usize];
         star_positions.par_iter_mut().for_each( |pos|{
             *pos =  sample_star_pos(&galaxy_config);
         });
 
-        for index in 0..65536 {
+        for pos in star_positions {
             commands.spawn((
                 // For automatic instancing to take effect you need to
                 // use the same mesh handle and material handle for each instance
-                Mesh3d(mesh_handle.clone()),
-                MeshMaterial3d(material_handle.clone()),
+                Mesh3d(star_instancing.mesh_handle.clone()),
+                MeshMaterial3d(star_instancing.material_handle.clone()),
                 // This is an optional component that can be used to help tie external data to a mesh instance
-                MeshTag(index),
-                Transform::from_translation(star_positions[index as usize]),
-                StarInstanceMarker
+                MeshTag(star_instancing.current_star_index),
+                Transform::from_translation(pos),
+                StarInstanceMarker,
                 //volume_upscaler::background_render_layer()
             ));
+            star_instancing.current_star_index += 1;
         }
-
+        star_instancing.stars_left_to_place -= batch_size;
     }
 }
 
@@ -123,7 +144,6 @@ fn sample_star_pos(galaxy_config : &GalaxyConfig) -> Vec3 {
     best
 }
 
-// This struct defines the data that will be passed to your shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
 struct StarInstanceMaterial {
    // #[texture(0)]

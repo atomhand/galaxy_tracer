@@ -222,7 +222,7 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
 
                 egui::CollapsingHeader::new("Bulge Parameters").show(ui, |ui| {
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.bulge_strength, 1.0..=50.0)
+                        egui::Slider::new(&mut galaxy_config.bulge_strength, 1.0..=200.0)
                             .text("Strength"),
                     );
                     ui.add(

@@ -20,7 +20,7 @@ pub struct GalaxyConfig {
     pub winding_n: f32,
     pub exposure: f32,
 
-    pub max_stars: i32,
+    pub stars_per_arm: i32,
     pub spacing: f32,
     pub padding_coeff: f32,
 
@@ -184,19 +184,19 @@ impl Default for GalaxyConfig {
         Self {
             diagnostic_mode: false,
             flat_mode: false,
-            runtime_noise: false,
+            runtime_noise: true,
             noise_texture_size: UVec3::new(64, 8, 64),
             noise_detail_texture_size: UVec3::new(64, 64, 64),
-            raymarch_steps: 32,
+            raymarch_steps: 128,
             generation: 1,
             texture_root: 9,
             texture_dimension: 512,
-            bulge_strength: 30.0,
-            bulge_radius: 5.0,
+            bulge_strength: 100.0,
+            bulge_radius: 9.0,
             bulge_intensity: 1.0,
             exposure: 0.01,
             radius: 500.0, // in parsecs
-            max_stars: 1000,
+            stars_per_arm: 32768,
             spacing: 40.0,
             n_arms: 3,
             arm_configs: [
@@ -240,12 +240,12 @@ impl Default for GalaxyConfig {
             },
             dust_params: ComponentConfig {
                 component_type: ComponentType::Dust,
-                strength: 250.0,
+                strength: 900.0,
                 arm_width: 0.25,
                 y_thickness: 0.02,
                 radial_extent: 0.45,
                 radial_dropoff: 0.05,
-                noise_scale: 3.0,
+                noise_scale: 6.0,
                 angular_offset: -45.,
                 noise_offset: 1.0,
                 noise_octaves: 5,
@@ -253,7 +253,15 @@ impl Default for GalaxyConfig {
                 ..default()
             },
             stars_params: ComponentConfig {
-                component_type: ComponentType::Stars,
+                component_type: ComponentType::Stars, // Match disk
+                strength: 900.0,
+                arm_width: 0.3,
+                y_thickness: 0.02,
+                radial_dropoff: 0.05,
+                radial_extent: 0.4,
+                noise_octaves: 10,
+                noise_tilt: 0.3,
+                noise_winding_factor: 0.1,
                 ..default()
             },
         }

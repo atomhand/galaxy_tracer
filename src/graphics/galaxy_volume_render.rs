@@ -90,13 +90,11 @@ pub struct GalaxyVolumeMaterial {
     #[sampler(8)]
     lut: Option<Handle<Image>>,
     #[texture(9, dimension = "3d")]
-    #[sampler(10)]
     disk_noise_texture: Option<Handle<Image>>,
+    #[texture(10, dimension = "3d")]
+    dust_noise_texture: Option<Handle<Image>>,
     #[texture(11, dimension = "3d")]
     #[sampler(12)]
-    dust_noise_texture: Option<Handle<Image>>,
-    #[texture(13, dimension = "3d")]
-    #[sampler(14)]
     dust_detail_texture: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
     diagnostic_mode: bool,

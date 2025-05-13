@@ -152,7 +152,7 @@ fn disk_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
 #else
     let dims = textureDimensions(disk_noise_texture, 0);
     let y_scale = vec3<f32>(1.0, f32(dims.x)/f32(dims.y),1.0);
-    return textureSample(disk_noise_texture,disk_noise_sampler, r * y_scale * disk_params.noise_scale).x;
+    return textureSample(disk_noise_texture,noise_sampler, r * y_scale * disk_params.noise_scale).x;
 #endif    
 }
 
@@ -166,8 +166,8 @@ fn dust_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
 
     let detail_sampling_freq = 4.0;
 
-    let macro_sample = textureSample(dust_noise_texture,dust_noise_sampler, pr * y_scale * dust_params.noise_scale).xy;
-    let micro_sample = textureSample(dust_detail_texture,dust_detail_sampler, pr * y_scale * dust_params.noise_scale * detail_sampling_freq).x;
+    let macro_sample = textureSample(dust_noise_texture,noise_sampler, pr * y_scale * dust_params.noise_scale).xy;
+    let micro_sample = textureSample(dust_detail_texture,noise_sampler, pr * y_scale * dust_params.noise_scale * detail_sampling_freq).x;
 
     return max(0.0, (macro_sample.x + macro_sample.y * micro_sample) * 1.25 - 1.0);
 #endif
@@ -207,6 +207,7 @@ struct ComponentParams {
     noise_octaves : f32,
 }
 
+
 @group(2) @binding(0) var<uniform> galaxy: GalaxyParams;
 @group(2) @binding(1) var<uniform> bulge_params: BulgeParams;
 @group(2) @binding(2) var<uniform> disk_params: ComponentParams;
@@ -217,11 +218,9 @@ struct ComponentParams {
 @group(2) @binding(7) var lut_texture: texture_2d_array<f32>;
 @group(2) @binding(8) var lut_sampler: sampler;
 @group(2) @binding(9) var disk_noise_texture: texture_3d<f32>;
-@group(2) @binding(10) var disk_noise_sampler: sampler;
-@group(2) @binding(11) var dust_noise_texture: texture_3d<f32>;
-@group(2) @binding(12) var dust_noise_sampler: sampler;
-@group(2) @binding(13) var dust_detail_texture: texture_3d<f32>;
-@group(2) @binding(14) var dust_detail_sampler: sampler;
+@group(2) @binding(10) var dust_noise_texture: texture_3d<f32>;
+@group(2) @binding(11) var dust_detail_texture: texture_3d<f32>;
+@group(2) @binding(12) var noise_sampler: sampler;
 
 const LUT_ID_WINDING : i32 = 0;
 

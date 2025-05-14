@@ -112,6 +112,7 @@ fn setup(
                     Camera3d::default(),
                     Camera {
                         target: image_handle.clone().into(),
+                        order : -1, // background camera needs to render before main pass
                         clear_color: Color::BLACK.into(),
                         ..default()
                     },
@@ -146,7 +147,11 @@ fn prepare_background_jitter_and_mip_bias(
     mut query: Query<(Entity, &mut TemporalJitter, Option<&MipBias>), With<BackgroundChildCamera>>,
     mut commands: Commands,
 ) {
-    let p = frame_count.0 as i32 % (UPSCALE_FACTOR * UPSCALE_FACTOR);
+    // The -1 frame offset is a clunky hack for a sytem ordering change that is caused by giving the camera an order of -1
+    // Honestly I haven't worked out WHAT systems are being executed out of order (intuitively I didn't think it should be affected)
+    // But it dsynced the jitter offsets used in the camera and material respectively I added this offset
+    // There may be a more elegant way to do this
+    let p = (frame_count.0 as i32-1) % (UPSCALE_FACTOR * UPSCALE_FACTOR);
     let mapping = [4, 6, 12, 15, 0, 3, 14, 10, 2, 7, 9, 1, 11, 5, 8, 13];
     // inverse mapping is array(4, 11, 8, 5, 0, 13, 1, 9, 14, 10, 7, 12, 2, 15, 6, 3);
 

@@ -51,7 +51,12 @@ impl Plugin for BackgroundCameraPlugin {
         // really there should be a cleanup system as well
         app.add_systems(
             Update,
-            (setup_new_camera, update_uniform, update_target_size,cleanup),
+            (
+                setup_new_camera,
+                update_uniform,
+                update_target_size,
+                cleanup,
+            ),
         );
 
         let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
@@ -65,13 +70,15 @@ impl Plugin for BackgroundCameraPlugin {
 }
 
 fn cleanup(
-    mut commands : Commands,
-    q_child : Query<(Entity,&ChildOf),With<BackgroundChildCamera>>,
-    q_parent : Query<&BackgroundCamera>,
+    mut commands: Commands,
+    mut q_child: Query<(Entity, &mut Camera, &ChildOf), With<BackgroundChildCamera>>,
+    q_parent: Query<&Camera,(With<BackgroundCamera>,Without<BackgroundChildCamera>)>,
 ) {
     // clean up stray child cameras
-    for (entity,child_of) in &q_child {
-        if q_parent.get(child_of.parent()).is_err() {
+    for (entity, mut camera, child_of) in q_child.iter_mut() {
+        if let Ok(parent_camera) = q_parent.get(child_of.parent()) {
+            camera.hdr = parent_camera.hdr;
+        } else {
             commands.entity(entity).despawn();
         }
     }
@@ -138,8 +145,8 @@ fn setup_new_camera(
         let mut image = Image::new_fill(
             size,
             TextureDimension::D2,
-            &[0, 0, 0, 0],
-            TextureFormat::Bgra8UnormSrgb,
+            &[0; 8],
+            TextureFormat::Rgba16Float,
             RenderAssetUsages::default(),
         );
         image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
@@ -158,6 +165,7 @@ fn setup_new_camera(
                     Msaa::Off,
                     Camera3d::default(),
                     Camera {
+                        hdr : camera.hdr,
                         target: image_handle.clone().into(),
                         order: -1, // background camera needs to render before main pass
                         clear_color: Color::BLACK.into(),

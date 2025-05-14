@@ -70,7 +70,7 @@ impl Plugin for BackgroundUpscalePlugin {
             .init_resource::<PreviousViewUniforms>()
             .add_systems(
                 Render,
-                (prepare_background_history_textures.in_set(RenderSet::PrepareResources),),
+                (prepare_background_history_textures.in_set(RenderSet::PrepareResources),prepare_upscale_pipelines.in_set(RenderSet::Prepare)),
             )
             // Bevy's renderer uses a render graph which is a collection of nodes in a directed acyclic graph.
             // It currently runs on each view/camera and executes each node in the specified order.
@@ -117,7 +117,8 @@ impl Plugin for BackgroundUpscalePlugin {
 
         render_app
             // Initialize the pipeline
-            .init_resource::<BackgroundUpscalePipeline>();
+            .init_resource::<BackgroundUpscalePipeline>()
+            .init_resource::<SpecializedRenderPipelines<BackgroundUpscalePipeline>>();
     }
 }
 
@@ -141,6 +142,7 @@ impl ViewNode for BackgroundUpscaleNode {
         &'static BackgroundImageOutput,
         &'static BackgroundHistoryTextures,
         &'static BackgroundUpscaleSettings,
+        &'static UpscalePipelineId,
         // As there could be multiple post processing components sent to the GPU (one per camera),
         // we need to get the index of the one that is associated with the current view.
         &'static DynamicUniformIndex<BackgroundUpscaleSettings>,
@@ -164,6 +166,7 @@ impl ViewNode for BackgroundUpscaleNode {
             background_input,
             background_history_textures,
             _background_upscale_settings, // This is just so the node doesn't run unless this component is present
+            upscale_pipeline_id,
             settings_index,
         ): QueryItem<Self::ViewQuery>,
         world: &World,
@@ -179,7 +182,7 @@ impl ViewNode for BackgroundUpscaleNode {
 
         // Get the pipeline from the cache
         let Some(pipeline) =
-            pipeline_cache.get_render_pipeline(background_upscale_pipeline.pipeline_id)
+            pipeline_cache.get_render_pipeline(upscale_pipeline_id.0)
         else {
             return Ok(());
         };
@@ -289,8 +292,7 @@ impl ViewNode for BackgroundUpscaleNode {
 struct BackgroundUpscalePipeline {
     layout: BindGroupLayout,
     nearest_sampler: Sampler,
-    linear_sampler: Sampler,
-    pipeline_id: CachedRenderPipelineId,
+    linear_sampler: Sampler
 }
 
 impl FromWorld for BackgroundUpscalePipeline {
@@ -335,48 +337,86 @@ impl FromWorld for BackgroundUpscalePipeline {
             ..SamplerDescriptor::default()
         });
 
-        let pipeline_id = world
-            .resource_mut::<PipelineCache>()
-            // This will add the pipeline to the cache and queue its creation
-            .queue_render_pipeline(RenderPipelineDescriptor {
-                label: Some("background_upscale_pipeline".into()),
-                layout: vec![layout.clone()],
-                // This will setup a fullscreen triangle for the vertex state
-                vertex: fullscreen_shader_vertex_state(),
-                fragment: Some(FragmentState {
-                    shader: UPSCALE_SHADER_HANDLE,
-                    shader_defs: vec![],
-                    // Make sure this matches the entry point of your shader.
-                    // It can be anything as long as it matches here and in the shader.
-                    entry_point: "fragment".into(),
-                    targets: vec![
-                        Some(ColorTargetState {
-                            format: TextureFormat::bevy_default(),
-                            blend: None,
-                            write_mask: ColorWrites::ALL,
-                        }),
-                        Some(ColorTargetState {
-                            format: TextureFormat::bevy_default(),
-                            blend: None,
-                            write_mask: ColorWrites::ALL,
-                        }),
-                    ],
-                }),
-                // All of the following properties are not important for this effect so just use the default values.
-                // This struct doesn't have the Default trait implemented because not all fields can have a default value.
-                primitive: PrimitiveState::default(),
-                depth_stencil: None,
-                multisample: MultisampleState::default(),
-                push_constant_ranges: vec![],
-                zero_initialize_workgroup_memory: false,
-            });
-
         Self {
             layout,
             nearest_sampler,
             linear_sampler,
-            pipeline_id,
         }
+    }
+}
+
+#[derive(Component)]
+struct UpscalePipelineId(pub CachedRenderPipelineId);
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+struct UpscalePipelineKey {
+    hdr: bool,
+}
+
+impl SpecializedRenderPipeline for BackgroundUpscalePipeline {
+    type Key = UpscalePipelineKey;
+
+    fn specialize(&self, key: Self::Key) -> RenderPipelineDescriptor {
+        let mut shader_defs = vec![];
+        let format = if key.hdr {
+            shader_defs.push("TONEMAP".into());
+            ViewTarget::TEXTURE_FORMAT_HDR
+        } else {
+            TextureFormat::bevy_default()
+        };
+        
+
+        RenderPipelineDescriptor {
+            label: Some("background_upscale_pipeline".into()),
+            layout: vec![self.layout.clone()],
+            vertex: fullscreen_shader_vertex_state(),
+            fragment: Some(FragmentState {
+                shader: UPSCALE_SHADER_HANDLE,
+                shader_defs,
+                // Make sure this matches the entry point of your shader.
+                // It can be anything as long as it matches here and in the shader.
+                entry_point: "fragment".into(),
+                targets: vec![
+                    Some(ColorTargetState {
+                        format,
+                        blend: None,
+                        write_mask: ColorWrites::ALL,
+                    }),
+                    Some(ColorTargetState {
+                        format,
+                        blend: None,
+                        write_mask: ColorWrites::ALL,
+                    }),
+                ],
+            }),
+            // All of the following properties are not important for this effect so just use the default values.
+            // This struct doesn't have the Default trait implemented because not all fields can have a default value.
+            primitive: PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: MultisampleState::default(),
+            push_constant_ranges: vec![],
+            zero_initialize_workgroup_memory: false,
+        }
+    }
+}
+
+fn prepare_upscale_pipelines(
+    mut commands: Commands,
+    pipeline_cache: Res<PipelineCache>,
+    mut pipelines: ResMut<SpecializedRenderPipelines<BackgroundUpscalePipeline>>,
+    upsample_pipeline: Res<BackgroundUpscalePipeline>,
+    views: Query<(Entity, &ExtractedView, &BackgroundImageOutput)>,
+) {
+    for (entity, view, _output) in &views {
+        let pipeline_id = pipelines.specialize(
+            &pipeline_cache,
+            &upsample_pipeline,
+            UpscalePipelineKey { hdr: view.hdr },
+        );
+
+        commands
+            .entity(entity)
+            .insert(UpscalePipelineId(pipeline_id));
     }
 }
 

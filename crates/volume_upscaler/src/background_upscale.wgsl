@@ -66,6 +66,14 @@ fn sphIntersect( ro : vec3<f32> , rd : vec3<f32> ,  r : f32 ) -> vec2<f32>
     return vec2(-b - h, -b + h);
 }
 
+// trick based on bevy_anti_aliasing taa.wgsl
+// If the output from the previous camera was tone-mapped, un-tone-map it
+// (I don't think this really works that well)
+fn rcp(x: f32) -> f32 { return 1.0 / x; }
+fn max3(x: vec3<f32>) -> f32 { return max(x.r, max(x.g, x.b)); }
+fn tonemap(color: vec3<f32>) -> vec3<f32> { return color * rcp(max3(color) + 1.0); }
+fn reverse_tonemap(color: vec3<f32>) -> vec3<f32> { return color * rcp(1.0 - max3(color)); }
+
 @fragment
 fn fragment(in: FullscreenVertexOutput) -> Output {   
     let rd  : vec3<f32>= coords_to_ray_direction(in.position.xy, view.viewport);
@@ -125,7 +133,10 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
 
     var out = Output();
     if( p == i32(upscale_settings.current_pixel)){
-        let background_sample = textureSample(background_input_texture, nearest_sampler, center_uv);        
+        var background_sample = textureSample(background_input_texture, nearest_sampler, center_uv);
+#ifdef TONEMAP
+        background_sample = vec4<f32>(reverse_tonemap(background_sample.rgb),1.0);
+#endif
         // Not sure whether blending (instead of plain overwrite) is an overall benefit
         // at this step
         let blend = mix(history_sample,background_sample,1.0-history_confidence*0.5);
@@ -133,7 +144,10 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
         out.view_target =  vec4<f32>(blend.rgb,1.0);
     }
     else {
-        let background_sample = textureSample(background_input_texture, linear_sampler, in.uv);
+        var background_sample = textureSample(background_input_texture, linear_sampler, in.uv);
+#ifdef TONEMAP
+        background_sample = vec4<f32>(reverse_tonemap(background_sample.rgb),1.0);
+#endif
         let blended_sample = mix(background_sample.rgb,history_sample.rgb,history_confidence);
 
         out.history = vec4<f32>(blended_sample,history_confidence);

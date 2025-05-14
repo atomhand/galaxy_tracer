@@ -20,6 +20,9 @@ fn spawn_camera(mut commands: Commands, mut clearcolor: ResMut<ClearColor>) {
     commands.spawn((
         // NEED TO SET CLEAR COLOR TO BLACK...
         Camera3d { ..default() },
+        Camera {
+            ..default()
+        },
         Transform::from_xyz(10.0, 12.0, 16.0).looking_at(Vec3::ZERO, Vec3::Y),
         CameraMain::default(),
         volume_upscaler::BackgroundCamera,
@@ -72,7 +75,7 @@ impl CameraMain {
 use bevy::input::mouse::MouseScrollUnit;
 
 pub fn camera_control_system(
-    mut query: Query<(&Camera, &mut Transform, &mut CameraMain)>,
+    mut query: Query<(&mut Camera, &mut Transform, &mut CameraMain)>,
     windows: Query<&Window>,
     keys: Res<ButtonInput<KeyCode>>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
@@ -82,7 +85,7 @@ pub fn camera_control_system(
     //mut gizmos : Gizmos,
 ) {
     let galaxy_scale = galaxy_config.radius * 2.5;
-    let (cam, mut transform, mut camera_main) =
+    let (mut cam, mut transform, mut camera_main) =
         query.single_mut().expect("Error: Require ONE camera");
 
     // HIDE CURSOR
@@ -124,6 +127,10 @@ pub fn camera_control_system(
     }
     if keys.pressed(KeyCode::KeyD) {
         key_delta.x -= 1.0;
+    }
+
+    if keys.just_pressed(KeyCode::KeyH) {
+        cam.hdr = !cam.hdr;
     }
 
     let side_view = keys.pressed(KeyCode::Space);

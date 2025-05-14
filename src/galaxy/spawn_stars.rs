@@ -103,13 +103,13 @@ fn manage_star_instances(
 
 fn random_star_mass(rng: &mut ThreadRng) -> f32 {
     let in_ranges = [
-        (0.08..0.45, 0.5), // M (Red Dwarf)
-        (0.45..0.8, 2.),   // K
-        (0.8..1.04, 10.),   // G (Sol range)
-        (1.04..1.4, 10.),   // F
-        (1.4..2.1, 10.),    // A
+        (0.08..0.45, 0.25), // M (Red Dwarf)
+        (0.45..0.8, 0.5),   // K
+        (0.8..1.04, 1.),   // G (Sol range)
+        (1.04..1.4, 1.),   // F
+        (1.4..2.1, 1.),    // A
         (2.1..16., 0.5),   // B
-        (16. ..152., 0.05), // O
+        (16. ..152., 0.01), // O
     ];
     let range = in_ranges
         .choose_weighted(rng, |item| item.1)

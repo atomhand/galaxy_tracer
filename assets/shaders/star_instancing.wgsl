@@ -24,13 +24,18 @@ struct VertexOutput {
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
     let billboard_margin_scale = 4.0;
-    let galaxy_scale_factor = 0.1;
+    let minor_stars_scale_factor = 0.1;
 
     // retrieve colour based on instance tag
     let tag = mesh_functions::get_tag(vertex.instance_index);
     let in_color = extinction_output[tag].rgb;
 
-    let scale_factor =  ((in_color.x+in_color.y+in_color.z)*5.0)*galaxy_scale_factor * billboard_margin_scale;
+    var scale_factor =  (in_color.x+in_color.y+in_color.z) * minor_stars_scale_factor * billboard_margin_scale;
+    var alpha = 1.0;
+    if scale_factor < 1.0 {
+        alpha = scale_factor/1.0;
+        scale_factor = 1.0;
+    }
 
     let camera_right = normalize(vec3<f32>(view.clip_from_world[0].x, view.clip_from_world[1].x, view.clip_from_world[2].x));    
     let camera_up = normalize(vec3<f32>(view.clip_from_world[0].y, view.clip_from_world[1].y, view.clip_from_world[2].y));
@@ -39,7 +44,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     out.world_position = get_world_from_local(vertex.instance_index) * vec4<f32>((camera_right * vertex.position.x + camera_up * vertex.position.y ) * scale_factor,1.0);
     out.clip_position = view.clip_from_world * vec4<f32>(out.world_position.xyz, 1.0);
     out.uv = vertex.position.xy * billboard_margin_scale;
-    out.color = vec4<f32>(in_color,1.0);
+    out.color = vec4<f32>(in_color,alpha);
 
     return out;
 }
@@ -47,7 +52,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 fn draw_star(pos : vec2<f32>, star_color : vec3<f32>, I : f32) -> vec3<f32> {
     let system_transition_factor = 0.0;
 
-    let c = star_color;
+    let c = star_color.rgb;
 
     var d : f32 = length(pos);
 
@@ -56,7 +61,7 @@ fn draw_star(pos : vec2<f32>, star_color : vec3<f32>, I : f32) -> vec3<f32> {
 
     col = spectrum / (d*d*d);
 
-    let ARMS_SCALE = 1.0 / 1.4;
+    let ARMS_SCALE = 1.0 / 1.4 ;
 
     d = length(pos * vec2<f32>(50.0,0.5)) * ARMS_SCALE;
     col += spectrum/ (d*d*d) * (1.0 - system_transition_factor);
@@ -88,14 +93,14 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let dpdx = dpdx(in.uv) * supersampling_offset_scale;//vec2(dpdx(in.uv),dpdy(in.uv));
     let dpdy = dpdy(in.uv) * supersampling_offset_scale;
 
-    let intensity = 1.0 / 256.0;//.02*exp(-15.*rnd(1));
+    let intensity =  in.color.a / 256.0;//.02*exp(-15.*rnd(1));
 
     var starcol = vec3<f32>(0.0);
     for(var i =0; i<8; i+=1) {
         starcol     += draw_star(in.uv + dpdx * weights_8[i].x + dpdy * weights_8[i].y, in.color.rgb, intensity);
     }
 
-    starcol = starcol / 8.0;
+    starcol = in.color.a * starcol / 8.0;
 
     let a = (starcol.x+starcol.y+starcol.z)/3.0;
 

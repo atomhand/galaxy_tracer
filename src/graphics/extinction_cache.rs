@@ -71,19 +71,22 @@ pub struct ExtinctionCache {
     pub output_buffer: Handle<ShaderStorageBuffer>,
     pub required_size: usize,
     positions: Vec<Vec4>,
+    colours: Vec<Vec4>,
     positions_buffer: Handle<ShaderStorageBuffer>,
+    colours_buffer : Handle<ShaderStorageBuffer>,
     size: usize,
 }
 
 fn update_positions(
     mut extinction_cache: ResMut<ExtinctionCache>,
     mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
-    query: Query<(&Transform, &MeshTag), Added<StarInstanceMarker>>,
+    query: Query<(&Transform, &Star), Added<StarInstanceMarker>>,
 ) {
     if extinction_cache.size != extinction_cache.required_size {
         let size = extinction_cache.required_size;
         extinction_cache.size = size;
         extinction_cache.positions.resize(size, Vec4::ZERO);
+        extinction_cache.colours.resize(size, Vec4::ZERO);
 
         if let Some(buffer) = buffers.get_mut(&extinction_cache.output_buffer) {
             buffer.set_data(vec![Vec4::ZERO; size]);
@@ -94,18 +97,16 @@ fn update_positions(
         return;
     }
 
-    for (transform, tag) in &query {
-        if tag.0 >= extinction_cache.size as u32 {
-            extinction_cache
-                .positions
-                .resize(tag.0 as usize + 1, Vec4::ZERO);
-            extinction_cache.size = tag.0 as usize + 1;
-        }
-        extinction_cache.positions[tag.0 as usize] = transform.translation.extend(1.0);
+    for (transform, star) in &query {
+        extinction_cache.positions[star.index as usize] = transform.translation.extend(1.0);
+        extinction_cache.colours[star.index as usize] = star.color().extend(1.0);
     }
 
     if let Some(buffer) = buffers.get_mut(&extinction_cache.positions_buffer) {
         buffer.set_data(extinction_cache.positions.as_slice());
+    }
+    if let Some(buffer) = buffers.get_mut(&extinction_cache.colours_buffer) {
+        buffer.set_data(extinction_cache.colours.as_slice());
     }
 }
 
@@ -114,7 +115,9 @@ fn init_cache_resource(mut commands: Commands, mut buffers: ResMut<Assets<Shader
     commands.insert_resource(ExtinctionCache {
         output_buffer: buffers.add(ShaderStorageBuffer::from(vec![Vec4::ZERO; size])),
         positions: vec![Vec4::ZERO; size],
+        colours: vec![Vec4::ZERO; size],
         positions_buffer: buffers.add(ShaderStorageBuffer::from(vec![Vec4::ZERO; size])),
+        colours_buffer : buffers.add(ShaderStorageBuffer::from(vec![Vec4::ZERO; size])),
         required_size: size,
         size,
     });
@@ -183,6 +186,7 @@ fn prepare_bind_group(
     ssbos: Res<RenderAssets<GpuShaderStorageBuffer>>,
 ) {
     let input_positions = ssbos.get(&cache_image.positions_buffer).unwrap();
+    let input_colours = ssbos.get(&cache_image.colours_buffer).unwrap();
     let output_buffer = ssbos.get(&cache_image.output_buffer).unwrap();
 
     let galaxy_uniform = uniforms_buffer.galaxy_params.binding().unwrap();
@@ -209,6 +213,7 @@ fn prepare_bind_group(
             camera_uniform,
             output_buffer.buffer.as_entire_buffer_binding(),
             input_positions.buffer.as_entire_buffer_binding(),
+            input_colours.buffer.as_entire_buffer_binding(),
             galaxy_uniform,
             bulge_params,
             disk_params,
@@ -236,10 +241,13 @@ impl FromWorld for ExtinctionCachePipeline {
             &BindGroupLayoutEntries::sequential(
                 ShaderStages::COMPUTE,
                 (
-                    uniform_buffer::<Vec4>(false), // camera pos
+                    // camera pos
+                    uniform_buffer::<Vec4>(false),
                     // Extinction output
                     storage_buffer::<Vec4>(false),
                     // positions input buffer
+                    storage_buffer_read_only::<Vec4>(false),
+                    // colours input buffer
                     storage_buffer_read_only::<Vec4>(false),
                     uniform_buffer::<GalaxyParams>(false),
                     uniform_buffer::<BulgeParams>(false),

@@ -4,12 +4,17 @@
 //@group(0) @binding(1) var extinction_output: texture_storage_2d<rgb10a2unorm, write>;
 @group(0) @binding(1) var<storage, read_write> extinction_output: array<vec4<f32>>;
 @group(0) @binding(2) var<storage> positions_input: array<vec4<f32>>;
+@group(0) @binding(3) var<storage> colours_input: array<vec4<f32>>;
 
 @compute @workgroup_size(64, 1, 1)
 fn cache_extinction(@builtin(global_invocation_id) invocation_id: vec3<u32>, @builtin(num_workgroups) num_workgroups: vec3<u32>) {
     let index = invocation_id.x;
 
-    var col = vec3<f32>(1.0);
+    var col = (colours_input[index].rgb);
+    let len = length(col);
+    let new_len = log(len+1.0) * 4.0 +1.0;
+    col = col/len * new_len;
+
     let start : vec3<f32> = positions_input[index].xyz;
     let end: vec3<f32> = camera_pos.xyz;
 

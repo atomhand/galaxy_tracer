@@ -100,7 +100,7 @@ fn manage_star_instances(
                 Mesh3d(star_instancing.mesh_handle.clone()),
                 MeshMaterial3d(star_instancing.material_handle.clone()),
                 // This is an optional component that can be used to help tie external data to a mesh instance
-                MeshTag(star.0),
+                MeshTag(star.index),
                 StarInstanceMarker,
             ))
             .insert_if(volume_upscaler::background_render_layer(), || {

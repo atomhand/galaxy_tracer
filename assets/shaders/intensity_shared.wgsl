@@ -54,14 +54,14 @@ struct ComponentParams {
 
 #ifdef COMPUTE_BINDINGS
 // TODO - ADD VIEW UNIFORM HERE?
-@group(0) @binding(3) var<uniform> galaxy: GalaxyParams;
-@group(0) @binding(4) var<uniform> bulge_params: BulgeParams;
-@group(0) @binding(5) var<uniform> disk_params: ComponentParams;
-@group(0) @binding(6) var<uniform> dust_params: ComponentParams;
-@group(0) @binding(7) var galaxy_xz_texture: texture_2d<f32>;
-@group(0) @binding(8) var galaxy_xz_sampler: sampler; // are there texture samplers in compute shaders?
-@group(0) @binding(9) var lut_texture: texture_2d_array<f32>;
-@group(0) @binding(10) var lut_sampler: sampler;
+@group(0) @binding(4) var<uniform> galaxy: GalaxyParams;
+@group(0) @binding(5) var<uniform> bulge_params: BulgeParams;
+@group(0) @binding(6) var<uniform> disk_params: ComponentParams;
+@group(0) @binding(7) var<uniform> dust_params: ComponentParams;
+@group(0) @binding(8) var galaxy_xz_texture: texture_2d<f32>;
+@group(0) @binding(9) var galaxy_xz_sampler: sampler; // are there texture samplers in compute shaders?
+@group(0) @binding(10) var lut_texture: texture_2d_array<f32>;
+@group(0) @binding(11) var lut_sampler: sampler;
 // noise lookup not enabled for compute pass
 #else
 @group(2) @binding(0) var<uniform> galaxy: GalaxyParams;

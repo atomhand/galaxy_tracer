@@ -76,26 +76,24 @@ struct ComponentParams {
 @group(0) @binding(4) var<uniform> bulge_params: BulgeParams;
 @group(0) @binding(5) var<uniform> disk_params: ComponentParams;
 @group(0) @binding(6) var<uniform> dust_params: ComponentParams;
-@group(0) @binding(7) var<uniform> stars_params: ComponentParams;
-@group(0) @binding(8) var galaxy_xz_texture: texture_2d<f32>;
-@group(0) @binding(9) var galaxy_xz_sampler: sampler; // are there texture samplers in compute shaders?
-@group(0) @binding(10) var lut_texture: texture_2d_array<f32>;
-@group(0) @binding(11) var lut_sampler: sampler;
+@group(0) @binding(7) var galaxy_xz_texture: texture_2d<f32>;
+@group(0) @binding(8) var galaxy_xz_sampler: sampler; // are there texture samplers in compute shaders?
+@group(0) @binding(9) var lut_texture: texture_2d_array<f32>;
+@group(0) @binding(10) var lut_sampler: sampler;
 // noise lookup not enabled for compute pass
 #else
 @group(2) @binding(0) var<uniform> galaxy: GalaxyParams;
 @group(2) @binding(1) var<uniform> bulge_params: BulgeParams;
 @group(2) @binding(2) var<uniform> disk_params: ComponentParams;
 @group(2) @binding(3) var<uniform> dust_params: ComponentParams;
-@group(2) @binding(4) var<uniform> stars_params: ComponentParams;
-@group(2) @binding(5) var galaxy_xz_texture: texture_2d<f32>;
-@group(2) @binding(6) var galaxy_xz_sampler: sampler;
-@group(2) @binding(7) var lut_texture: texture_2d_array<f32>;
-@group(2) @binding(8) var lut_sampler: sampler;
-@group(2) @binding(9) var disk_noise_texture: texture_3d<f32>;
-@group(2) @binding(10) var dust_noise_texture: texture_3d<f32>;
-@group(2) @binding(11) var dust_detail_texture: texture_3d<f32>;
-@group(2) @binding(12) var noise_sampler: sampler;
+@group(2) @binding(4) var galaxy_xz_texture: texture_2d<f32>;
+@group(2) @binding(5) var galaxy_xz_sampler: sampler;
+@group(2) @binding(6) var lut_texture: texture_2d_array<f32>;
+@group(2) @binding(7) var lut_sampler: sampler;
+@group(2) @binding(8) var disk_noise_texture: texture_3d<f32>;
+@group(2) @binding(9) var dust_noise_texture: texture_3d<f32>;
+@group(2) @binding(10) var dust_detail_texture: texture_3d<f32>;
+@group(2) @binding(11) var noise_sampler: sampler;
 #endif
 
 const LUT_ID_WINDING : i32 = 0;

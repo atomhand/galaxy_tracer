@@ -142,7 +142,6 @@ struct ExtinctionCacheGalaxyUniforms {
     bulge_params: UniformBuffer<BulgeParams>,
     disk_params: UniformBuffer<ComponentParams>,
     dust_params: UniformBuffer<ComponentParams>,
-    stars_params: UniformBuffer<ComponentParams>,
     camera_uniform: UniformBuffer<Vec4>,
 }
 
@@ -163,9 +162,6 @@ fn prepare_uniforms(
     uniforms
         .dust_params
         .set(ComponentParams::read(&galaxy_config.dust_params));
-    uniforms
-        .stars_params
-        .set(ComponentParams::read(&galaxy_config.stars_params));
 
     if let Ok(camera) = camera.single() {
         uniforms.camera_uniform.set(camera.translation.extend(1.0));
@@ -182,9 +178,6 @@ fn prepare_uniforms(
         .write_buffer(&render_device, &render_queue);
     uniforms
         .dust_params
-        .write_buffer(&render_device, &render_queue);
-    uniforms
-        .stars_params
         .write_buffer(&render_device, &render_queue);
     uniforms
         .camera_uniform
@@ -212,7 +205,6 @@ fn prepare_bind_group(
     let bulge_params = uniforms_buffer.bulge_params.binding().unwrap();
     let disk_params = uniforms_buffer.disk_params.binding().unwrap();
     let dust_params = uniforms_buffer.dust_params.binding().unwrap();
-    let stars_params = uniforms_buffer.stars_params.binding().unwrap();
     let camera_uniform = uniforms_buffer.camera_uniform.binding().unwrap();
 
     let galaxy_view = galaxy_texture
@@ -237,7 +229,6 @@ fn prepare_bind_group(
             bulge_params,
             disk_params,
             dust_params,
-            stars_params,
             &galaxy_view.texture_view,
             &galaxy_view.sampler,
             &lut_view.texture_view,
@@ -272,7 +263,6 @@ impl FromWorld for ExtinctionCachePipeline {
                     storage_buffer_read_only::<Vec4>(false),
                     uniform_buffer::<GalaxyParams>(false),
                     uniform_buffer::<BulgeParams>(false),
-                    uniform_buffer::<ComponentParams>(false),
                     uniform_buffer::<ComponentParams>(false),
                     uniform_buffer::<ComponentParams>(false),
                     texture_2d(TextureSampleType::Float { filterable: true }), // Galaxy texture

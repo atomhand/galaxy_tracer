@@ -70,7 +70,10 @@ impl Plugin for BackgroundUpscalePlugin {
             .init_resource::<PreviousViewUniforms>()
             .add_systems(
                 Render,
-                (prepare_background_history_textures.in_set(RenderSet::PrepareResources),prepare_upscale_pipelines.in_set(RenderSet::Prepare)),
+                (
+                    prepare_background_history_textures.in_set(RenderSet::PrepareResources),
+                    prepare_upscale_pipelines.in_set(RenderSet::Prepare),
+                ),
             )
             // Bevy's renderer uses a render graph which is a collection of nodes in a directed acyclic graph.
             // It currently runs on each view/camera and executes each node in the specified order.
@@ -181,9 +184,7 @@ impl ViewNode for BackgroundUpscaleNode {
         let pipeline_cache = world.resource::<PipelineCache>();
 
         // Get the pipeline from the cache
-        let Some(pipeline) =
-            pipeline_cache.get_render_pipeline(upscale_pipeline_id.0)
-        else {
+        let Some(pipeline) = pipeline_cache.get_render_pipeline(upscale_pipeline_id.0) else {
             return Ok(());
         };
 
@@ -292,7 +293,7 @@ impl ViewNode for BackgroundUpscaleNode {
 struct BackgroundUpscalePipeline {
     layout: BindGroupLayout,
     nearest_sampler: Sampler,
-    linear_sampler: Sampler
+    linear_sampler: Sampler,
 }
 
 impl FromWorld for BackgroundUpscalePipeline {
@@ -364,7 +365,6 @@ impl SpecializedRenderPipeline for BackgroundUpscalePipeline {
         } else {
             TextureFormat::bevy_default()
         };
-        
 
         RenderPipelineDescriptor {
             label: Some("background_upscale_pipeline".into()),

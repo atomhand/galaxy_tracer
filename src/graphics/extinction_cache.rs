@@ -5,7 +5,6 @@ use bevy::{
     prelude::*,
     render::{
         extract_resource::{ExtractResource, ExtractResourcePlugin},
-        mesh::MeshTag,
         render_asset::RenderAssets,
         render_graph::{self, RenderGraph, RenderLabel},
         render_resource::{binding_types::*, *},
@@ -73,7 +72,7 @@ pub struct ExtinctionCache {
     positions: Vec<Vec4>,
     colours: Vec<Vec4>,
     positions_buffer: Handle<ShaderStorageBuffer>,
-    colours_buffer : Handle<ShaderStorageBuffer>,
+    colours_buffer: Handle<ShaderStorageBuffer>,
     size: usize,
 }
 
@@ -117,7 +116,7 @@ fn init_cache_resource(mut commands: Commands, mut buffers: ResMut<Assets<Shader
         positions: vec![Vec4::ZERO; size],
         colours: vec![Vec4::ZERO; size],
         positions_buffer: buffers.add(ShaderStorageBuffer::from(vec![Vec4::ZERO; size])),
-        colours_buffer : buffers.add(ShaderStorageBuffer::from(vec![Vec4::ZERO; size])),
+        colours_buffer: buffers.add(ShaderStorageBuffer::from(vec![Vec4::ZERO; size])),
         required_size: size,
         size,
     });

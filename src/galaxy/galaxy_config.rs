@@ -6,8 +6,7 @@ pub struct GalaxyConfig {
     pub generation: i32,
     pub raymarch_steps: u32,
 
-
-    pub draw_volume_to_background : bool,
+    pub draw_volume_to_background: bool,
 
     pub texture_root: u32,
     pub texture_dimension: u32,
@@ -179,7 +178,7 @@ impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
             diagnostic_mode: false,
-            draw_volume_to_background : true,
+            draw_volume_to_background: true,
             raymarch_steps: 128,
             generation: 1,
             texture_root: 9,

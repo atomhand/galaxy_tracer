@@ -27,8 +27,8 @@ pub struct StarSpawningControl {
 
 #[derive(Component)]
 pub struct Star {
-    pub index : u32,
-    mass : f32,
+    pub index: u32,
+    mass: f32,
 }
 
 impl Star {
@@ -84,16 +84,22 @@ fn manage_star_instances(
     if star_instancing.stars_left_to_place > 0 {
         let batch_size = star_instancing.stars_left_to_place.min(BATCH_SIZE);
 
-        let mut star_samples = vec![(Vec3::ZERO,0.0); batch_size as usize];
+        let mut star_samples = vec![(Vec3::ZERO, 0.0); batch_size as usize];
         star_samples.par_iter_mut().for_each(|sample| {
             let mut rng = rand::rng();
-            *sample = (sample_star_pos(&galaxy_config, &mut rng), random_star_mass(&mut rng));
+            *sample = (
+                sample_star_pos(&galaxy_config, &mut rng),
+                random_star_mass(&mut rng),
+            );
         });
 
         for star in star_samples {
             commands.spawn((
                 Transform::from_translation(star.0),
-                Star { index : star_instancing.next_star_index, mass : star.1 },
+                Star {
+                    index: star_instancing.next_star_index,
+                    mass: star.1,
+                },
             ));
             star_instancing.next_star_index += 1;
         }
@@ -105,10 +111,10 @@ fn random_star_mass(rng: &mut ThreadRng) -> f32 {
     let in_ranges = [
         (0.08..0.45, 0.25), // M (Red Dwarf)
         (0.45..0.8, 0.5),   // K
-        (0.8..1.04, 1.),   // G (Sol range)
-        (1.04..1.4, 1.),   // F
-        (1.4..2.1, 1.),    // A
-        (2.1..16., 0.5),   // B
+        (0.8..1.04, 1.),    // G (Sol range)
+        (1.04..1.4, 1.),    // F
+        (1.4..2.1, 1.),     // A
+        (2.1..16., 0.5),    // B
         (16. ..152., 0.01), // O
     ];
     let range = in_ranges
@@ -135,7 +141,7 @@ fn sample_pos(rng: &mut ThreadRng, radius: f32) -> Vec3 {
     vec3(circle_sample.x, height_sample, circle_sample.y) * 2.0
 }
 
-fn sample_star_pos(galaxy_config: &GalaxyConfig, rng : &mut ThreadRng) -> Vec3 {
+fn sample_star_pos(galaxy_config: &GalaxyConfig, rng: &mut ThreadRng) -> Vec3 {
     let arm_painter = super::ArmLutGenerator::new(galaxy_config, &galaxy_config.stars_params);
 
     let current_pos = sample_pos(rng, galaxy_config.radius);

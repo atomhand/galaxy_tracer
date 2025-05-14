@@ -2,7 +2,10 @@ use crate::prelude::*;
 use bevy::{
     prelude::*,
     reflect::TypePath,
-    render::{view::RenderLayers,render_resource::{AsBindGroup, ShaderRef}},
+    render::{
+        render_resource::{AsBindGroup, ShaderRef},
+        view::RenderLayers,
+    },
 };
 
 use super::shader_types::*;
@@ -14,7 +17,7 @@ impl Plugin for GalaxyVolumePlugin {
         app.add_plugins(MaterialPlugin::<GalaxyVolumeMaterial>::default());
 
         app.add_systems(Startup, setup_galaxy_volume)
-            .add_systems(Update, (update_volume_material,update_galaxy_volume));
+            .add_systems(Update, (update_volume_material, update_galaxy_volume));
     }
 }
 
@@ -42,18 +45,18 @@ fn setup_galaxy_volume(
 
 fn update_galaxy_volume(
     mut commands: Commands,
-    query : Query<Entity,With<GalaxyVolume>>,
-    galaxy_config: Res<GalaxyConfig>
+    query: Query<Entity, With<GalaxyVolume>>,
+    galaxy_config: Res<GalaxyConfig>,
 ) {
     // TODO: we dont have to do this every frame
     if let Ok(entity) = query.single() {
-        commands.entity(entity).insert(
-            if galaxy_config.draw_volume_to_background {
+        commands
+            .entity(entity)
+            .insert(if galaxy_config.draw_volume_to_background {
                 volume_upscaler::background_render_layer()
             } else {
                 RenderLayers::layer(0)
-            }
-        );
+            });
     }
 }
 

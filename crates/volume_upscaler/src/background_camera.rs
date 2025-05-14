@@ -72,7 +72,7 @@ impl Plugin for BackgroundCameraPlugin {
 fn cleanup(
     mut commands: Commands,
     mut q_child: Query<(Entity, &mut Camera, &ChildOf), With<BackgroundChildCamera>>,
-    q_parent: Query<&Camera,(With<BackgroundCamera>,Without<BackgroundChildCamera>)>,
+    q_parent: Query<&Camera, (With<BackgroundCamera>, Without<BackgroundChildCamera>)>,
 ) {
     // clean up stray child cameras
     for (entity, mut camera, child_of) in q_child.iter_mut() {
@@ -166,7 +166,7 @@ fn setup_new_camera(
                     Camera3d::default(),
                     bevy::core_pipeline::tonemapping::Tonemapping::None,
                     Camera {
-                        hdr : camera.hdr,
+                        hdr: camera.hdr,
                         target: image_handle.clone().into(),
                         order: -1, // background camera needs to render before main pass
                         clear_color: Color::BLACK.into(),

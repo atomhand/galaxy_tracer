@@ -37,7 +37,7 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
     let minval = ComponentConfig::MIN;
     let maxval = ComponentConfig::MAX;
 
-    egui::CollapsingHeader::new(heading).show(ui, |ui| {
+    let mut section = |ui : &mut egui::Ui| {
         ui.checkbox(&mut config.enabled, "Component Enabled");
         ui.add(
             egui::Slider::new(&mut config.strength, minval.strength..=maxval.strength)
@@ -142,8 +142,14 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
                     .text("Octaves"),
                 );
             });
-        }
-    });
+        };
+    };
+    if has_noise {
+        egui::CollapsingHeader::new(heading).show(ui, 
+            section);
+    } else {
+        (section(ui));
+    }
     ui.separator();
 }
 
@@ -235,7 +241,18 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
 
                 component_ui(&mut galaxy_config.disk_params, true, ui);
                 component_ui(&mut galaxy_config.dust_params, true, ui);
-                component_ui(&mut galaxy_config.stars_params, false, ui);
+
+                egui::CollapsingHeader::new("Stars Parameters").show(ui, |ui| {
+                    ui.add(
+                        egui::Slider::new(&mut galaxy_config.stars_per_arm, 4096..=65536)
+                            .text("Stars per arm"),
+                    );
+                    ui.checkbox(
+                        &mut galaxy_config.draw_stars_to_background,
+                        "Draw stars to background",
+                    );
+                    component_ui(&mut galaxy_config.stars_params, false, ui);
+                });
             });
         });
 }

@@ -20,7 +20,6 @@ pub struct GalaxyConfig {
     pub winding_n: f32,
     pub exposure: f32,
 
-    pub stars_per_arm: i32,
     pub spacing: f32,
     pub padding_coeff: f32,
 
@@ -32,6 +31,9 @@ pub struct GalaxyConfig {
 
     pub diagnostic_mode: bool,
     pub flat_mode: bool,
+
+    pub stars_per_arm: i32,
+    pub draw_stars_to_background :bool,
 
     pub disk_params: ComponentConfig,
     pub dust_params: ComponentConfig,
@@ -197,6 +199,7 @@ impl Default for GalaxyConfig {
             exposure: 0.01,
             radius: 500.0, // in parsecs
             stars_per_arm: 32768,
+            draw_stars_to_background : true,
             spacing: 40.0,
             n_arms: 3,
             arm_configs: [

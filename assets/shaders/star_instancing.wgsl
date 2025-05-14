@@ -7,6 +7,8 @@
 #import bevy_pbr::mesh_view_bindings::view
 @group(2) @binding(0) var texture: texture_2d<f32>;
 @group(2) @binding(1) var texture_sampler: sampler;
+@group(2) @binding(2) var<uniform> supersampling_offset_scale: f32;
+
 
 struct Vertex {
     @builtin(instance_index) instance_index: u32,
@@ -86,8 +88,8 @@ const weights_8 = array<vec2<f32>,8>(
 
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
-    let dpdx = dpdx(in.uv);//vec2(dpdx(in.uv),dpdy(in.uv));
-    let dpdy = dpdy(in.uv);
+    let dpdx = dpdx(in.uv) * supersampling_offset_scale;//vec2(dpdx(in.uv),dpdy(in.uv));
+    let dpdy = dpdy(in.uv) * supersampling_offset_scale;
 
     let intensity = 1.0 / 256.0;//.02*exp(-15.*rnd(1));
 

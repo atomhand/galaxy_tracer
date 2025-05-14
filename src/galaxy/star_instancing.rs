@@ -5,6 +5,7 @@ use bevy::{
     render::{
         mesh::MeshTag,
         render_resource::{AsBindGroup, ShaderRef},
+        view::RenderLayers
     },
 };
 use rand::prelude::*;
@@ -36,13 +37,14 @@ struct StarInstancingControl {
 fn init_resource(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StarInstanceMaterial>>,
+    mut materials: ResMut<Assets<StarInstanceMaterial>>
 ) {
     let mesh_handle = meshes.add(Rectangle::from_size(Vec2::splat(2.0)));
 
     let material_handle = materials.add(StarInstanceMaterial {
         alpha_mode: AlphaMode::Add,
         image: None,
+        supersampling_offset_scale: 1.0,
     });
 
     commands.insert_resource(StarInstancingControl {
@@ -56,15 +58,14 @@ fn init_resource(
 }
 
 fn update_material(
-    star: Res<StarInstancingControl>,
+    star_instancing: Res<StarInstancingControl>,
     extinction: Res<crate::graphics::ExtinctionCache>,
     mut materials: ResMut<Assets<StarInstanceMaterial>>,
 ) {
     if extinction.is_changed() {
-        let Some(mat) = materials.get_mut(&star.material_handle) else {
-            return;
+        if let Some(mat) = materials.get_mut(&star_instancing.material_handle) {
+            mat.image = Some(extinction.output_image.clone());
         };
-        mat.image = Some(extinction.output_image.clone());
     }
 }
 
@@ -79,6 +80,7 @@ fn manage_star_instances(
     galaxy_config: Res<GalaxyConfig>,
     existing_star_query: Query<Entity, With<StarInstanceMarker>>,
     mut star_instancing: ResMut<StarInstancingControl>,
+    mut materials: ResMut<Assets<StarInstanceMaterial>>,
 ) {
     const BATCH_SIZE: i32 = 4096;
 
@@ -92,6 +94,10 @@ fn manage_star_instances(
         star_instancing.num_stars = galaxy_config.stars_per_arm * galaxy_config.n_arms;
         star_instancing.stars_left_to_place = star_instancing.num_stars;
         star_instancing.current_star_index = 0;
+
+        if let Some(mat) = materials.get_mut(&star_instancing.material_handle) {
+            mat.supersampling_offset_scale = if galaxy_config.draw_stars_to_background { 0.25 } else { 1.0 };
+        };
     }
     if !galaxy_config.stars_params.enabled {
         return;
@@ -115,8 +121,10 @@ fn manage_star_instances(
                 MeshTag(star_instancing.current_star_index),
                 Transform::from_translation(pos),
                 StarInstanceMarker,
-                //volume_upscaler::background_render_layer()
-            ));
+            )).insert_if(
+                volume_upscaler::background_render_layer() ,
+                || galaxy_config.draw_stars_to_background
+            );
             star_instancing.current_star_index += 1;
         }
         star_instancing.stars_left_to_place -= batch_size;
@@ -167,6 +175,8 @@ struct StarInstanceMaterial {
     #[texture(0)]
     #[sampler(1)]
     image: Option<Handle<Image>>,
+    #[uniform(2)]
+    supersampling_offset_scale : f32,
     alpha_mode: AlphaMode,
 }
 

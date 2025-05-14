@@ -164,6 +164,7 @@ fn setup_new_camera(
                 .spawn((
                     Msaa::Off,
                     Camera3d::default(),
+                    bevy::core_pipeline::tonemapping::Tonemapping::None,
                     Camera {
                         hdr : camera.hdr,
                         target: image_handle.clone().into(),

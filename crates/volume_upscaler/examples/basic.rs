@@ -1,5 +1,7 @@
 use bevy::{prelude::*, render::view::RenderLayers};
-use volume_upscaler::{BackgroundCamera,BackgroundRenderingPlugin,background_render_layer,BACKGROUND_RENDER_LAYER};
+use volume_upscaler::{
+    BACKGROUND_RENDER_LAYER, BackgroundCamera, BackgroundRenderingPlugin, background_render_layer,
+};
 
 fn main() {
     App::new()

@@ -27,7 +27,7 @@ fn arm_component_ui(id: i32, arm_config: &mut ArmConfig, ui: &mut egui::Ui) {
         });
 }
 
-fn component_ui(config: &mut ComponentConfig, has_noise : bool, ui: &mut egui::Ui) {
+fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui) {
     let heading = match config.component_type {
         ComponentType::Disk => "Disk Config",
         ComponentType::Dust => "Dust Config",
@@ -80,14 +80,15 @@ fn component_ui(config: &mut ComponentConfig, has_noise : bool, ui: &mut egui::U
             );
         });
         if has_noise {
-
             ui.label("Noise");
 
             ui.group(|ui| {
                 ui.checkbox(&mut config.noise_enabled, "Enabled");
                 // speciual case for stars, ugly hack but w/e
                 if config.component_type == ComponentType::Stars {
-                    ui.add(egui::Slider::new(&mut config.noise_scale, 1.0..=100.0).text("Frequency"));
+                    ui.add(
+                        egui::Slider::new(&mut config.noise_scale, 1.0..=100.0).text("Frequency"),
+                    );
                 } else {
                     ui.add(
                         egui::Slider::new(
@@ -132,7 +133,7 @@ fn component_ui(config: &mut ComponentConfig, has_noise : bool, ui: &mut egui::U
                     )
                     .text("Persistence"),
                 );
-    
+
                 ui.add(
                     egui::Slider::new(
                         &mut config.noise_octaves,
@@ -232,9 +233,9 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                 });
                 ui.separator();
 
-                component_ui(&mut galaxy_config.disk_params, true,ui);
-                component_ui(&mut galaxy_config.dust_params, true,ui);
-                component_ui(&mut galaxy_config.stars_params, false,ui);
+                component_ui(&mut galaxy_config.disk_params, true, ui);
+                component_ui(&mut galaxy_config.dust_params, true, ui);
+                component_ui(&mut galaxy_config.stars_params, false, ui);
             });
         });
 }

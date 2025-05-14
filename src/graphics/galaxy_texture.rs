@@ -1,9 +1,10 @@
 use crate::prelude::*;
 use bevy::prelude::*;
+use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
 use rayon::prelude::*;
 pub struct GalaxyTexturePlugin;
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Clone, ExtractResource)]
 pub struct GalaxyTexture {
     pub tex: Option<Handle<Image>>,
     pub luts: Option<Handle<Image>>,
@@ -12,7 +13,8 @@ pub struct GalaxyTexture {
 
 impl Plugin for GalaxyTexturePlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(GalaxyTexture::default())
+        app.add_plugins(ExtractResourcePlugin::<GalaxyTexture>::default())
+            .insert_resource(GalaxyTexture::default())
             .add_systems(Update, update_texture);
     }
 }

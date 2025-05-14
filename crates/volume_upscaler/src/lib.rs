@@ -3,7 +3,7 @@ mod background_camera;
 mod background_upscale;
 pub mod prelude;
 
-pub use background_camera::{BackgroundCamera,BACKGROUND_RENDER_LAYER,background_render_layer};
+pub use background_camera::{BACKGROUND_RENDER_LAYER, BackgroundCamera, background_render_layer};
 
 pub struct BackgroundRenderingPlugin;
 

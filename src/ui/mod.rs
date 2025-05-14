@@ -5,6 +5,8 @@ mod camera;
 mod config_egui;
 mod fps_widget;
 
+pub use camera::CameraMain;
+
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {

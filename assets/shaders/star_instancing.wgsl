@@ -5,8 +5,8 @@
 #import bevy_pbr::mesh_functions::{get_world_from_local, mesh_position_local_to_clip}
 #import bevy_pbr::view_transformations::position_world_to_clip;
 #import bevy_pbr::mesh_view_bindings::view
-//@group(2) @binding(0) var texture: texture_2d<f32>;
-//@group(2) @binding(1) var texture_sampler: sampler;
+@group(2) @binding(0) var texture: texture_2d<f32>;
+@group(2) @binding(1) var texture_sampler: sampler;
 
 struct Vertex {
     @builtin(instance_index) instance_index: u32,
@@ -25,9 +25,13 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     let billboard_margin_scale = 4.0;
     let galaxy_scale_factor = 0.1;
 
-    let in_color = vec4<f32>(1.0,1.0,1.0,0.1);
+    // retrieve colour based on instance tag
+    let tag = mesh_functions::get_tag(vertex.instance_index);
+    let tex_dim = textureDimensions(texture);
+    let texel_coord = vec2<u32>(tag % tex_dim.x, tag / tex_dim.x);
+    let in_color = textureLoad(texture, texel_coord, 0).rgb;
 
-    let scale_factor =  (length(in_color)/10.0+6.0)*galaxy_scale_factor * billboard_margin_scale;
+    let scale_factor =  ((in_color.x+in_color.y+in_color.z)*5.0)*galaxy_scale_factor * billboard_margin_scale;
 
     let camera_right = normalize(vec3<f32>(view.clip_from_world[0].x, view.clip_from_world[1].x, view.clip_from_world[2].x));    
     let camera_up = normalize(vec3<f32>(view.clip_from_world[0].y, view.clip_from_world[1].y, view.clip_from_world[2].y));
@@ -35,8 +39,8 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     var out : VertexOutput;
     out.world_position = get_world_from_local(vertex.instance_index) * vec4<f32>((camera_right * vertex.position.x + camera_up * vertex.position.y ) * scale_factor,1.0);
     out.clip_position = view.clip_from_world * vec4<f32>(out.world_position.xyz, 1.0);
-    out.color = vec4<f32>(normalize(in_color.rgb),1.0);
     out.uv = vertex.position.xy * billboard_margin_scale;
+    out.color = vec4<f32>(in_color,1.0);
 
     return out;
 }
@@ -60,7 +64,7 @@ fn draw_star(pos : vec2<f32>, star_color : vec3<f32>, I : f32) -> vec3<f32> {
     d = length(pos * vec2<f32>(0.5,50.0)) * ARMS_SCALE;
     col += spectrum / (d*d*d) * (1.0 - system_transition_factor);
 
-    return col;// * (1.0 - smoothstep(0.75,1.0,length(pos)));
+    return col;
 }
 
 const weights_4 = array<vec2<f32>,4>(

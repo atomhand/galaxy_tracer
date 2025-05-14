@@ -1,12 +1,17 @@
 use crate::prelude::*;
-use bevy::{input::mouse::MouseWheel, prelude::*};
+use bevy::{
+    input::mouse::MouseWheel,
+    prelude::*,
+    render::extract_component::{ExtractComponent, ExtractComponentPlugin},
+};
 
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_camera)
-            .add_systems(PostUpdate, camera_control_system);
+            .add_systems(PostUpdate, camera_control_system)
+            .add_plugins(ExtractComponentPlugin::<CameraMain>::default());
     }
 }
 
@@ -17,16 +22,17 @@ fn spawn_camera(mut commands: Commands, mut clearcolor: ResMut<ClearColor>) {
         Camera3d { ..default() },
         Transform::from_xyz(10.0, 12.0, 16.0).looking_at(Vec3::ZERO, Vec3::Y),
         CameraMain::default(),
-        volume_upscaler::BackgroundCamera
+        volume_upscaler::BackgroundCamera,
     ));
 }
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, ExtractComponent)]
 pub struct CameraMain {
     target_pos: Vec3,
     zoom: f32,
     smooth_zoom_buffer: f32,
     drag_origin: Option<Vec3>,
+    pub translation: Vec3,
 }
 
 impl Default for CameraMain {
@@ -36,23 +42,26 @@ impl Default for CameraMain {
             zoom: 1.0,
             smooth_zoom_buffer: 0.0,
             drag_origin: None,
+            translation: Vec3::ZERO,
         }
     }
 }
 
 impl CameraMain {
-    fn translation(&self, galaxy_scale: f32, side_view : bool) -> Vec3 {
+    fn translation(&mut self, galaxy_scale: f32, side_view: bool) -> Vec3 {
         let galaxy_zoom = self.zoom * 0.85 + 0.15;
         let adjusted_scale = galaxy_scale * galaxy_zoom;
 
         if side_view {
             let antitilt = 0.25;
-            self.look_pos() + Vec3::new(0., adjusted_scale * antitilt, -adjusted_scale)
+            self.translation =
+                self.look_pos() + Vec3::new(0., adjusted_scale * antitilt, -adjusted_scale);
         } else {
-
             let antitilt = 0.6;
-            self.look_pos() + Vec3::new(0., adjusted_scale, -adjusted_scale * antitilt)
+            self.translation =
+                self.look_pos() + Vec3::new(0., adjusted_scale, -adjusted_scale * antitilt);
         }
+        self.translation
     }
 
     fn look_pos(&self) -> Vec3 {
@@ -176,7 +185,7 @@ pub fn camera_control_system(
     //
 
     for _i in 0..2 {
-        transform.translation = camera_main.translation(galaxy_scale,side_view);
+        transform.translation = camera_main.translation(galaxy_scale, side_view);
         transform.look_at(camera_main.look_pos(), Vec3::Y);
 
         let Some(mouse_pos) = cursor
@@ -198,7 +207,7 @@ pub fn camera_control_system(
             camera_main.target_pos += drag_offset;
         }
 
-        transform.translation = camera_main.translation(galaxy_scale,side_view);
+        transform.translation = camera_main.translation(galaxy_scale, side_view);
         transform.look_at(camera_main.look_pos(), Vec3::Y);
     }
 }

@@ -70,7 +70,19 @@ struct ComponentParams {
     noise_octaves : f32,
 }
 
-
+#ifdef COMPUTE_BINDINGS
+// TODO - ADD VIEW UNIFORM HERE?
+@group(0) @binding(3) var<uniform> galaxy: GalaxyParams;
+@group(0) @binding(4) var<uniform> bulge_params: BulgeParams;
+@group(0) @binding(5) var<uniform> disk_params: ComponentParams;
+@group(0) @binding(6) var<uniform> dust_params: ComponentParams;
+@group(0) @binding(7) var<uniform> stars_params: ComponentParams;
+@group(0) @binding(8) var galaxy_xz_texture: texture_2d<f32>;
+@group(0) @binding(9) var galaxy_xz_sampler: sampler; // are there texture samplers in compute shaders?
+@group(0) @binding(10) var lut_texture: texture_2d_array<f32>;
+@group(0) @binding(11) var lut_sampler: sampler;
+// noise lookup not enabled for compute pass
+#else
 @group(2) @binding(0) var<uniform> galaxy: GalaxyParams;
 @group(2) @binding(1) var<uniform> bulge_params: BulgeParams;
 @group(2) @binding(2) var<uniform> disk_params: ComponentParams;
@@ -84,6 +96,7 @@ struct ComponentParams {
 @group(2) @binding(10) var dust_noise_texture: texture_3d<f32>;
 @group(2) @binding(11) var dust_detail_texture: texture_3d<f32>;
 @group(2) @binding(12) var noise_sampler: sampler;
+#endif
 
 const LUT_ID_WINDING : i32 = 0;
 
@@ -95,7 +108,11 @@ fn lookup_winding(d : f32) -> f32 {
 #ifdef FLAT_DIAGNOSTIC
     return 0.0;
 #else
+#ifdef COMPUTE_BINDINGS
+    return textureSampleLevel(lut_texture,lut_sampler, vec2<f32>(d + 0.5 / galaxy.texture_dimension,0.5), LUT_ID_WINDING,0.0).x;
+#else
     return textureSample(lut_texture,lut_sampler, vec2<f32>(d + 0.5 / galaxy.texture_dimension,0.5), LUT_ID_WINDING).x;
+#endif
 #endif
 }
 
@@ -194,30 +211,36 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     let d : f32 = length(p.xz) / galaxy.radius;
     let uv : vec2<f32> = pos_to_uv(p.xz);
 
+#ifdef COMPUTE_BINDINGS
+    let xz_sample : vec4<f32> = textureSampleLevel(galaxy_xz_texture, galaxy_xz_sampler, uv,0.0);
+#else
     let xz_sample : vec4<f32> = textureSample(galaxy_xz_texture, galaxy_xz_sampler, uv);
+#endif
 
     // It's feasible to calculate this live, but caching it to the texture/LUT gets a very acceptable result and seems to be faster
     let base_winding : f32 = -lookup_winding(d);//-xz_sample.w;//-get_winding(d);
 
+    let dust_xz = reconstruct_intensity(p, xz_sample.y, dust_params.y_thickness);
+    let dust_winding_angle : f32 = base_winding * dust_params.winding_factor;
+    let dust_intensity : f32 = get_dust_intensity_ridged(p, dust_winding_angle, dust_xz) * stepsize;
+    // yellow absorption spectra = appears red
+    let dust_col = vec3<f32>(0.4,0.6,1.0);
+    let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
+
+#ifdef EXTINCTION_ONLY
+    return in_col * extinction;
+#else
     let disk_xz: f32  = reconstruct_intensity(p, xz_sample.x, disk_params.y_thickness);
     let disk_winding_angle : f32 = base_winding * disk_params.winding_factor;//-disk_sample.y;
 
     //  blue
     let disk_col = vec3<f32>(0.4,0.6,1.0);
     let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz) * stepsize;
-
-    let dust_xz = reconstruct_intensity(p, xz_sample.y, dust_params.y_thickness);
-    let dust_winding_angle : f32 = base_winding * dust_params.winding_factor;
-    let dust_intensity : f32 = get_dust_intensity_ridged(p, dust_winding_angle, dust_xz) * stepsize;
-
+    
     let bulge_intensity = get_bulge_intensity(p) * stepsize * galaxy.exposure * 0.1;
     // yellow
     let bulge_col = vec3<f32>(1.,0.9,0.45);
 
-    // yellow absorption spectra = appears red
-    let dust_col = vec3<f32>(0.4,0.6,1.0);
-
-    let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
 #ifdef FLAT_DIAGNOSTIC
     return vec3<f32>(1.0 - dust_intensity);
 #else
@@ -226,6 +249,7 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
 #else
     let col = in_col + disk_col * disk_intensity * galaxy.exposure + bulge_col * bulge_intensity;
     return col * extinction;
+#endif
 #endif
 #endif
 }

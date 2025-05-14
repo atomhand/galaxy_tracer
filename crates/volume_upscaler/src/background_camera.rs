@@ -4,8 +4,7 @@ use bevy::{
     render::{
         Render, RenderApp, RenderSet,
         camera::{MipBias, TemporalJitter},
-        extract_component::{ExtractComponent, ExtractComponentPlugin,
-        },
+        extract_component::{ExtractComponent, ExtractComponentPlugin},
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
         view::RenderLayers,
@@ -15,7 +14,7 @@ use bevy::{
 use super::background_upscale::BackgroundUpscaleSettings;
 
 const UPSCALE_FACTOR: i32 = 4;
-pub const BACKGROUND_RENDER_LAYER : usize = 999;
+pub const BACKGROUND_RENDER_LAYER: usize = 999;
 
 /// The target camera
 #[derive(Component)]
@@ -124,10 +123,12 @@ fn setup(
 
             commands
                 .entity(entity)
-                .insert(
-                    (Msaa::Off,BackgroundImageOutput {
-                    image: image_handle.clone(),
-                }))
+                .insert((
+                    Msaa::Off,
+                    BackgroundImageOutput {
+                        image: image_handle.clone(),
+                    },
+                ))
                 .add_child(cam);
         }
     }
@@ -146,10 +147,10 @@ fn prepare_background_jitter_and_mip_bias(
     mut commands: Commands,
 ) {
     let p = frame_count.0 as i32 % (UPSCALE_FACTOR * UPSCALE_FACTOR);
-    let mapping = [4,6,12,15,0,3,14,10,2,7,9,1,11,5,8,13];
+    let mapping = [4, 6, 12, 15, 0, 3, 14, 10, 2, 7, 9, 1, 11, 5, 8, 13];
     // inverse mapping is array(4, 11, 8, 5, 0, 13, 1, 9, 14, 10, 7, 12, 2, 15, 6, 3);
 
-    let p =mapping[p as usize];
+    let p = mapping[p as usize];
     let sub_coord = ivec2(p % UPSCALE_FACTOR, p / UPSCALE_FACTOR);
 
     let offset = vec2(-0.5, -0.5) + (sub_coord.as_vec2() + 0.5) / UPSCALE_FACTOR as f32;

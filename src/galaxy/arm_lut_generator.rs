@@ -35,9 +35,7 @@ impl ArmLutGenerator<'_> {
         let r = rad + 0.05;
 
         //let t =
-        f32::atan(f32::exp(-0.25 / (0.5 * r)) / self.galaxy.winding_b)
-            * 2.0
-            * self.galaxy.winding_n
+        f32::atan(f32::exp(-0.25 / (0.5 * r)) / self.galaxy.winding_b) * 2.0 * self.galaxy.winding_n
         //let t= atan(exp(1.0/r) / wb) * 2.0 * wn;
     }
 
@@ -66,17 +64,17 @@ impl ArmLutGenerator<'_> {
         v
     }
 
-    fn get_height_modulation(&self, height : f32) -> f32 {
-        let h = f32::abs(height / (self.component.y_thickness*self.galaxy.radius));
-        if h>2.0 {
+    fn get_height_modulation(&self, height: f32) -> f32 {
+        let h = f32::abs(height / (self.component.y_thickness * self.galaxy.radius));
+        if h > 2.0 {
             return 0.0;
         }
-    
+
         let val = 1.0 / f32::cosh(h);
-        val*val
+        val * val
     }
 
-    pub fn get_xyz_intensity(&self, p : Vec3) -> f32 {
+    pub fn get_xyz_intensity(&self, p: Vec3) -> f32 {
         self.get_xz_intensity(p.xz()) * self.get_height_modulation(p.y)
     }
 

@@ -32,7 +32,7 @@ fn setup_texture(
             depth_or_array_layers: dimensions.z,
         },
         TextureDimension::D3,
-        &[0, 0, 0, 255],
+        &[0; 8],
         TextureFormat::Rg32Float,
         RenderAssetUsages::RENDER_WORLD,
     );

@@ -213,8 +213,6 @@ impl ViewNode for BackgroundUpscaleNode {
         // texture to the `destination` texture. Failing to do so will cause
         // the current main texture information to be lost.
 
-
-        
         //let post_process = view_target.post_process_write();
 
         // The bind_group gets created each frame.

@@ -10,6 +10,7 @@ mod ui;
 mod prelude;
 
 fn main() {
+    //std::env::set_var("RUST_BACKTRACE", "1");
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {

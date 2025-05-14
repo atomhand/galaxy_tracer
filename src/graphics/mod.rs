@@ -1,13 +1,14 @@
 use bevy::prelude::*;
 
 mod galaxy_texture;
-mod noise_texture;
 mod galaxy_volume_render;
+mod noise_texture;
 
+mod extinction_cache;
 mod shader_types;
 
+pub use extinction_cache::ExtinctionCache;
 use galaxy_texture::GalaxyTexture;
-
 pub struct GraphicsPlugin;
 
 impl Plugin for GraphicsPlugin {
@@ -15,8 +16,9 @@ impl Plugin for GraphicsPlugin {
         app.add_plugins((
             galaxy_volume_render::GalaxyVolumePlugin,
             galaxy_texture::GalaxyTexturePlugin,
+            extinction_cache::ExtinctionCachePlugin,
             noise_texture::NoiseTexturePlugin,
-            volume_upscaler::BackgroundRenderingPlugin
+            volume_upscaler::BackgroundRenderingPlugin,
         ));
     }
 }

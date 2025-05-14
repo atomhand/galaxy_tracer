@@ -95,34 +95,43 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
     let prev_clip_pos = (previous_view.clip_from_world * world_pos);
     let old_uv = ndc_to_uv(prev_clip_pos.xy/prev_clip_pos.w);
 
-    // force new sample if historical uv is outside the screen buffer
-    //  or if the difference in uvs is too high
-    var force_new_sample = any(saturate(old_uv) != old_uv) || length(old_uv-in.uv)  > 0.1 || t < 0.0;
+    let dimensions = vec2<f32>(textureDimensions(background_input_texture).xy) * 4.0;
 
     // Background sample position and pixel offset
-    let dimensions = vec2<f32>(textureDimensions(background_input_texture).xy) * 4.0;
     let coord = vec2<i32>(in.uv * dimensions);
     let sub_coord = coord % vec2<i32>(4,4);
+    let center_uv = (vec2<f32>((coord/4)*4)+vec2<f32>(1.5,1.5)) / dimensions;
+    let history_sample = textureSample(history_input_texture, nearest_sampler, old_uv);
+
+
+
+    let velocity = length((old_uv-in.uv)*dimensions);
+    var history_confidence = history_sample.a;
+    if(t < 0.0) {
+        history_confidence = 0.0;
+    }
+
+    // force new sample if historical uv is outside the screen buffer
+    //  or if the difference in uvs is too high
+    var force_new_sample = any(saturate(old_uv) != old_uv) || velocity > 4.0 || t < 0.0;
 
     const inverse_mapping = array(4, 11, 8, 5, 0, 13, 1, 9, 14, 10, 7, 12, 2, 15, 6, 3);
     let p = inverse_mapping[(sub_coord.x + sub_coord.y * 4) % 16];    
 
     var out = Output();
-    let center_uv = (vec2<f32>((coord/4)*4)+vec2<f32>(1.5,1.5)) / dimensions;
-    let history_sample = textureSample(history_input_texture, nearest_sampler, old_uv);
     if(force_new_sample) {
         let background_sample = textureSample(background_input_texture, linear_sampler, in.uv);
-        out.history = background_sample;
-        out.view_target =  background_sample;
+        out.history = vec4<f32>(background_sample.xyz,0.0);//background_sample;
+        out.view_target =  vec4<f32>(background_sample.xyz,1.0);
     } else if( p == i32(upscale_settings.current_pixel)){
         let background_sample = textureSample(background_input_texture, nearest_sampler, center_uv);
-        let blend = mix(history_sample,background_sample,0.4);
-        out.history = blend;
-        out.view_target =  blend;
+        let blend = mix(history_sample,background_sample,1.0 - history_confidence * 0.5);
+        out.history = vec4<f32>(blend.xyz,1.0);
+        out.view_target =  vec4<f32>(blend.xyz,1.0);
     }
     else {
-        out.history = history_sample;
-        out.view_target = history_sample;
+        out.history = vec4<f32>(history_sample.xyz,history_confidence);
+        out.view_target = vec4<f32>(history_sample.rgb,1.0);
     }
     
     return out;

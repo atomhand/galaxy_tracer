@@ -227,16 +227,16 @@ impl ViewNode for BackgroundUpscaleNode {
             &background_upscale_pipeline.layout,
             // It's important for this to match the BindGroupLayout defined in the PostProcessPipeline
             &BindGroupEntries::sequential((
+                view_uniforms,
+                prev_view_uniforms,
+                // Set the settings binding
+                settings_binding.clone(),
                 // Make sure to use the source view
                 //post_process.source,
                 &background_history_textures.read.default_view,
                 // Use the sampler created for the pipeline
                 &input_image.texture_view,
                 &background_upscale_pipeline.sampler,
-                view_uniforms,
-                prev_view_uniforms,
-                // Set the settings binding
-                settings_binding.clone(),
             )),
         );
 
@@ -302,6 +302,10 @@ impl FromWorld for BackgroundUpscalePipeline {
                 // The layout entries will only be visible in the fragment stage
                 ShaderStages::FRAGMENT,
                 (
+                    // The settings uniform that will control the effect
+                    uniform_buffer::<ViewUniform>(true),
+                    uniform_buffer::<PreviousViewData>(true),
+                    uniform_buffer::<BackgroundUpscaleSettings>(true),
                     // The screen texture
                     //texture_2d(TextureSampleType::Float { filterable: true }),
                     // history input texture
@@ -310,12 +314,6 @@ impl FromWorld for BackgroundUpscalePipeline {
                     texture_2d(TextureSampleType::Float { filterable: true }),
                     // Can use the same sampler for all of them (I think?)
                     sampler(SamplerBindingType::Filtering),
-                    // The settings uniform that will control the effect
-                    uniform_buffer::<ViewUniform>(true),
-                    uniform_buffer::<PreviousViewData>(true),
-                    //
-                    // The input texture
-                    uniform_buffer::<BackgroundUpscaleSettings>(true),
                 ),
             ),
         );

@@ -189,7 +189,7 @@ impl Default for GalaxyConfig {
             bulge_intensity: 1.0,
             exposure: 0.01,
             radius: 500.0, // in parsecs
-            stars_per_arm: 32768,
+            stars_per_arm: 10000,
             // Tends to look extremely bad in motion
             draw_stars_to_background: false,
             spacing: 40.0,

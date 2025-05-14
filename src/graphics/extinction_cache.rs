@@ -2,12 +2,11 @@ use super::{galaxy_texture::GalaxyTexture, shader_types::*};
 use crate::prelude::*;
 use crate::ui::CameraMain;
 use bevy::{
-    image::{ImageSampler, ImageSamplerDescriptor},
     prelude::*,
     render::{
         extract_resource::{ExtractResource, ExtractResourcePlugin},
         mesh::MeshTag,
-        render_asset::{RenderAssetUsages, RenderAssets},
+        render_asset::{ RenderAssets},
         render_graph::{self, RenderGraph, RenderLabel},
         render_resource::{binding_types::*, *},
         renderer::{RenderContext, RenderDevice, RenderQueue},
@@ -19,7 +18,7 @@ use bevy::{
 use std::borrow::Cow;
 
 const SHADER_ASSET_PATH: &str = "shaders/extinction_cache_compute.wgsl";
-const WORKGROUP_SIZE: u32 = 8;
+const WORKGROUP_SIZE: u32 = 64;
 ///
 /// This is a strategy to complement point-rendering/PSF rendering (ie. stars)
 ///
@@ -69,10 +68,10 @@ impl Plugin for ExtinctionCachePlugin {
 
 #[derive(Resource, Default, Clone, ExtractResource)]
 pub struct ExtinctionCache {
-    pub output_image: Handle<Image>,
+    pub output_buffer: Handle<ShaderStorageBuffer>,
     positions: Vec<Vec4>,
     positions_buffer: Handle<ShaderStorageBuffer>,
-    dimensions: UVec2,
+    size : usize,
 }
 
 fn update_positions(
@@ -84,53 +83,48 @@ fn update_positions(
         return;
     }
 
+    let old_size = extinction_cache.size;
+
     for (transform, tag) in &query {
-        if tag.0 < extinction_cache.dimensions.x * extinction_cache.dimensions.y {
-            extinction_cache.positions[tag.0 as usize] = transform.translation.extend(1.0);
+        if tag.0 >= extinction_cache.size as u32 {
+            extinction_cache.positions.resize(tag.0 as usize +1, Vec4::ZERO);
+            extinction_cache.size = tag.0 as usize +1;
+        }
+        extinction_cache.positions[tag.0 as usize] = transform.translation.extend(1.0);
+    }
+
+    if extinction_cache.size != old_size {
+        
+        if let Some(buffer) = buffers.get_mut(&extinction_cache.output_buffer) {        
+            buffer.set_data(vec![Vec4::ZERO;extinction_cache.size]);
         }
     }
 
-    // TODO - if we jump out as this step, we should take a note to try to reinsert the data next frame
-    let Some(buffer) = buffers.get_mut(&extinction_cache.positions_buffer) else {
-        return;
-    };
 
-    buffer.set_data(extinction_cache.positions.as_slice());
+    if let Some(buffer) = buffers.get_mut(&extinction_cache.positions_buffer) {        
+        buffer.set_data(extinction_cache.positions.as_slice());
+    }
 }
 
 fn init_cache_resource(
     mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
     mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
 ) {
     // TODO - adaptive dimensions
-    let dimensions = uvec3(256, 256, 1);
-    info!("Resizing extinction cache texture {}", dimensions);
-    let mut image = Image::new_fill(
-        Extent3d {
-            width: dimensions.x,
-            height: dimensions.y,
-            depth_or_array_layers: dimensions.z,
-        },
-        TextureDimension::D2,
-        &[0; 4],
-        TextureFormat::Rgb10a2Unorm,
-        RenderAssetUsages::RENDER_WORLD,
-    );
-    // wrapping sampling
-    image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor::nearest());
-    image.texture_descriptor.usage =
-        TextureUsages::COPY_DST | TextureUsages::STORAGE_BINDING | TextureUsages::TEXTURE_BINDING;
+    let size = 65536;
+    info!("Resizing extinction cache buffers {}", size);
 
     commands.insert_resource(ExtinctionCache {
-        output_image: images.add(image),
-        positions: vec![Vec4::ZERO; (dimensions.x * dimensions.y) as usize],
+        output_buffer : buffers.add(ShaderStorageBuffer::from(vec![
+            Vec4::ZERO;
+            size
+        ])),
+        positions: vec![Vec4::ZERO;size],
         positions_buffer: buffers.add(ShaderStorageBuffer::from(vec![
             Vec4::ZERO;
-            (dimensions.x * dimensions.y)
-                as usize
+            size
         ])),
-        dimensions: dimensions.xy(),
+        size,
     });
 }
 
@@ -196,9 +190,8 @@ fn prepare_bind_group(
     render_device: Res<RenderDevice>,
     ssbos: Res<RenderAssets<GpuShaderStorageBuffer>>,
 ) {
-    let output_view = gpu_images.get(&cache_image.output_image).unwrap();
-
     let input_positions = ssbos.get(&cache_image.positions_buffer).unwrap();
+    let output_buffer = ssbos.get(&cache_image.output_buffer).unwrap();
 
     let galaxy_uniform = uniforms_buffer.galaxy_params.binding().unwrap();
     let bulge_params = uniforms_buffer.bulge_params.binding().unwrap();
@@ -222,7 +215,7 @@ fn prepare_bind_group(
         &pipeline.bind_group_layout,
         &BindGroupEntries::sequential((
             camera_uniform,
-            &output_view.texture_view,
+            output_buffer.buffer.as_entire_buffer_binding(),
             input_positions.buffer.as_entire_buffer_binding(),
             galaxy_uniform,
             bulge_params,
@@ -253,11 +246,7 @@ impl FromWorld for ExtinctionCachePipeline {
                 (
                     uniform_buffer::<Vec4>(false), // camera pos
                     // Extinction output
-                    BindingType::StorageTexture {
-                        access: StorageTextureAccess::WriteOnly,
-                        format: TextureFormat::Rgb10a2Unorm,
-                        view_dimension: TextureViewDimension::D2,
-                    },
+                    storage_buffer::<Vec4>(false),
                     // positions input buffer
                     storage_buffer_read_only::<Vec4>(false),
                     uniform_buffer::<GalaxyParams>(false),
@@ -341,7 +330,7 @@ impl render_graph::Node for ExtinctionCacheNode {
         let bind_groups = &world.resource::<ExtinctionCacheBindGroups>().0;
         let pipeline_cache = world.resource::<PipelineCache>();
         let pipeline: &ExtinctionCachePipeline = world.resource::<ExtinctionCachePipeline>();
-        let texture_dimensions = world.resource::<ExtinctionCache>().dimensions;
+        let size = world.resource::<ExtinctionCache>().size;
 
         let mut pass = render_context
             .command_encoder()
@@ -357,8 +346,8 @@ impl render_graph::Node for ExtinctionCacheNode {
                 pass.set_bind_group(0, &bind_groups[0], &[]);
                 pass.set_pipeline(pipeline);
                 pass.dispatch_workgroups(
-                    texture_dimensions.x / WORKGROUP_SIZE,
-                    texture_dimensions.y / WORKGROUP_SIZE,
+                    size as u32 / WORKGROUP_SIZE,
+                    1,
                     1,
                 );
             }

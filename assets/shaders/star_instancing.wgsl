@@ -5,9 +5,8 @@
 #import bevy_pbr::mesh_functions::{get_world_from_local, mesh_position_local_to_clip}
 #import bevy_pbr::view_transformations::position_world_to_clip;
 #import bevy_pbr::mesh_view_bindings::view
-@group(2) @binding(0) var texture: texture_2d<f32>;
-@group(2) @binding(1) var texture_sampler: sampler;
-@group(2) @binding(2) var<uniform> supersampling_offset_scale: f32;
+@group(2) @binding(0) var<storage> extinction_output: array<vec4<f32>>;
+@group(2) @binding(1) var<uniform> supersampling_offset_scale: f32;
 
 
 struct Vertex {
@@ -29,9 +28,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 
     // retrieve colour based on instance tag
     let tag = mesh_functions::get_tag(vertex.instance_index);
-    let tex_dim = textureDimensions(texture);
-    let texel_coord = vec2<u32>(tag % tex_dim.x, tag / tex_dim.x);
-    let in_color = textureLoad(texture, texel_coord, 0).rgb;
+    let in_color = extinction_output[tag].rgb;
 
     let scale_factor =  ((in_color.x+in_color.y+in_color.z)*5.0)*galaxy_scale_factor * billboard_margin_scale;
 

@@ -4,7 +4,7 @@ use bevy::{
     reflect::TypePath,
     render::{
         mesh::MeshTag,
-        render_resource::{AsBindGroup, ShaderRef},
+        render_resource::{AsBindGroup, ShaderRef}, storage::ShaderStorageBuffer,
     },
 };
 use rand::prelude::*;
@@ -42,7 +42,7 @@ fn init_resource(
 
     let material_handle = materials.add(StarInstanceMaterial {
         alpha_mode: AlphaMode::Add,
-        image: None,
+        colors: Handle::default(),
         supersampling_offset_scale: 1.0,
     });
 
@@ -63,7 +63,7 @@ fn update_material(
 ) {
     if extinction.is_changed() {
         if let Some(mat) = materials.get_mut(&star_instancing.material_handle) {
-            mat.image = Some(extinction.output_image.clone());
+            mat.colors = extinction.output_buffer.clone();
         };
     }
 }
@@ -176,10 +176,9 @@ fn sample_star_pos(galaxy_config: &GalaxyConfig) -> Vec3 {
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
 struct StarInstanceMaterial {
-    #[texture(0)]
-    #[sampler(1)]
-    image: Option<Handle<Image>>,
-    #[uniform(2)]
+    #[storage(0, read_only)]
+    colors: Handle<ShaderStorageBuffer>,
+    #[uniform(1)]
     supersampling_offset_scale: f32,
     alpha_mode: AlphaMode,
 }

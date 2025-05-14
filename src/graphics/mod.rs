@@ -6,6 +6,9 @@ mod galaxy_volume_render;
 mod extinction_cache;
 mod shader_types;
 
+mod star_instancing;
+pub use star_instancing::{StarInstanceMarker, StarInstancingPlugin};
+
 pub use extinction_cache::ExtinctionCache;
 use galaxy_texture::GalaxyTexture;
 pub struct GraphicsPlugin;

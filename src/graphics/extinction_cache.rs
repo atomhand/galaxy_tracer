@@ -1,12 +1,12 @@
-use super::{galaxy_texture::GalaxyTexture, shader_types::*};
-use crate::{galaxy::StarInstanceMarker,prelude::*};
+use super::{galaxy_texture::GalaxyTexture, shader_types::*, StarInstanceMarker};
+use crate::prelude::*;
 use crate::ui::CameraMain;
 use bevy::{
     prelude::*,
     render::{
         extract_resource::{ExtractResource, ExtractResourcePlugin},
         mesh::MeshTag,
-        render_asset::{ RenderAssets},
+        render_asset::RenderAssets,
         render_graph::{self, RenderGraph, RenderLabel},
         render_resource::{binding_types::*, *},
         renderer::{RenderContext, RenderDevice, RenderQueue},
@@ -69,10 +69,10 @@ impl Plugin for ExtinctionCachePlugin {
 #[derive(Resource, Default, Clone, ExtractResource)]
 pub struct ExtinctionCache {
     pub output_buffer: Handle<ShaderStorageBuffer>,
-    pub required_size : usize,
+    pub required_size: usize,
     positions: Vec<Vec4>,
     positions_buffer: Handle<ShaderStorageBuffer>,
-    size : usize,
+    size: usize,
 }
 
 fn update_positions(
@@ -85,8 +85,8 @@ fn update_positions(
         extinction_cache.size = size;
         extinction_cache.positions.resize(size, Vec4::ZERO);
 
-        if let Some(buffer) = buffers.get_mut(&extinction_cache.output_buffer) {        
-            buffer.set_data(vec![Vec4::ZERO;size]);
+        if let Some(buffer) = buffers.get_mut(&extinction_cache.output_buffer) {
+            buffer.set_data(vec![Vec4::ZERO; size]);
         }
     }
 
@@ -96,34 +96,26 @@ fn update_positions(
 
     for (transform, tag) in &query {
         if tag.0 >= extinction_cache.size as u32 {
-            extinction_cache.positions.resize(tag.0 as usize +1, Vec4::ZERO);
-            extinction_cache.size = tag.0 as usize +1;
+            extinction_cache
+                .positions
+                .resize(tag.0 as usize + 1, Vec4::ZERO);
+            extinction_cache.size = tag.0 as usize + 1;
         }
         extinction_cache.positions[tag.0 as usize] = transform.translation.extend(1.0);
     }
 
-
-    if let Some(buffer) = buffers.get_mut(&extinction_cache.positions_buffer) {        
+    if let Some(buffer) = buffers.get_mut(&extinction_cache.positions_buffer) {
         buffer.set_data(extinction_cache.positions.as_slice());
     }
 }
 
-fn init_cache_resource(
-    mut commands: Commands,
-    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
-) {
+fn init_cache_resource(mut commands: Commands, mut buffers: ResMut<Assets<ShaderStorageBuffer>>) {
     let size = 0;
     commands.insert_resource(ExtinctionCache {
-        output_buffer : buffers.add(ShaderStorageBuffer::from(vec![
-            Vec4::ZERO;
-            size
-        ])),
-        positions: vec![Vec4::ZERO;size],
-        positions_buffer: buffers.add(ShaderStorageBuffer::from(vec![
-            Vec4::ZERO;
-            size
-        ])),
-        required_size : size,
+        output_buffer: buffers.add(ShaderStorageBuffer::from(vec![Vec4::ZERO; size])),
+        positions: vec![Vec4::ZERO; size],
+        positions_buffer: buffers.add(ShaderStorageBuffer::from(vec![Vec4::ZERO; size])),
+        required_size: size,
         size,
     });
 }
@@ -345,11 +337,7 @@ impl render_graph::Node for ExtinctionCacheNode {
                     .unwrap();
                 pass.set_bind_group(0, &bind_groups[0], &[]);
                 pass.set_pipeline(pipeline);
-                pass.dispatch_workgroups(
-                    size as u32 / WORKGROUP_SIZE,
-                    1,
-                    1,
-                );
+                pass.dispatch_workgroups(size as u32 / WORKGROUP_SIZE, 1, 1);
             }
         }
 

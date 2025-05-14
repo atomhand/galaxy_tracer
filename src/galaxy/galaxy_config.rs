@@ -26,7 +26,6 @@ pub struct GalaxyConfig {
     pub bulge_intensity: f32,
 
     pub diagnostic_mode: bool,
-    pub flat_mode: bool,
 
     pub stars_per_arm: i32,
     pub draw_stars_to_background: bool,
@@ -177,7 +176,6 @@ impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
             diagnostic_mode: false,
-            flat_mode: false,
             raymarch_steps: 128,
             generation: 1,
             texture_root: 9,

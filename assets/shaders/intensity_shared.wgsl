@@ -81,14 +81,10 @@ fn pos_to_uv(p : vec2<f32>) -> vec2<f32> {
 }
 
 fn lookup_winding(d : f32) -> f32 {
-#ifdef FLAT_DIAGNOSTIC
-    return 0.0;
-#else
 #ifdef COMPUTE_BINDINGS
     return textureSampleLevel(lut_texture,lut_sampler, vec2<f32>(d + 0.5 / galaxy.texture_dimension,0.5), LUT_ID_WINDING,0.0).x;
 #else
     return textureSample(lut_texture,lut_sampler, vec2<f32>(d + 0.5 / galaxy.texture_dimension,0.5), LUT_ID_WINDING).x;
-#endif
 #endif
 }
 
@@ -217,15 +213,11 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     // yellow
     let bulge_col = vec3<f32>(1.,0.9,0.45);
 
-#ifdef FLAT_DIAGNOSTIC
-    return vec3<f32>(1.0 - dust_intensity);
-#else
 #ifdef DIAGNOSTIC
-    return in_col + vec3<f32>((disk_intensity + dust_intensity), 0.0, 0.0);
+    return in_col + stepsize * galaxy.exposure * vec3<f32>((disk_intensity + dust_intensity), 0.0, 0.0);
 #else
     let col = in_col + disk_col * disk_intensity * galaxy.exposure + bulge_col * bulge_intensity;
     return col * extinction;
-#endif
 #endif
 #endif
 }

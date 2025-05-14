@@ -84,7 +84,6 @@ pub struct GalaxyVolumeMaterial {
     lut: Option<Handle<Image>>,
     alpha_mode: AlphaMode,
     diagnostic_mode: bool,
-    flat_mode: bool,
 }
 impl GalaxyVolumeMaterial {
     pub fn update(&mut self, galaxy_config: &GalaxyConfig) {
@@ -93,7 +92,6 @@ impl GalaxyVolumeMaterial {
         self.disk_params = ComponentParams::read(&galaxy_config.disk_params);
         self.dust_params = ComponentParams::read(&galaxy_config.dust_params);
         self.diagnostic_mode = galaxy_config.diagnostic_mode;
-        self.flat_mode = galaxy_config.flat_mode;
     }
     pub fn new(galaxy_config: &GalaxyConfig) -> Self {
         let mut ret = Self {
@@ -138,11 +136,6 @@ impl Material for GalaxyVolumeMaterial {
             let fragment = descriptor.fragment.as_mut().unwrap();
             fragment.shader_defs.push("DIAGNOSTIC".into());
         }
-        if key.bind_group_data.flat_mode {
-            let fragment: &mut bevy::render::render_resource::FragmentState =
-                descriptor.fragment.as_mut().unwrap();
-            fragment.shader_defs.push("FLAT_DIAGNOSTIC".into());
-        }
         Ok(())
     }
 }
@@ -153,14 +146,12 @@ impl Material for GalaxyVolumeMaterial {
 #[derive(Eq, PartialEq, Hash, Clone)]
 pub struct GalaxyMaterialKey {
     diagnostic_mode: bool,
-    flat_mode: bool,
 }
 
 impl From<&GalaxyVolumeMaterial> for GalaxyMaterialKey {
     fn from(material: &GalaxyVolumeMaterial) -> Self {
         Self {
             diagnostic_mode: material.diagnostic_mode,
-            flat_mode: material.flat_mode,
         }
     }
 }

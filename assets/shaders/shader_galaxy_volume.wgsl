@@ -53,9 +53,6 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {
     let STEPS = galaxy.raymarch_steps;
     let exposure = 0.1;
 
-#ifdef FLAT_DIAGNOSTIC
-    col = ray_step(ro, col, 1.0);
-#else
     // LINEAR TRACE
     let start = ro + rd * max(0.0,t2);
     let end = ro + rd * max(0.0,t1);
@@ -65,7 +62,6 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {
         let p = start + step * f32(i);
         col = ray_step(p,col,step_size * exposure);
     }
-#endif
     return col;    
 }
 

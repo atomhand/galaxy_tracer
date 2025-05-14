@@ -5,10 +5,6 @@ use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
 pub struct GalaxyConfig {
     pub generation: i32,
     pub raymarch_steps: u32,
-    pub runtime_noise: bool,
-
-    pub noise_texture_size: UVec3,
-    pub noise_detail_texture_size: UVec3,
 
     pub texture_root: u32,
     pub texture_dimension: u32,
@@ -71,7 +67,6 @@ pub struct ComponentConfig {
     pub angular_offset: f32,
     pub noise_winding_factor: f32,
     pub noise_scale: f32,
-    pub noise_texture_frequency: u32,
     pub noise_offset: f32,
     pub noise_tilt: f32,
     pub noise_persistence: f32,
@@ -92,7 +87,6 @@ impl Default for ComponentConfig {
             angular_offset: 0.0,
             noise_winding_factor: 0.5,
             noise_scale: 1.0,
-            noise_texture_frequency: 1,
             noise_offset: 0.0,
             noise_tilt: 1.0,
             noise_persistence: 1.0,
@@ -114,7 +108,6 @@ impl ComponentConfig {
         angular_offset: -180.0,
         noise_winding_factor: 0.0,
         noise_scale: 0.5,
-        noise_texture_frequency: 1,
         noise_offset: -1.0,
         noise_tilt: -1.0,
         noise_persistence: 0.1,
@@ -132,7 +125,6 @@ impl ComponentConfig {
         angular_offset: 180.0,
         noise_winding_factor: 0.5,
         noise_scale: 10.0,
-        noise_texture_frequency: 5,
         noise_offset: 1.0,
         noise_tilt: 1.0,
         noise_persistence: 2.0,
@@ -186,9 +178,6 @@ impl Default for GalaxyConfig {
         Self {
             diagnostic_mode: false,
             flat_mode: false,
-            runtime_noise: true,
-            noise_texture_size: UVec3::new(64, 8, 64),
-            noise_detail_texture_size: UVec3::new(64, 64, 64),
             raymarch_steps: 128,
             generation: 1,
             texture_root: 9,

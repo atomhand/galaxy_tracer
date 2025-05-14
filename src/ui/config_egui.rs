@@ -100,13 +100,6 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
                 }
                 ui.add(
                     egui::Slider::new(
-                        &mut config.noise_texture_frequency,
-                        minval.noise_texture_frequency..=maxval.noise_texture_frequency,
-                    )
-                    .text("Frequency (Texture)"),
-                );
-                ui.add(
-                    egui::Slider::new(
                         &mut config.noise_offset,
                         minval.noise_offset..=maxval.noise_offset,
                     )
@@ -174,18 +167,6 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                             })
                             .text("Texture Size"),
                     );
-                    ui.add(
-                        egui::Slider::new(&mut galaxy_config.noise_texture_size.x, 8..=512)
-                            .text("Noise Texture X"),
-                    );
-                    ui.add(
-                        egui::Slider::new(&mut galaxy_config.noise_texture_size.y, 8..=32)
-                            .text("Noise Texture Y"),
-                    );
-                    ui.add(
-                        egui::Slider::new(&mut galaxy_config.noise_texture_size.z, 8..=512)
-                            .text("Noise Texture Z"),
-                    );
 
                     ui.add(
                         egui::Slider::new(&mut galaxy_config.padding_coeff, 1.0..=2.0)
@@ -194,10 +175,6 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                     ui.add(
                         egui::Slider::new(&mut galaxy_config.raymarch_steps, 1..=256)
                             .text("Raymarch Steps"),
-                    );
-                    ui.checkbox(
-                        &mut galaxy_config.runtime_noise,
-                        "Procedural Noise Evaluation",
                     );
                     let mut inv_exposure = 1.0 / galaxy_config.exposure;
                     ui.add(

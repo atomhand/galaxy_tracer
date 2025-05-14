@@ -2,7 +2,6 @@ use bevy::prelude::*;
 
 mod galaxy_texture;
 mod galaxy_volume_render;
-mod noise_texture;
 
 mod extinction_cache;
 mod shader_types;
@@ -17,7 +16,6 @@ impl Plugin for GraphicsPlugin {
             galaxy_volume_render::GalaxyVolumePlugin,
             galaxy_texture::GalaxyTexturePlugin,
             extinction_cache::ExtinctionCachePlugin,
-            noise_texture::NoiseTexturePlugin,
             volume_upscaler::BackgroundRenderingPlugin,
         ));
     }

@@ -10,30 +10,12 @@ fn get_twirled_unit_pos(p : vec3<f32>, winding_angle : f32) -> vec3<f32> {
 
 fn disk_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
     let r = get_twirled_unit_pos(p,winding_angle);
-#ifdef RUNTIME_NOISE
-    return octave_noise_3d(octaves,disk_params.noise_persistence,disk_params.noise_scale, r);
-#else
-    let dims = textureDimensions(disk_noise_texture, 0);
-    let y_scale = vec3<f32>(1.0, f32(dims.x)/f32(dims.y),1.0);
-    return textureSample(disk_noise_texture,noise_sampler, r * y_scale * disk_params.noise_scale).x;
-#endif    
+    return octave_noise_3d(octaves,disk_params.noise_persistence,disk_params.noise_scale, r);    
 }
 
 fn dust_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
     let pr = get_twirled_unit_pos(p, winding_angle);
-#ifdef RUNTIME_NOISE
     return max(0.0,ridge_noise(pr * dust_params.noise_scale, dust_params.noise_persistence,octaves,2.5,dust_params.noise_offset, dust_params.noise_tilt));
-#else
-    let dims = textureDimensions(disk_noise_texture, 0);
-    let y_scale = vec3<f32>(1.0, f32(dims.x)/f32(dims.y),1.0);
-
-    let detail_sampling_freq = 4.0;
-
-    let macro_sample = textureSample(dust_noise_texture,noise_sampler, pr * y_scale * dust_params.noise_scale).xy;
-    let micro_sample = textureSample(dust_detail_texture,noise_sampler, pr * y_scale * dust_params.noise_scale * detail_sampling_freq).x;
-
-    return max(0.0, (macro_sample.x + macro_sample.y * micro_sample) * 1.25 - 1.0);
-#endif
 }
 
 // END Noise utilities
@@ -90,10 +72,6 @@ struct ComponentParams {
 @group(2) @binding(5) var galaxy_xz_sampler: sampler;
 @group(2) @binding(6) var lut_texture: texture_2d_array<f32>;
 @group(2) @binding(7) var lut_sampler: sampler;
-@group(2) @binding(8) var disk_noise_texture: texture_3d<f32>;
-@group(2) @binding(9) var dust_noise_texture: texture_3d<f32>;
-@group(2) @binding(10) var dust_detail_texture: texture_3d<f32>;
-@group(2) @binding(11) var noise_sampler: sampler;
 #endif
 
 const LUT_ID_WINDING : i32 = 0;

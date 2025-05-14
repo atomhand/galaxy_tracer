@@ -5,7 +5,6 @@ use bevy::{
     render::{
         mesh::MeshTag,
         render_resource::{AsBindGroup, ShaderRef},
-        view::RenderLayers
     },
 };
 use rand::prelude::*;
@@ -37,7 +36,7 @@ struct StarInstancingControl {
 fn init_resource(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StarInstanceMaterial>>
+    mut materials: ResMut<Assets<StarInstanceMaterial>>,
 ) {
     let mesh_handle = meshes.add(Rectangle::from_size(Vec2::splat(2.0)));
 
@@ -96,7 +95,11 @@ fn manage_star_instances(
         star_instancing.current_star_index = 0;
 
         if let Some(mat) = materials.get_mut(&star_instancing.material_handle) {
-            mat.supersampling_offset_scale = if galaxy_config.draw_stars_to_background { 0.25 } else { 1.0 };
+            mat.supersampling_offset_scale = if galaxy_config.draw_stars_to_background {
+                0.25
+            } else {
+                1.0
+            };
         };
     }
     if !galaxy_config.stars_params.enabled {
@@ -112,19 +115,20 @@ fn manage_star_instances(
         });
 
         for pos in star_positions {
-            commands.spawn((
-                // For automatic instancing to take effect you need to
-                // use the same mesh handle and material handle for each instance
-                Mesh3d(star_instancing.mesh_handle.clone()),
-                MeshMaterial3d(star_instancing.material_handle.clone()),
-                // This is an optional component that can be used to help tie external data to a mesh instance
-                MeshTag(star_instancing.current_star_index),
-                Transform::from_translation(pos),
-                StarInstanceMarker,
-            )).insert_if(
-                volume_upscaler::background_render_layer() ,
-                || galaxy_config.draw_stars_to_background
-            );
+            commands
+                .spawn((
+                    // For automatic instancing to take effect you need to
+                    // use the same mesh handle and material handle for each instance
+                    Mesh3d(star_instancing.mesh_handle.clone()),
+                    MeshMaterial3d(star_instancing.material_handle.clone()),
+                    // This is an optional component that can be used to help tie external data to a mesh instance
+                    MeshTag(star_instancing.current_star_index),
+                    Transform::from_translation(pos),
+                    StarInstanceMarker,
+                ))
+                .insert_if(volume_upscaler::background_render_layer(), || {
+                    galaxy_config.draw_stars_to_background
+                });
             star_instancing.current_star_index += 1;
         }
         star_instancing.stars_left_to_place -= batch_size;
@@ -176,7 +180,7 @@ struct StarInstanceMaterial {
     #[sampler(1)]
     image: Option<Handle<Image>>,
     #[uniform(2)]
-    supersampling_offset_scale : f32,
+    supersampling_offset_scale: f32,
     alpha_mode: AlphaMode,
 }
 

@@ -1,9 +1,8 @@
 use super::{galaxy_texture::GalaxyTexture, shader_types::*};
 use crate::prelude::*;
 use crate::ui::CameraMain;
-use bevy::prelude::*;
 use bevy::{
-    image::{ImageAddressMode, ImageSampler, ImageSamplerDescriptor},
+    image::{ImageSampler, ImageSamplerDescriptor},
     prelude::*,
     render::{
         extract_resource::{ExtractResource, ExtractResourcePlugin},
@@ -17,7 +16,6 @@ use bevy::{
         Render, RenderApp, RenderSet,
     },
 };
-use bytemuck::{Pod, Zeroable};
 use std::borrow::Cow;
 
 const SHADER_ASSET_PATH: &str = "shaders/extinction_cache_compute.wgsl";
@@ -187,6 +185,7 @@ fn prepare_uniforms(
 #[derive(Resource)]
 struct ExtinctionCacheBindGroups([BindGroup; 1]);
 
+#[allow(clippy::too_many_arguments)]
 fn prepare_bind_group(
     mut commands: Commands,
     pipeline: Res<ExtinctionCachePipeline>,

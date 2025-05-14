@@ -37,7 +37,7 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
     let minval = ComponentConfig::MIN;
     let maxval = ComponentConfig::MAX;
 
-    let mut section = |ui : &mut egui::Ui| {
+    let mut section = |ui: &mut egui::Ui| {
         ui.checkbox(&mut config.enabled, "Component Enabled");
         ui.add(
             egui::Slider::new(&mut config.strength, minval.strength..=maxval.strength)
@@ -138,8 +138,7 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
         };
     };
     if has_noise {
-        egui::CollapsingHeader::new(heading).show(ui, 
-            section);
+        egui::CollapsingHeader::new(heading).show(ui, section);
     } else {
         (section(ui));
     }

@@ -80,6 +80,7 @@ fn manage_star_instances(
     existing_star_query: Query<Entity, With<StarInstanceMarker>>,
     mut star_instancing: ResMut<StarInstancingControl>,
     mut materials: ResMut<Assets<StarInstanceMaterial>>,
+    mut extinction: ResMut<crate::graphics::ExtinctionCache>,
 ) {
     const BATCH_SIZE: i32 = 4096;
 
@@ -93,6 +94,7 @@ fn manage_star_instances(
         star_instancing.num_stars = galaxy_config.stars_per_arm * galaxy_config.n_arms;
         star_instancing.stars_left_to_place = star_instancing.num_stars;
         star_instancing.current_star_index = 0;
+        extinction.required_size = star_instancing.num_stars as usize;
 
         if let Some(mat) = materials.get_mut(&star_instancing.material_handle) {
             mat.supersampling_offset_scale = if galaxy_config.draw_stars_to_background {

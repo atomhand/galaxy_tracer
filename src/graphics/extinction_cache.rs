@@ -1,5 +1,5 @@
 use super::{galaxy_texture::GalaxyTexture, shader_types::*};
-use crate::prelude::*;
+use crate::{galaxy::StarInstanceMarker,prelude::*};
 use crate::ui::CameraMain;
 use bevy::{
     prelude::*,
@@ -69,6 +69,7 @@ impl Plugin for ExtinctionCachePlugin {
 #[derive(Resource, Default, Clone, ExtractResource)]
 pub struct ExtinctionCache {
     pub output_buffer: Handle<ShaderStorageBuffer>,
+    pub required_size : usize,
     positions: Vec<Vec4>,
     positions_buffer: Handle<ShaderStorageBuffer>,
     size : usize,
@@ -77,13 +78,21 @@ pub struct ExtinctionCache {
 fn update_positions(
     mut extinction_cache: ResMut<ExtinctionCache>,
     mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
-    query: Query<(&Transform, &MeshTag), Added<crate::galaxy::StarInstanceMarker>>,
+    query: Query<(&Transform, &MeshTag), Added<StarInstanceMarker>>,
 ) {
+    if extinction_cache.size != extinction_cache.required_size {
+        let size = extinction_cache.required_size;
+        extinction_cache.size = size;
+        extinction_cache.positions.resize(size, Vec4::ZERO);
+
+        if let Some(buffer) = buffers.get_mut(&extinction_cache.output_buffer) {        
+            buffer.set_data(vec![Vec4::ZERO;size]);
+        }
+    }
+
     if query.is_empty() {
         return;
     }
-
-    let old_size = extinction_cache.size;
 
     for (transform, tag) in &query {
         if tag.0 >= extinction_cache.size as u32 {
@@ -91,13 +100,6 @@ fn update_positions(
             extinction_cache.size = tag.0 as usize +1;
         }
         extinction_cache.positions[tag.0 as usize] = transform.translation.extend(1.0);
-    }
-
-    if extinction_cache.size != old_size {
-        
-        if let Some(buffer) = buffers.get_mut(&extinction_cache.output_buffer) {        
-            buffer.set_data(vec![Vec4::ZERO;extinction_cache.size]);
-        }
     }
 
 
@@ -110,10 +112,7 @@ fn init_cache_resource(
     mut commands: Commands,
     mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
 ) {
-    // TODO - adaptive dimensions
-    let size = 65536;
-    info!("Resizing extinction cache buffers {}", size);
-
+    let size = 0;
     commands.insert_resource(ExtinctionCache {
         output_buffer : buffers.add(ShaderStorageBuffer::from(vec![
             Vec4::ZERO;
@@ -124,6 +123,7 @@ fn init_cache_resource(
             Vec4::ZERO;
             size
         ])),
+        required_size : size,
         size,
     });
 }

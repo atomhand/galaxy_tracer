@@ -47,7 +47,12 @@ impl Plugin for BackgroundCameraPlugin {
             ExtractComponentPlugin::<BackgroundImageOutput>::default(),
             ExtractComponentPlugin::<BackgroundChildCamera>::default(),
         ));
-        app.add_systems(Update, (setup, update));
+        // TODO
+        // really there should be a cleanup system as well
+        app.add_systems(
+            Update,
+            (setup_new_camera, update_uniform, update_target_size,cleanup),
+        );
 
         let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
             return;
@@ -59,7 +64,49 @@ impl Plugin for BackgroundCameraPlugin {
     }
 }
 
-fn setup(
+fn cleanup(
+    mut commands : Commands,
+    q_child : Query<(Entity,&ChildOf),With<BackgroundChildCamera>>,
+    q_parent : Query<&BackgroundCamera>,
+) {
+    // clean up stray child cameras
+    for (entity,child_of) in &q_child {
+        if q_parent.get(child_of.parent()).is_err() {
+            commands.entity(entity).despawn();
+        }
+    }
+}
+
+fn update_target_size(
+    mut query: Query<(&Camera, &mut BackgroundImageOutput)>,
+    mut images: ResMut<Assets<Image>>,
+) {
+    for (camera, background_image_output) in query.iter_mut() {
+        let Some(viewport) = camera.physical_viewport_rect() else {
+            continue;
+        };
+
+        let w = (viewport.max.x - viewport.min.x) / UPSCALE_FACTOR as u32;
+        let h = (viewport.max.y - viewport.min.y) / UPSCALE_FACTOR as u32;
+
+        let Some(image) = images.get(&background_image_output.image) else {
+            continue;
+        };
+
+        if image.size() != uvec2(w, h) {
+            let size = Extent3d {
+                width: w,
+                height: h,
+                ..default()
+            };
+            if let Some(image) = images.get_mut(&background_image_output.image) {
+                image.resize(size);
+            }
+        }
+    }
+}
+
+fn setup_new_camera(
     mut commands: Commands,
     mut query: Query<
         (
@@ -135,7 +182,7 @@ fn setup(
     }
 }
 
-fn update(frame_count: Res<FrameCount>, mut query: Query<&mut BackgroundUpscaleSettings>) {
+fn update_uniform(frame_count: Res<FrameCount>, mut query: Query<&mut BackgroundUpscaleSettings>) {
     for mut pass_settings in query.iter_mut() {
         pass_settings.current_pixel =
             (frame_count.0 as i32 % (UPSCALE_FACTOR * UPSCALE_FACTOR)) as f32;

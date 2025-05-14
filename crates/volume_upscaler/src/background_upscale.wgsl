@@ -15,7 +15,8 @@ struct BackgroundUpscaleSettings {
 @group(0) @binding(2) var<uniform> upscale_settings : BackgroundUpscaleSettings;
 @group(0) @binding(3) var history_input_texture: texture_2d<f32>;
 @group(0) @binding(4) var background_input_texture: texture_2d<f32>;
-@group(0) @binding(5) var texture_sampler: sampler;
+@group(0) @binding(5) var nearest_sampler: sampler;
+@group(0) @binding(6) var linear_sampler: sampler;
 
 struct Output {
     @location(0) view_target: vec4<f32>,
@@ -96,7 +97,7 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
 
     // force new sample if historical uv is outside the screen buffer
     //  or if the difference in uvs is too high
-    var force_new_sample = any(saturate(old_uv) != old_uv) || length(old_uv-in.uv)  > 0.01;
+    var force_new_sample = any(saturate(old_uv) != old_uv) || length(old_uv-in.uv)  > 0.1 || t < 0.0;
 
     // Background sample position and pixel offset
     let dimensions = vec2<f32>(textureDimensions(background_input_texture).xy) * 4.0;
@@ -108,14 +109,14 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
 
     var out = Output();
     let center_uv = (vec2<f32>((coord/4)*4)+vec2<f32>(1.5,1.5)) / dimensions;
-    let history_sample = textureSample(history_input_texture, texture_sampler, old_uv);
-    let background_sample = textureSample(background_input_texture, texture_sampler, center_uv);
+    let history_sample = textureSample(history_input_texture, nearest_sampler, old_uv);
     if(force_new_sample) {
-        let center_uv = (vec2<f32>((coord/4)*4)+vec2<f32>(1.5,1.5)) / dimensions;
+        let background_sample = textureSample(background_input_texture, linear_sampler, in.uv);
         out.history = background_sample;
         out.view_target =  background_sample;
     } else if( p == i32(upscale_settings.current_pixel)){
-        let blend = mix(history_sample,background_sample,0.25);
+        let background_sample = textureSample(background_input_texture, nearest_sampler, center_uv);
+        let blend = mix(history_sample,background_sample,0.4);
         out.history = blend;
         out.view_target =  blend;
     }

@@ -236,7 +236,8 @@ impl ViewNode for BackgroundUpscaleNode {
                 &background_history_textures.read.default_view,
                 // Use the sampler created for the pipeline
                 &input_image.texture_view,
-                &background_upscale_pipeline.sampler,
+                &background_upscale_pipeline.nearest_sampler,
+                &background_upscale_pipeline.linear_sampler,
             )),
         );
 
@@ -287,7 +288,8 @@ impl ViewNode for BackgroundUpscaleNode {
 #[derive(Resource)]
 struct BackgroundUpscalePipeline {
     layout: BindGroupLayout,
-    sampler: Sampler,
+    nearest_sampler: Sampler,
+    linear_sampler: Sampler,
     pipeline_id: CachedRenderPipelineId,
 }
 
@@ -314,15 +316,22 @@ impl FromWorld for BackgroundUpscalePipeline {
                     texture_2d(TextureSampleType::Float { filterable: true }),
                     // Can use the same sampler for all of them (I think?)
                     sampler(SamplerBindingType::Filtering),
+                    sampler(SamplerBindingType::Filtering),
                 ),
             ),
         );
 
         // We can create the sampler here since it won't change at runtime and doesn't depend on the view
-        let sampler = render_device.create_sampler(&SamplerDescriptor {
+        let nearest_sampler = render_device.create_sampler(&SamplerDescriptor {
             label: Some("background_upscale_nearest_sampler"),
             mag_filter: FilterMode::Nearest,
             min_filter: FilterMode::Nearest,
+            ..SamplerDescriptor::default()
+        });
+        let linear_sampler = render_device.create_sampler(&SamplerDescriptor {
+            label: Some("background_upscale_linear_sampler"),
+            mag_filter: FilterMode::Linear,
+            min_filter: FilterMode::Linear,
             ..SamplerDescriptor::default()
         });
 
@@ -364,7 +373,8 @@ impl FromWorld for BackgroundUpscalePipeline {
 
         Self {
             layout,
-            sampler,
+            nearest_sampler,
+            linear_sampler,
             pipeline_id,
         }
     }

@@ -18,17 +18,17 @@ pub struct GalaxyParams {
 }
 
 impl GalaxyParams {
-    pub fn read(config: &GalaxyConfig) -> Self {
+    pub fn read(config: &GalaxyConfig, galaxy_render_settings: &GalaxyRenderConfig) -> Self {
         Self {
-            padding_coefficient: config.padding_coeff,
+            padding_coefficient: galaxy_render_settings.padding_coeff,
             radius: config.radius,
             num_arms: config.n_arms,
             arm_offsets: Vec4::from_array(config.arm_offsets),
             winding_b: config.winding_b,
             winding_n: config.winding_n,
-            exposure: config.exposure,
-            raymarch_steps: config.raymarch_steps as f32,
-            texture_dimension: config.texture_dimension as f32,
+            exposure: galaxy_render_settings.exposure,
+            raymarch_steps: galaxy_render_settings.raymarch_steps as f32,
+            texture_dimension: galaxy_render_settings.texture_dimension as f32,
         }
     }
 }

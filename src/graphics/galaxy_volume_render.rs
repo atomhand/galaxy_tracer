@@ -29,9 +29,13 @@ fn setup_galaxy_volume(
     mut meshes: ResMut<Assets<Mesh>>,
     mut galaxy_materials: ResMut<Assets<GalaxyVolumeMaterial>>,
     galaxy_config: Res<GalaxyConfig>,
+    galaxy_render_settings: Res<GalaxyRenderConfig>,
 ) {
     let galaxy_mesh = meshes.add(Rectangle::from_size(Vec2::splat(2.0)));
-    let mat = galaxy_materials.add(GalaxyVolumeMaterial::new(&galaxy_config));
+    let mat = galaxy_materials.add(GalaxyVolumeMaterial::new(
+        &galaxy_config,
+        &galaxy_render_settings,
+    ));
     commands.spawn((
         Mesh3d(galaxy_mesh),
         Transform::IDENTITY,
@@ -46,13 +50,13 @@ fn setup_galaxy_volume(
 fn update_galaxy_volume(
     mut commands: Commands,
     query: Query<Entity, With<GalaxyVolume>>,
-    galaxy_config: Res<GalaxyConfig>,
+    galaxy_render_settings: Res<GalaxyRenderConfig>,
 ) {
     // TODO: we dont have to do this every frame
     if let Ok(entity) = query.single() {
         commands
             .entity(entity)
-            .insert(if galaxy_config.draw_volume_to_background {
+            .insert(if galaxy_render_settings.draw_volume_to_background {
                 volume_upscaler::background_render_layer()
             } else {
                 RenderLayers::layer(0)
@@ -64,6 +68,7 @@ fn update_volume_material(
     galaxy_mat: Query<&MeshMaterial3d<GalaxyVolumeMaterial>, With<GalaxyVolume>>,
     galaxy_texture: Res<super::GalaxyTexture>,
     galaxy_config: Res<GalaxyConfig>,
+    galaxy_render_settings: Res<GalaxyRenderConfig>,
     mut galaxy_materials: ResMut<Assets<GalaxyVolumeMaterial>>,
 ) {
     // it would be good to divorce parameter updates from texture updates I guess
@@ -76,7 +81,7 @@ fn update_volume_material(
             return;
         };
 
-        mat.update(&galaxy_config);
+        mat.update(&galaxy_config, &galaxy_render_settings);
 
         mat.xz_texture = galaxy_texture.tex.clone();
         mat.lut = galaxy_texture.luts.clone();
@@ -106,19 +111,23 @@ pub struct GalaxyVolumeMaterial {
     diagnostic_mode: bool,
 }
 impl GalaxyVolumeMaterial {
-    pub fn update(&mut self, galaxy_config: &GalaxyConfig) {
-        self.galaxy_params = GalaxyParams::read(galaxy_config);
+    pub fn update(
+        &mut self,
+        galaxy_config: &GalaxyConfig,
+        galaxy_render_settings: &GalaxyRenderConfig,
+    ) {
+        self.galaxy_params = GalaxyParams::read(galaxy_config, galaxy_render_settings);
         self.bulge_params = BulgeParams::read(galaxy_config);
         self.disk_params = ComponentParams::read(&galaxy_config.disk_params);
         self.dust_params = ComponentParams::read(&galaxy_config.dust_params);
-        self.diagnostic_mode = galaxy_config.diagnostic_mode;
+        self.diagnostic_mode = galaxy_render_settings.diagnostic_mode;
     }
-    pub fn new(galaxy_config: &GalaxyConfig) -> Self {
+    pub fn new(galaxy_config: &GalaxyConfig, galaxy_render_settings: &GalaxyRenderConfig) -> Self {
         let mut ret = Self {
             alpha_mode: AlphaMode::Add,
             ..default()
         };
-        ret.update(galaxy_config);
+        ret.update(galaxy_config, galaxy_render_settings);
         ret
     }
 }

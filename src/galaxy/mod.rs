@@ -8,7 +8,7 @@ pub use spawn_stars::{SpawnStarsPlugin, Star};
 
 pub use arm_lut_generator::ArmLutGenerator;
 pub use galaxy_config::{
-    ArmConfig, ComponentConfig, ComponentType, GalaxyConfig, GalaxyConfigPlugin,
+    ArmConfig, ComponentConfig, ComponentType, GalaxyConfig, GalaxyConfigPlugin, GalaxyRenderConfig,
 };
 
 #[derive(Resource)]

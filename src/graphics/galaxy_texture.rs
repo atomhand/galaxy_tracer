@@ -8,6 +8,7 @@ pub struct GalaxyTexturePlugin;
 pub struct GalaxyTexture {
     pub tex: Option<Handle<Image>>,
     pub luts: Option<Handle<Image>>,
+    dimension: u32,
     generation: i32,
 }
 
@@ -24,8 +25,8 @@ use bevy::render::{
     render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
-pub fn get_lut(config: &GalaxyConfig) -> Image {
-    let width = config.texture_dimension.next_power_of_two();
+pub fn get_lut(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> Image {
+    let width = render_settings.texture_dimension.next_power_of_two();
     let layers = 4;
 
     let disk_painter = ArmLutGenerator::new(config, &config.disk_params);
@@ -66,8 +67,8 @@ pub fn get_lut(config: &GalaxyConfig) -> Image {
     )
 }
 
-pub fn get_texture(config: &GalaxyConfig) -> Image {
-    let dimension = config.texture_dimension.next_power_of_two();
+pub fn get_texture(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> Image {
+    let dimension = render_settings.texture_dimension.next_power_of_two();
 
     let disk_painter = ArmLutGenerator::new(config, &config.disk_params);
     let dust_painter = ArmLutGenerator::new(config, &config.dust_params);
@@ -85,7 +86,7 @@ pub fn get_texture(config: &GalaxyConfig) -> Image {
             let p = Vec2::new(
                 x as f32 / dimension as f32 * config.radius * 2.0 - config.radius,
                 y as f32 / dimension as f32 * config.radius * 2.0 - config.radius,
-            ) * config.padding_coeff;
+            ) * render_settings.padding_coeff;
 
             let disk = disk_painter.get_xz_intensity(p);
             let dust = dust_painter.get_xz_intensity(p);
@@ -119,14 +120,19 @@ pub fn get_texture(config: &GalaxyConfig) -> Image {
 fn update_texture(
     mut images: ResMut<Assets<Image>>,
     config: Res<GalaxyConfig>,
+    render_settings: Res<GalaxyRenderConfig>,
     mut tex_holder: ResMut<GalaxyTexture>,
 ) {
-    if config.generation != tex_holder.generation || tex_holder.tex.is_none() {
+    if config.generation != tex_holder.generation
+        || tex_holder.tex.is_none()
+        || tex_holder.dimension != render_settings.texture_dimension.next_power_of_two()
+    {
         info!("Galaxy config updated, rebaking galaxy");
-        let handle = images.add(get_texture(&config));
+        let handle = images.add(get_texture(&config, &render_settings));
         tex_holder.tex = Some(handle);
+        tex_holder.dimension = render_settings.texture_dimension.next_power_of_two();
 
-        let lut_handle = images.add(get_lut(&config));
+        let lut_handle = images.add(get_lut(&config, &render_settings));
         tex_holder.luts = Some(lut_handle);
         tex_holder.generation = config.generation;
     }

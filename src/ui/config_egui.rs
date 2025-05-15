@@ -145,7 +145,11 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
     ui.separator();
 }
 
-fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>) {
+fn ui_system(
+    mut contexts: EguiContexts,
+    mut galaxy_config: ResMut<GalaxyConfig>,
+    mut rendering_config: ResMut<GalaxyRenderConfig>,
+) {
     let ctx = contexts.ctx_mut();
 
     egui::SidePanel::left("side_panel")
@@ -159,7 +163,7 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                         egui::Slider::new(&mut galaxy_config.radius, 100.0..=1000.0).text("Radius"),
                     );
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.texture_root, 4..=11)
+                        egui::Slider::new(&mut rendering_config.texture_root, 4..=11)
                             .custom_formatter(|n, _| {
                                 let n = n as u32;
                                 format!("{}", 2u32.pow(n))
@@ -168,23 +172,23 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                     );
 
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.padding_coeff, 1.0..=2.0)
+                        egui::Slider::new(&mut rendering_config.padding_coeff, 1.0..=2.0)
                             .text("Padding Coefficient"),
                     );
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.raymarch_steps, 1..=256)
+                        egui::Slider::new(&mut rendering_config.raymarch_steps, 1..=256)
                             .text("Raymarch Steps"),
                     );
                     ui.checkbox(
-                        &mut galaxy_config.draw_volume_to_background,
+                        &mut rendering_config.draw_volume_to_background,
                         "Draw volume to background layer",
                     );
-                    let mut inv_exposure = 1.0 / galaxy_config.exposure;
+                    let mut inv_exposure = 1.0 / rendering_config.exposure;
                     ui.add(
                         egui::Slider::new(&mut inv_exposure, 1.0..=1000.0)
                             .text("Exposure (Inverse)"),
                     );
-                    galaxy_config.exposure = 1.0 / inv_exposure;
+                    rendering_config.exposure = 1.0 / inv_exposure;
 
                     ui.add(
                         egui::Slider::new(&mut galaxy_config.winding_b, 0.5..=3.0).text("windingB"),
@@ -194,7 +198,10 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                             .text("windingN"),
                     );
 
-                    ui.checkbox(&mut galaxy_config.diagnostic_mode, "Performance Diagnostic");
+                    ui.checkbox(
+                        &mut rendering_config.diagnostic_mode,
+                        "Performance Diagnostic",
+                    );
                 });
 
                 ui.separator();
@@ -227,7 +234,7 @@ fn ui_system(mut contexts: EguiContexts, mut galaxy_config: ResMut<GalaxyConfig>
                             .text("Stars per arm"),
                     );
                     ui.checkbox(
-                        &mut galaxy_config.draw_stars_to_background,
+                        &mut rendering_config.draw_stars_to_background,
                         "Draw stars to background",
                     );
                     component_ui(&mut galaxy_config.stars_params, false, ui);

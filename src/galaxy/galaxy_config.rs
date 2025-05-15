@@ -1,25 +1,30 @@
 use bevy::prelude::*;
 use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
 
+#[derive(Resource, Clone, ExtractResource)]
+pub struct GalaxyRenderConfig {
+    pub raymarch_steps: u32,
+    pub draw_volume_to_background: bool,
+    pub texture_root: u32,
+    pub texture_dimension: u32,
+    pub diagnostic_mode: bool,
+    pub draw_stars_to_background: bool,
+    pub padding_coeff: f32,
+    pub exposure: f32,
+}
+
 #[derive(Resource, Clone, PartialEq, ExtractResource)]
 pub struct GalaxyConfig {
     pub generation: i32,
-    pub raymarch_steps: u32,
 
-    pub draw_volume_to_background: bool,
-
-    pub texture_root: u32,
-    pub texture_dimension: u32,
     pub radius: f32,
     pub n_arms: i32,
     pub arm_offsets: [f32; 4],
 
     pub winding_b: f32,
     pub winding_n: f32,
-    pub exposure: f32,
 
     pub spacing: f32,
-    pub padding_coeff: f32,
 
     pub arm_configs: [ArmConfig; 4],
 
@@ -27,10 +32,7 @@ pub struct GalaxyConfig {
     pub bulge_radius: f32,
     pub bulge_intensity: f32,
 
-    pub diagnostic_mode: bool,
-
     pub stars_per_arm: i32,
-    pub draw_stars_to_background: bool,
 
     pub disk_params: ComponentConfig,
     pub dust_params: ComponentConfig,
@@ -138,20 +140,23 @@ pub struct GalaxyConfigPlugin;
 impl Plugin for GalaxyConfigPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GalaxyConfig::default())
+            .insert_resource(GalaxyRenderConfig::default())
             .insert_resource(GalaxyConfigOld::default())
             .add_systems(Update, apply_ui_updates)
-            .add_plugins(ExtractResourcePlugin::<GalaxyConfig>::default());
+            .add_plugins(ExtractResourcePlugin::<GalaxyConfig>::default())
+            .add_plugins(ExtractResourcePlugin::<GalaxyRenderConfig>::default());
     }
 }
 
 fn apply_ui_updates(
     mut galaxy_config_old: ResMut<GalaxyConfigOld>,
     mut galaxy_config: ResMut<GalaxyConfig>,
+    mut rendering_config: ResMut<GalaxyRenderConfig>,
 ) {
     if galaxy_config.is_changed() && *galaxy_config != galaxy_config_old.0 {
         galaxy_config.generation += 1;
 
-        galaxy_config.texture_dimension = 2u32.pow(galaxy_config.texture_root);
+        rendering_config.texture_dimension = 2u32.pow(rendering_config.texture_root);
 
         let mut arms = 0;
         for i in 0..4 {
@@ -174,23 +179,32 @@ pub struct ArmConfig {
     pub offset: i32, // in degrees
 }
 
-impl Default for GalaxyConfig {
+impl Default for GalaxyRenderConfig {
     fn default() -> Self {
         Self {
             diagnostic_mode: false,
             draw_volume_to_background: true,
             raymarch_steps: 128,
-            generation: 1,
+
             texture_root: 9,
             texture_dimension: 512,
+            // Tends to look extremely bad in motion
+            draw_stars_to_background: false,
+            exposure: 0.01,
+            padding_coeff: 1.5,
+        }
+    }
+}
+
+impl Default for GalaxyConfig {
+    fn default() -> Self {
+        Self {
+            generation: 1,
             bulge_strength: 100.0,
             bulge_radius: 9.0,
             bulge_intensity: 1.0,
-            exposure: 0.01,
             radius: 500.0, // in parsecs
             stars_per_arm: 10000,
-            // Tends to look extremely bad in motion
-            draw_stars_to_background: false,
             spacing: 40.0,
             n_arms: 3,
             arm_configs: [
@@ -219,7 +233,6 @@ impl Default for GalaxyConfig {
             ],
             winding_b: 0.5,
             winding_n: 4.0,
-            padding_coeff: 1.5,
             disk_params: ComponentConfig {
                 component_type: ComponentType::Disk,
                 strength: 900.0,

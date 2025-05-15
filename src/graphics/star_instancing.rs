@@ -66,6 +66,7 @@ pub struct StarInstanceMarker;
 /// Spawns or despawns star instances
 /// Spawns in fairly small batches to avoid stutter when galaxy config changes
 /// - Might be a flag active during game loading that causes the spawn to run to finish
+#[allow(clippy::too_many_arguments)]
 fn manage_star_instances(
     mut commands: Commands,
     galaxy_config: Res<GalaxyConfig>,
@@ -74,6 +75,7 @@ fn manage_star_instances(
     star_instancing: Res<StarInstancingControl>,
     mut materials: ResMut<Assets<StarInstanceMaterial>>,
     mut extinction: ResMut<ExtinctionCache>,
+    galaxy_render_settings: Res<GalaxyRenderConfig>,
 ) {
     extinction.required_size = star_count.count;
 
@@ -83,7 +85,7 @@ fn manage_star_instances(
 
     // update supersampling offset
     if let Some(mat) = materials.get_mut(&star_instancing.material_handle) {
-        mat.supersampling_offset_scale = if galaxy_config.draw_stars_to_background {
+        mat.supersampling_offset_scale = if galaxy_render_settings.draw_stars_to_background {
             0.25
         } else {
             1.0
@@ -104,7 +106,7 @@ fn manage_star_instances(
                 StarInstanceMarker,
             ))
             .insert_if(volume_upscaler::background_render_layer(), || {
-                galaxy_config.draw_stars_to_background
+                galaxy_render_settings.draw_stars_to_background
             });
     }
 }

@@ -11,6 +11,7 @@ pub use star_instancing::{StarInstanceMarker, StarInstancingPlugin};
 
 pub use extinction_cache::ExtinctionCache;
 use galaxy_texture::GalaxyTexture;
+
 pub struct GraphicsPlugin;
 
 impl Plugin for GraphicsPlugin {

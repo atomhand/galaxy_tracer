@@ -135,12 +135,13 @@ fn prepare_uniforms(
     render_device: Res<RenderDevice>,
     render_queue: Res<RenderQueue>,
     galaxy_config: Res<GalaxyConfig>,
+    galaxy_render_settings: Res<GalaxyRenderConfig>,
     mut uniforms: ResMut<ExtinctionCacheGalaxyUniforms>,
     camera: Query<&CameraMain>,
 ) {
     uniforms
         .galaxy_params
-        .set(GalaxyParams::read(&galaxy_config));
+        .set(GalaxyParams::read(&galaxy_config, &galaxy_render_settings));
     uniforms.bulge_params.set(BulgeParams::read(&galaxy_config));
     uniforms
         .disk_params

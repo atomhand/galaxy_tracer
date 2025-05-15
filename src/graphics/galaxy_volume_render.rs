@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
     reflect::TypePath,
     render::{
-        render_resource::{AsBindGroup, ShaderRef},
+        render_resource::{AsBindGroup, ShaderRef,Face},
         view::RenderLayers,
     },
 };
@@ -31,7 +31,7 @@ fn setup_galaxy_volume(
     galaxy_config: Res<GalaxyConfig>,
     galaxy_render_settings: Res<GalaxyRenderConfig>,
 ) {
-    let galaxy_mesh = meshes.add(Rectangle::from_size(Vec2::splat(2.0)));
+    let galaxy_mesh = meshes.add(Sphere::new(1.0));
     let mat = galaxy_materials.add(GalaxyVolumeMaterial::new(
         &galaxy_config,
         &galaxy_render_settings,
@@ -107,7 +107,7 @@ pub struct GalaxyVolumeMaterial {
     #[texture(6, dimension = "2d_array")]
     #[sampler(7)]
     lut: Option<Handle<Image>>,
-    alpha_mode: AlphaMode,
+    //alpha_mode: AlphaMode,
     diagnostic_mode: bool,
 }
 impl GalaxyVolumeMaterial {
@@ -123,10 +123,7 @@ impl GalaxyVolumeMaterial {
         self.diagnostic_mode = galaxy_render_settings.diagnostic_mode;
     }
     pub fn new(galaxy_config: &GalaxyConfig, galaxy_render_settings: &GalaxyRenderConfig) -> Self {
-        let mut ret = Self {
-            alpha_mode: AlphaMode::Add,
-            ..default()
-        };
+        let mut ret = Self::default();
         ret.update(galaxy_config, galaxy_render_settings);
         ret
     }
@@ -146,7 +143,7 @@ impl Material for GalaxyVolumeMaterial {
         "shaders/shader_galaxy_volume.wgsl".into()
     }
     fn alpha_mode(&self) -> AlphaMode {
-        self.alpha_mode
+        AlphaMode::Opaque
     }
 
     // prevents issues when rendering stars and galaxy volume together in the background camera
@@ -161,6 +158,7 @@ impl Material for GalaxyVolumeMaterial {
         _layout: &MeshVertexBufferLayoutRef,
         key: MaterialPipelineKey<Self>,
     ) -> Result<(), SpecializedMeshPipelineError> {
+        descriptor.primitive.cull_mode = Some(Face::Front);
         if key.bind_group_data.diagnostic_mode {
             let fragment = descriptor.fragment.as_mut().unwrap();
             fragment.shader_defs.push("DIAGNOSTIC".into());

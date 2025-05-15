@@ -17,20 +17,24 @@ struct VertexOutput {
 
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
-    let camera_right = normalize(vec3<f32>(view.clip_from_world[0].x, view.clip_from_world[1].x, view.clip_from_world[2].x));    
-    let camera_up = normalize(vec3<f32>(view.clip_from_world[0].y, view.clip_from_world[1].y, view.clip_from_world[2].y));
+    //let camera_right = normalize(vec3<f32>(view.clip_from_world[0].x, view.clip_from_world[1].x, view.clip_from_world[2].x));    
+    //let camera_up = normalize(vec3<f32>(view.clip_from_world[0].y, view.clip_from_world[1].y, view.clip_from_world[2].y));
 
     let model = get_world_from_local(vertex.instance_index);
 
     let scaled_r = galaxy.radius * galaxy.padding_coefficient;
     //let world_space = vertex.position.xyz * vec3<f32>(scaled_r,50.0,scaled_r);
-    let world_space : vec3<f32> = (camera_right * vertex.position.x + camera_up * vertex.position.y ) * scaled_r;
-    let position = view.clip_from_world * model * vec4<f32>(world_space,1.0);
+    //let world_space : vec3<f32> = (camera_right * vertex.position.x + camera_up * vertex.position.y ) * scaled_r;
+
+    let world_pos = model * vec4<f32>(vertex.position.xyz * scaled_r,1.0);
+    let position = view.clip_from_world * world_pos;
+
+    let scaled_vertex = vertex.position * scaled_r;
 
     var out: VertexOutput;
     out.position = position;
     out.camera_origin = view.world_position;
-    out.ray_dir = (model * vec4<f32>(world_space, 1.0)).xyz - view.world_position;
+    out.ray_dir = world_pos.xyz - view.world_position;
 
     return out;
 }

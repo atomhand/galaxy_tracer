@@ -30,8 +30,12 @@ fn spawn_camera(mut commands: Commands, mut clearcolor: ResMut<ClearColor>) {
 #[derive(Component, Clone, ExtractComponent)]
 pub struct CameraMain {
     target_pos: Vec3,
+    galaxy_radius : f32,
+    max_zoom_scale : f32,
     zoom: f32,
+    side_view : bool,
     smooth_zoom_buffer: f32,
+    far_view : bool,
     drag_origin: Option<Vec3>,
     pub translation: Vec3,
 }
@@ -40,8 +44,12 @@ impl Default for CameraMain {
     fn default() -> Self {
         Self {
             target_pos: Vec3::new(0.0, 0., 0.0),
+            galaxy_radius : 1.0,
             zoom: 1.0,
+            max_zoom_scale : 2.5,
+            side_view : false,
             smooth_zoom_buffer: 0.0,
+            far_view : false,
             drag_origin: None,
             translation: Vec3::ZERO,
         }
@@ -49,24 +57,36 @@ impl Default for CameraMain {
 }
 
 impl CameraMain {
-    fn translation(&mut self, galaxy_scale: f32, side_view: bool) -> Vec3 {
+    fn translation(&self) -> Vec3 {
         let galaxy_zoom = self.zoom * 0.85 + 0.15;
-        let adjusted_scale = galaxy_scale * galaxy_zoom;
+        let adjusted_scale = self.galaxy_radius * self.max_zoom_scale * galaxy_zoom * if self.far_view { 10.0 } else { 1.0 };
 
-        if side_view {
+        if self.side_view {
             let antitilt = 0.25;
-            self.translation =
-                self.look_pos() + Vec3::new(0., adjusted_scale * antitilt, -adjusted_scale);
+            self.target_pos + Vec3::new(0., adjusted_scale * antitilt, -adjusted_scale)
         } else {
             let antitilt = 0.6;
-            self.translation =
-                self.look_pos() + Vec3::new(0., adjusted_scale, -adjusted_scale * antitilt);
+            self.target_pos + Vec3::new(0., adjusted_scale, -adjusted_scale * antitilt)
         }
-        self.translation
     }
 
     fn look_pos(&self) -> Vec3 {
         self.target_pos
+    }
+
+    fn smooth_constrain(&mut self) {        
+        let d = self.target_pos.xz().length();
+        if d > self.galaxy_radius {
+            // Constrain the rate of change to get a gradual transition when stopping dragging
+            let fac = (self.galaxy_radius /d).max(0.95);
+            self.target_pos *= fac;
+        }
+    }
+
+    fn set_transform(&mut self, transform : &mut Transform) {
+        self.translation = self.translation();
+        transform.translation = self.translation;
+        transform.look_at(self.look_pos(), Vec3::Y);
     }
 }
 
@@ -85,6 +105,8 @@ pub fn camera_control_system(
     let galaxy_scale = galaxy_config.radius * 2.5;
     let (mut cam, mut transform, mut camera_main) =
         query.single_mut().expect("Error: Require ONE camera");
+
+    camera_main.galaxy_radius = galaxy_config.radius;
 
     // HIDE CURSOR
     //windows.single_mut().cursor.visible = false;
@@ -130,8 +152,12 @@ pub fn camera_control_system(
     if keys.just_pressed(KeyCode::KeyH) {
         cam.hdr = !cam.hdr;
     }
+    if keys.just_pressed(KeyCode::KeyV) {
+        camera_main.far_view = !camera_main.far_view;
+    }
 
-    let side_view = keys.pressed(KeyCode::Space);
+
+    camera_main.side_view = keys.pressed(KeyCode::Space);
 
     let old_zoom = camera_main.zoom;
 
@@ -180,19 +206,15 @@ pub fn camera_control_system(
     // apply key delta  to drag origin so keyboard movement works as expected during drag
     if let Some(drag) = camera_main.drag_origin {
         camera_main.drag_origin = Some(drag + key_delta * speed);
+    } else {
+        // if not dragging, constrain camera target to the galaxy radius 
+        // -- Could do this when dragging too, but I find this has behaviour overall more pleasant
+        camera_main.smooth_constrain();
+
     }
 
-    let d = camera_main.target_pos.xz().length();
-    if d > galaxy_config.radius {
-        camera_main.target_pos *= galaxy_config.radius / d;
-    }
-
-    //
-
+    camera_main.set_transform(&mut transform);
     for _i in 0..2 {
-        transform.translation = camera_main.translation(galaxy_scale, side_view);
-        transform.look_at(camera_main.look_pos(), Vec3::Y);
-
         let Some(mouse_pos) = cursor
             .and_then(|cursor| {
                 cam.viewport_to_world(&GlobalTransform::from(*transform), cursor)
@@ -211,8 +233,7 @@ pub fn camera_control_system(
 
             camera_main.target_pos += drag_offset;
         }
-
-        transform.translation = camera_main.translation(galaxy_scale, side_view);
-        transform.look_at(camera_main.look_pos(), Vec3::Y);
+        
+        camera_main.set_transform(&mut transform);
     }
 }

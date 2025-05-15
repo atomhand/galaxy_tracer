@@ -67,37 +67,41 @@ fn sphIntersect( ro : vec3<f32> , rd : vec3<f32> ,  r : f32 ) -> vec2<f32>
 }
 
 @fragment
-fn fragment(in: FullscreenVertexOutput) -> Output {   
-    let rd  : vec3<f32>= coords_to_ray_direction(in.position.xy, view.viewport);
-
-
-    let clip_pos = uv_to_ndc(in.uv); // Convert from uv to clip space
-    let ro : vec3<f32> = view.world_position;//(view.world_from_clip * vec4(clip_pos, 0.0, 1.0)).xyz;
+fn fragment(in: FullscreenVertexOutput) -> Output {
+    // need to pass this as a uniform this constant
     let galaxy_radius : f32 = 500.0;
 
+    // Calculate reference fragment world position for reprojection
+    // We use whichever intersection is closest - (or just the only intersection, if one is a miss/behind the camera)
+    // -- an origin-centred sphere scaled with a radius chosen to be the larger of
+    // -A The distance of the camera to the origin
+    // -B The galaxy radius scaled by a const factor
+    //      This is for the case when the camera is facing away from the origin.
+    //      The galaxy radius could be substituted with a system radius etc., the important thing is it needs to be defined in terms of the area the camera is constrained to 
+    //
+    // -- the galactic (XZ) plane
 
-    // sphere intersect
-    /*
-    var t : f32 = sphIntersect(ro,rd, galaxy_radius).x;
-    if( t < 0.0) {
-        t = -dot(n,ro) / dot(n, rd);
-    }
-    */
-    // galactic XZ plane
+    // Get intersection
+    let rd  : vec3<f32>= coords_to_ray_direction(in.position.xy, view.viewport);
+    let clip_pos = uv_to_ndc(in.uv); // Convert from uv to clip space
+    let ro : vec3<f32> = view.world_position;//(view.world_from_clip * vec4(clip_pos, 0.0, 1.0)).xyz;
+    // backface of a sphere
+    let rad = max(galaxy_radius*1.5,length(ro));
+    var sph = sphIntersect(ro,rd, rad);
+    var t = max(sph.x,sph.y);
+    // galactic xz plane
     let n =vec3(0.0,1.0,0.0);
-    // "billboard plane"
-    //let n =normalize(ro);
-
-    // intersect plane
-    let t : f32= -dot(n,ro) / dot(n, rd);
-    
-    let world_pos : vec4<f32> = vec4<f32>(ro + rd * t,1.0);
+    let plane_intersection = -dot(n,ro) / dot(n, rd);
+    if plane_intersection > 0.0 && (plane_intersection < t || t < 0.0) {
+        t = plane_intersection;
+    }
+    // reconstruct old uv from world pos
+    var world_pos : vec4<f32> = vec4<f32>(ro + rd * t,1.0);
     let prev_clip_pos = (previous_view.clip_from_world * world_pos);
     let old_uv = ndc_to_uv(prev_clip_pos.xy/prev_clip_pos.w);
 
-    let dimensions = vec2<f32>(textureDimensions(background_input_texture).xy) * 4.0;
-
     // Background sample position and pixel offset
+    let dimensions = vec2<f32>(textureDimensions(background_input_texture).xy) * 4.0;
     let coord = vec2<i32>(in.uv * dimensions);
     let center_uv = (vec2<f32>((coord/4)*4)+vec2<f32>(1.5,1.5)) / dimensions;
     let history_sample = textureSample(history_input_texture, linear_sampler, old_uv);
@@ -114,14 +118,14 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
     let velocity = length((old_uv-in.uv)*dimensions);
     let confidence_velocity_factor = saturate(1.0 /velocity);
     var history_confidence = min(confidence_velocity_factor,history_sample.a);
-
+    
     if any(saturate(old_uv) != old_uv) {
         history_confidence = 0.0;
     }
 
     const inverse_mapping = array(4, 11, 8, 5, 0, 13, 1, 9, 14, 10, 7, 12, 2, 15, 6, 3);
     let sub_coord = coord % vec2<i32>(4,4);
-    let p = inverse_mapping[(sub_coord.x + sub_coord.y * 4) % 16];    
+    let p = inverse_mapping[(sub_coord.x + sub_coord.y * 4) % 16];
 
     var out = Output();
     if( p == i32(upscale_settings.current_pixel)){

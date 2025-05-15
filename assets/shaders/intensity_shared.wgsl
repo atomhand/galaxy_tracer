@@ -22,11 +22,11 @@ fn dust_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
 
 // These structs are duplicated in render.rs, so make sure to update both
 struct GalaxyParams {
-    arm_offsets : vec4<f32>,
+    //arm_offsets : vec4<f32>,
     radius : f32,
-    num_arms : i32,
-    winding_b : f32,
-    winding_n : f32,
+    //num_arms : i32,
+    //winding_b : f32,
+    //winding_n : f32,
     padding_coefficient : f32,
     exposure : f32,
     raymarch_steps : f32,
@@ -39,11 +39,11 @@ struct BulgeParams {
 }
 struct ComponentParams {
     strength : f32,
-    arm_width : f32, // inverse
+    //arm_width : f32, // inverse
     y_thickness : f32,
-    radial_extent : f32, // radial intensity start
-    central_falloff : f32, // radial central falloff start
-    angular_offset : f32,
+    //radial_extent : f32, // radial intensity start
+    //central_falloff : f32, // radial central falloff start
+    //angular_offset : f32,
     winding_factor : f32,
     noise_scale : f32,
     noise_offset : f32,
@@ -118,8 +118,6 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
         p2 = abs(disk_noise(p, winding_angle, octaves));
     }
 
-    // These should be folded into the cached noise texture
-    // (BUt I need to sort the tex format to deal with values outside 0..1 )
     p2 = max(p2, 0.01);
     p2 = pow(p2,disk_params.noise_tilt);
     p2 += disk_params.noise_offset;
@@ -129,7 +127,7 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
 }
 
 fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
-    if(base_intensity < 0.0005 || dust_params.strength == 0.0) {
+        if(base_intensity < 0.0005 || dust_params.strength == 0.0) {
         return 0.0;
     }
 
@@ -194,7 +192,7 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
 
     let dust_xz = reconstruct_intensity(p, xz_sample.y, dust_params.y_thickness);
     let dust_winding_angle : f32 = base_winding * dust_params.winding_factor;
-    let dust_intensity : f32 = get_dust_intensity_ridged(p, dust_winding_angle, dust_xz) * stepsize;
+    let dust_intensity : f32 = get_dust_intensity(p, dust_winding_angle, dust_xz) * stepsize;
     // yellow absorption spectra = appears red
     let dust_col = vec3<f32>(0.4,0.6,1.0);
     let extinction : vec3<f32> = exp(-dust_intensity * dust_col );

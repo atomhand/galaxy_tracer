@@ -6,11 +6,11 @@ use bytemuck::{Pod, Zeroable};
 #[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug, Default)]
 #[repr(C)]
 pub struct GalaxyParams {
-    arm_offsets: Vec4,
+    //arm_offsets: Vec4,
     radius: f32,
-    num_arms: i32,
-    winding_b: f32,
-    winding_n: f32,
+    //num_arms: i32,
+    //winding_b: f32,
+    //winding_n: f32,
     padding_coefficient: f32,
     exposure: f32,
     raymarch_steps: f32,
@@ -22,10 +22,10 @@ impl GalaxyParams {
         Self {
             padding_coefficient: galaxy_render_settings.padding_coeff,
             radius: config.radius,
-            num_arms: config.n_arms,
-            arm_offsets: Vec4::from_array(config.arm_offsets),
-            winding_b: config.winding_b,
-            winding_n: config.winding_n,
+            //num_arms: config.n_arms,
+            //arm_offsets: Vec4::from_array(config.arm_offsets),
+            //winding_b: config.winding_b,
+            //winding_n: config.winding_n,
             exposure: galaxy_render_settings.exposure,
             raymarch_steps: galaxy_render_settings.raymarch_steps as f32,
             texture_dimension: galaxy_render_settings.texture_dimension as f32,
@@ -55,11 +55,11 @@ impl BulgeParams {
 #[repr(C)]
 pub struct ComponentParams {
     strength: f32,
-    arm_width: f32, // inverse
+    //arm_width: f32, // inverse
     y_thickness: f32,
-    radial_extent: f32,   // radial intensity start
-    central_falloff: f32, // radial falloff start
-    angular_offset: f32,
+    //radial_extent: f32,   // radial intensity start
+    //central_falloff: f32, // radial falloff start
+    //angular_offset: f32,
     winding_factor: f32,
     noise_scale: f32,
     noise_offset: f32,
@@ -76,11 +76,11 @@ impl ComponentParams {
             } else {
                 0.0
             },
-            arm_width: component.arm_width,
+            //arm_width: component.arm_width,
             y_thickness: component.y_thickness,
-            radial_extent: component.radial_extent,
-            central_falloff: component.radial_dropoff,
-            angular_offset: component.angular_offset,
+            //radial_extent: component.radial_extent,
+            //central_falloff: component.radial_dropoff,
+            //angular_offset: component.angular_offset,
             winding_factor: component.noise_winding_factor,
             noise_scale: component.noise_scale,
             noise_offset: component.noise_offset,

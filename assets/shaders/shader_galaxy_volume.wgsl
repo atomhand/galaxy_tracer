@@ -65,6 +65,10 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {
     return col;    
 }
 
+fn jitter(p : vec2<f32>) -> f32 {
+    return fract(sin(dot(p, vec2<f32>(41.0, 289.0)))*45758.5453 );
+}
+
 @fragment
 fn fragment(
     mesh: VertexOutput,
@@ -76,8 +80,13 @@ fn fragment(
 
     if t.x == -1.0 && t.y == -1.0 {
         return vec4<f32>(0.0,0.0,0.0,0.0);
-    }    
+    }
 
-    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), t.x, t.y);
+    let start = t.x ;
+    // EXPERIMENTAL RAY OFFSET JITTER
+    // this is a proof of concept, 
+    let end = t.y + jitter(rd.xy + rd.zz) * 100.0;
+
+    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), start,end);
     return vec4<f32>(a,1.0);        
 }

@@ -46,7 +46,7 @@ impl Default for CameraMain {
             target_pos: Vec3::new(0.0, 0., 0.0),
             galaxy_radius : 1.0,
             zoom: 1.0,
-            max_zoom_scale : 2.5,
+            max_zoom_scale : 4.0,
             side_view : false,
             smooth_zoom_buffer: 0.0,
             far_view : false,
@@ -57,9 +57,19 @@ impl Default for CameraMain {
 }
 
 impl CameraMain {
+    fn adjusted_zoom(&self) -> f32 {
+        let base_scale = if self.far_view { 10.0 } else { 1.0 }; 
+        let min_zoom = 25.0 * base_scale;
+        let max_zoom = self.galaxy_radius *  base_scale * self.max_zoom_scale;
+
+        let min_factor = f32::log10(min_zoom);
+        let max_factor = f32::log10(max_zoom);
+        let zoom_as_factor = f32::lerp(min_factor,max_factor,self.zoom);
+        10.0f32.powf(zoom_as_factor)
+    }
+
     fn translation(&self) -> Vec3 {
-        let galaxy_zoom = self.zoom * 0.85 + 0.15;
-        let adjusted_scale = self.galaxy_radius * self.max_zoom_scale * galaxy_zoom * if self.far_view { 10.0 } else { 1.0 };
+        let adjusted_scale = self.adjusted_zoom();
 
         if self.side_view {
             let antitilt = 0.25;
@@ -78,7 +88,7 @@ impl CameraMain {
         let d = self.target_pos.xz().length();
         if d > self.galaxy_radius {
             // Constrain the rate of change to get a gradual transition when stopping dragging
-            let fac = (self.galaxy_radius /d).max(0.95);
+            let fac = (self.galaxy_radius /d).max(0.975);
             self.target_pos *= fac;
         }
     }

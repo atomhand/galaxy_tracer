@@ -127,7 +127,7 @@ impl ComponentConfig {
         component_type: ComponentType::Disk,
         enabled: true,
         strength: 2000.0,
-        arm_width: 1.0,
+        arm_width: 2.0,
         y_thickness: 0.05,
         radial_extent: 1.0,
         radial_dropoff: 0.6,

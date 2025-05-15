@@ -68,6 +68,13 @@ fn sphIntersect( ro : vec3<f32> , rd : vec3<f32> ,  r : f32 ) -> vec2<f32>
 
 @fragment
 fn fragment(in: FullscreenVertexOutput) -> Output {
+#ifdef RESET
+    // If RESET, just grab from background texture with no reprojection necessary
+    let background_sample = textureSample(background_input_texture, linear_sampler, in.uv).rgb;
+    var out = Output();
+    out.history = vec4<f32>(background_sample,0.0);
+    out.view_target = vec4<f32>(background_sample,1.0);
+#else
     // need to pass this as a uniform this constant
     let galaxy_radius : f32 = 500.0;
 
@@ -106,6 +113,10 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
     let center_uv = (vec2<f32>((coord/4)*4)+vec2<f32>(1.5,1.5)) / dimensions;
     let history_sample = textureSample(history_input_texture, linear_sampler, old_uv);
 
+    const inverse_mapping = array(4, 11, 8, 5, 0, 13, 1, 9, 14, 10, 7, 12, 2, 15, 6, 3);
+    let sub_coord = coord % vec2<i32>(4,4);
+    let p = inverse_mapping[(sub_coord.x + sub_coord.y * 4) % 16];
+
     // The effect of velocity on image needs to be smoothly continuous
     // - any sort of step or threshold can produce strong artefacts
     // Biasing the ramp towards 0 (eg squaring velocity) will make the image less floaty
@@ -117,15 +128,10 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
     // effect to reduce floatiness.
     let velocity = length((old_uv-in.uv)*dimensions);
     let confidence_velocity_factor = saturate(1.0 /velocity);
-    var history_confidence = min(confidence_velocity_factor,history_sample.a);
-    
+    var history_confidence = min(confidence_velocity_factor,history_sample.a);    
     if any(saturate(old_uv) != old_uv) {
         history_confidence = 0.0;
     }
-
-    const inverse_mapping = array(4, 11, 8, 5, 0, 13, 1, 9, 14, 10, 7, 12, 2, 15, 6, 3);
-    let sub_coord = coord % vec2<i32>(4,4);
-    let p = inverse_mapping[(sub_coord.x + sub_coord.y * 4) % 16];
 
     var out = Output();
     if( p == i32(upscale_settings.current_pixel)){
@@ -143,6 +149,7 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
         out.history = vec4<f32>(blended_sample,history_confidence);
         out.view_target = vec4<f32>(blended_sample,1.0);
     }
+#endif
     
     return out;
 }

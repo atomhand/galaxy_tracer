@@ -29,7 +29,7 @@ use bevy::{
         },
         renderer::{RenderContext, RenderDevice},
         texture::{CachedTexture, GpuImage, TextureCache},
-        view::{ExtractedView, ViewTarget, ViewUniform, ViewUniformOffset, ViewUniforms},
+        view::{ExtractedView, ViewTarget, ViewUniform, ViewUniformOffset, ViewUniforms}
     },
 };
 
@@ -352,6 +352,7 @@ struct UpscalePipelineId(pub CachedRenderPipelineId);
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 struct UpscalePipelineKey {
     hdr: bool,
+    reset: bool,
 }
 
 impl SpecializedRenderPipeline for BackgroundUpscalePipeline {
@@ -365,6 +366,10 @@ impl SpecializedRenderPipeline for BackgroundUpscalePipeline {
         } else {
             TextureFormat::bevy_default()
         };
+
+        if key.reset {
+            shader_defs.push("RESET".into());
+        }
 
         RenderPipelineDescriptor {
             label: Some("background_upscale_pipeline".into()),
@@ -407,12 +412,20 @@ fn prepare_upscale_pipelines(
     upsample_pipeline: Res<BackgroundUpscalePipeline>,
     views: Query<(Entity, &ExtractedView, &BackgroundImageOutput)>,
 ) {
-    for (entity, view, _output) in &views {
+    for (entity, view, output) in &views {
+        let mut pipeline_key = UpscalePipelineKey { hdr: view.hdr, reset : output.reset };
         let pipeline_id = pipelines.specialize(
             &pipeline_cache,
             &upsample_pipeline,
-            UpscalePipelineKey { hdr: view.hdr },
+            pipeline_key,
         );
+
+        // This is a trick from Bevy TAA, even if we don't need reset pipeline
+        // if we make it now it will be cached ready for next frame
+        if pipeline_key.reset {
+            pipeline_key.reset = false;
+            pipelines.specialize(&pipeline_cache, &upsample_pipeline, pipeline_key);
+        }
 
         commands
             .entity(entity)

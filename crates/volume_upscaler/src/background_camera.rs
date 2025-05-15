@@ -2,12 +2,14 @@ use bevy::{
     diagnostic::FrameCount,
     prelude::*,
     render::{
+        sync_world::RenderEntity,
+        sync_component::SyncComponentPlugin,
         Render, RenderApp, RenderSet,
         camera::{MipBias, TemporalJitter},
         extract_component::{ExtractComponent, ExtractComponentPlugin},
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
-        view::RenderLayers,
+        view::RenderLayers,MainWorld
     },
 };
 
@@ -28,10 +30,11 @@ struct BackgroundChildCamera;
 
 /// This is the lowres background texture
 /// Component on the parent camera, render target of the child camera
-#[derive(Component, Default, Clone, Reflect, ExtractComponent)]
+#[derive(Component, Default, Clone, Reflect)]
 #[reflect(Component, Default, Clone)]
 pub struct BackgroundImageOutput {
     pub image: Handle<Image>,
+    pub reset : bool,
 }
 
 /// shorthand
@@ -43,12 +46,11 @@ pub struct BackgroundCameraPlugin;
 
 impl Plugin for BackgroundCameraPlugin {
     fn build(&self, app: &mut App) {
+        app.register_type::<BackgroundImageOutput>();
+        app.add_plugins(SyncComponentPlugin::<BackgroundImageOutput>::default());
         app.add_plugins((
-            ExtractComponentPlugin::<BackgroundImageOutput>::default(),
             ExtractComponentPlugin::<BackgroundChildCamera>::default(),
         ));
-        // TODO
-        // really there should be a cleanup system as well
         app.add_systems(
             Update,
             (
@@ -62,19 +64,22 @@ impl Plugin for BackgroundCameraPlugin {
         let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
             return;
         };
-        render_app.add_systems(
+        render_app.
+        add_systems(ExtractSchedule, extract_background_output).add_systems(
             Render,
             prepare_background_jitter_and_mip_bias.in_set(RenderSet::ManageViews),
         );
     }
 }
 
+/// This could be implemented more robustly
 fn cleanup(
     mut commands: Commands,
     mut q_child: Query<(Entity, &mut Camera, &ChildOf), With<BackgroundChildCamera>>,
     q_parent: Query<&Camera, (With<BackgroundCamera>, Without<BackgroundChildCamera>)>,
 ) {
-    // clean up stray child cameras
+    // if parent is alive, copy their HDR settings
+    // otherwise clean up the stray child
     for (entity, mut camera, child_of) in q_child.iter_mut() {
         if let Ok(parent_camera) = q_parent.get(child_of.parent()) {
             camera.hdr = parent_camera.hdr;
@@ -184,6 +189,7 @@ fn setup_new_camera(
                     Msaa::Off,
                     BackgroundImageOutput {
                         image: image_handle.clone(),
+                        reset : true,
                     },
                 ))
                 .add_child(cam);
@@ -195,6 +201,32 @@ fn update_uniform(frame_count: Res<FrameCount>, mut query: Query<&mut Background
     for mut pass_settings in query.iter_mut() {
         pass_settings.current_pixel =
             (frame_count.0 as i32 % (UPSCALE_FACTOR * UPSCALE_FACTOR)) as f32;
+    }
+}
+
+/// custom extract schedule for BackgroundImageOutput, mostly just so we can toggle Reset after extracting
+fn extract_background_output(mut commands: Commands, mut main_world: ResMut<MainWorld>) {
+    let mut cameras_3d = main_world.query_filtered::<(
+        RenderEntity,
+        &Camera,
+        &mut BackgroundImageOutput,
+    ),With<Camera3d>>();
+
+    for (entity, camera, mut background_output) in
+        cameras_3d.iter_mut(&mut main_world)
+    {
+        let mut entity_commands = commands
+            .get_entity(entity)
+            .expect("Camera entity wasn't synced.");
+        if camera.is_active {
+            entity_commands.insert(background_output.clone());
+            background_output.reset = false;
+        } else {
+            // TODO: needs better strategy for cleaning up
+            entity_commands.remove::<(
+                BackgroundImageOutput,
+            )>();
+        }
     }
 }
 

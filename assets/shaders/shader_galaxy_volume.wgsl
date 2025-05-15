@@ -48,18 +48,17 @@ fn sphIntersect( ro : vec3<f32> , rd : vec3<f32> ,  r : f32 ) -> vec2<f32>
     return vec2(-b - h, -b + h);
 }
 
-fn march(ro : vec3<f32>, rd : vec3<f32>, t1 : f32, t2 : f32) -> vec3<f32> {    
+fn march(ro : vec3<f32>, rd : vec3<f32>, near_offset : f32, far_offset : f32) -> vec3<f32> {    
     var col = vec3<f32>(0.0,0.0,0.0);
     let STEPS = galaxy.raymarch_steps;
     let exposure = 0.1;
 
-    // LINEAR TRACE
-    let start = ro + rd * max(0.0,t2);
-    let end = ro + rd * max(0.0,t1);
-    let step = (end-start) / STEPS;
-    let step_size = length(step);
+    // we trace backwards from the far point
+    let step_size = abs(near_offset-far_offset) / STEPS;
+    let start = ro + rd * (far_offset + jitter(rd.xy + rd.zz) * step_size * 5.0);
+    let end = ro + rd * near_offset;
     for(var i =0; i<i32(STEPS); i++) {
-        let p = start + step * f32(i);
+        let p = start - step_size * f32(i) * rd;
         col = ray_step(p,col,step_size * exposure);
     }
     return col;    
@@ -82,11 +81,9 @@ fn fragment(
         return vec4<f32>(0.0,0.0,0.0,0.0);
     }
 
-    let start = t.x ;
-    // EXPERIMENTAL RAY OFFSET JITTER
-    // this is a proof of concept, 
-    let end = t.y + jitter(rd.xy + rd.zz) * 100.0;
+    let near = max(0.0,t.x);
+    let far = t.y;
 
-    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), start,end);
+    let a = march(mesh.camera_origin, normalize(mesh.ray_dir), near,far);
     return vec4<f32>(a,1.0);        
 }

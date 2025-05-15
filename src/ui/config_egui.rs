@@ -191,10 +191,10 @@ fn ui_system(
                     rendering_config.exposure = 1.0 / inv_exposure;
 
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.winding_b, 0.5..=3.0).text("windingB"),
+                        egui::Slider::new(&mut galaxy_config.winding_b, 0.05..=1.0).text("windingB"),
                     );
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.winding_n, 0.5..=10.0)
+                        egui::Slider::new(&mut galaxy_config.winding_n, 1.0..=10.0)
                             .text("windingN"),
                     );
 

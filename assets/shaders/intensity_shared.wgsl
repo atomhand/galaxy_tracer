@@ -90,9 +90,9 @@ fn lookup_winding(d : f32) -> f32 {
 
 fn get_height_modulation(height : f32, y_thickness : f32) -> f32 {
     let h = abs(height / (y_thickness*galaxy.radius));
-    if (h>2.0) {
-        return 0.0;
-    }
+    //if (h>2.0) {
+    //    return 0.0;
+    //}
 
     let val = 1.0 / cosh(h);
     return val*val;

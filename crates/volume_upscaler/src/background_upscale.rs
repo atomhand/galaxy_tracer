@@ -29,7 +29,7 @@ use bevy::{
         },
         renderer::{RenderContext, RenderDevice},
         texture::{CachedTexture, GpuImage, TextureCache},
-        view::{ExtractedView, ViewTarget, ViewUniform, ViewUniformOffset, ViewUniforms}
+        view::{ExtractedView, ViewTarget, ViewUniform, ViewUniformOffset, ViewUniforms},
     },
 };
 
@@ -413,12 +413,11 @@ fn prepare_upscale_pipelines(
     views: Query<(Entity, &ExtractedView, &BackgroundImageOutput)>,
 ) {
     for (entity, view, output) in &views {
-        let mut pipeline_key = UpscalePipelineKey { hdr: view.hdr, reset : output.reset };
-        let pipeline_id = pipelines.specialize(
-            &pipeline_cache,
-            &upsample_pipeline,
-            pipeline_key,
-        );
+        let mut pipeline_key = UpscalePipelineKey {
+            hdr: view.hdr,
+            reset: output.reset,
+        };
+        let pipeline_id = pipelines.specialize(&pipeline_cache, &upsample_pipeline, pipeline_key);
 
         // This is a trick from Bevy TAA, even if we don't need reset pipeline
         // if we make it now it will be cached ready for next frame

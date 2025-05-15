@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use bevy::{render::render_resource::ShaderType};
+use bevy::render::render_resource::ShaderType;
 use bytemuck::{Pod, Zeroable};
 
 // These structs are duplicated in intensity_shared.wgsl, so make sure to update both

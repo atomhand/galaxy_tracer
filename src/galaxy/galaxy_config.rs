@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
 
-#[derive(Resource, Clone, ExtractResource)]
+#[derive(Resource, Clone, PartialEq, ExtractResource)]
 pub struct GalaxyRenderConfig {
     pub raymarch_steps: u32,
     pub draw_volume_to_background: bool,
@@ -40,14 +40,20 @@ pub struct GalaxyConfig {
 }
 
 #[derive(Resource)]
-struct GalaxyConfigOld(GalaxyConfig);
+struct GalaxyConfigOld {
+    config: GalaxyConfig,
+    rendering: GalaxyRenderConfig,
+}
 
 impl Default for GalaxyConfigOld {
     fn default() -> Self {
-        Self(GalaxyConfig {
-            generation: -1,
-            ..default()
-        })
+        GalaxyConfigOld {
+            config: GalaxyConfig {
+                generation: -1,
+                ..default()
+            },
+            rendering: GalaxyRenderConfig::default(),
+        }
     }
 }
 
@@ -153,7 +159,9 @@ fn apply_ui_updates(
     mut galaxy_config: ResMut<GalaxyConfig>,
     mut rendering_config: ResMut<GalaxyRenderConfig>,
 ) {
-    if galaxy_config.is_changed() && *galaxy_config != galaxy_config_old.0 {
+    if (galaxy_config.is_changed() && *galaxy_config != galaxy_config_old.config)
+        || (rendering_config.is_changed() && *rendering_config != galaxy_config_old.rendering)
+    {
         galaxy_config.generation += 1;
 
         rendering_config.texture_dimension = 2u32.pow(rendering_config.texture_root);
@@ -169,7 +177,8 @@ fn apply_ui_updates(
         }
         galaxy_config.n_arms = arms as i32;
 
-        galaxy_config_old.0 = galaxy_config.clone();
+        galaxy_config_old.config = galaxy_config.clone();
+        galaxy_config_old.rendering = rendering_config.clone();
     }
 }
 

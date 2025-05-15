@@ -2,14 +2,14 @@ use bevy::{
     diagnostic::FrameCount,
     prelude::*,
     render::{
-        sync_world::RenderEntity,
-        sync_component::SyncComponentPlugin,
-        Render, RenderApp, RenderSet,
+        MainWorld, Render, RenderApp, RenderSet,
         camera::{MipBias, TemporalJitter},
         extract_component::{ExtractComponent, ExtractComponentPlugin},
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
-        view::RenderLayers,MainWorld
+        sync_component::SyncComponentPlugin,
+        sync_world::RenderEntity,
+        view::RenderLayers,
     },
 };
 
@@ -34,7 +34,7 @@ struct BackgroundChildCamera;
 #[reflect(Component, Default, Clone)]
 pub struct BackgroundImageOutput {
     pub image: Handle<Image>,
-    pub reset : bool,
+    pub reset: bool,
 }
 
 /// shorthand
@@ -48,9 +48,7 @@ impl Plugin for BackgroundCameraPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<BackgroundImageOutput>();
         app.add_plugins(SyncComponentPlugin::<BackgroundImageOutput>::default());
-        app.add_plugins((
-            ExtractComponentPlugin::<BackgroundChildCamera>::default(),
-        ));
+        app.add_plugins((ExtractComponentPlugin::<BackgroundChildCamera>::default(),));
         app.add_systems(
             Update,
             (
@@ -64,11 +62,12 @@ impl Plugin for BackgroundCameraPlugin {
         let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
             return;
         };
-        render_app.
-        add_systems(ExtractSchedule, extract_background_output).add_systems(
-            Render,
-            prepare_background_jitter_and_mip_bias.in_set(RenderSet::ManageViews),
-        );
+        render_app
+            .add_systems(ExtractSchedule, extract_background_output)
+            .add_systems(
+                Render,
+                prepare_background_jitter_and_mip_bias.in_set(RenderSet::ManageViews),
+            );
     }
 }
 
@@ -189,7 +188,7 @@ fn setup_new_camera(
                     Msaa::Off,
                     BackgroundImageOutput {
                         image: image_handle.clone(),
-                        reset : true,
+                        reset: true,
                     },
                 ))
                 .add_child(cam);
@@ -206,15 +205,10 @@ fn update_uniform(frame_count: Res<FrameCount>, mut query: Query<&mut Background
 
 /// custom extract schedule for BackgroundImageOutput, mostly just so we can toggle Reset after extracting
 fn extract_background_output(mut commands: Commands, mut main_world: ResMut<MainWorld>) {
-    let mut cameras_3d = main_world.query_filtered::<(
-        RenderEntity,
-        &Camera,
-        &mut BackgroundImageOutput,
-    ),With<Camera3d>>();
+    let mut cameras_3d = main_world
+        .query_filtered::<(RenderEntity, &Camera, &mut BackgroundImageOutput), With<Camera3d>>();
 
-    for (entity, camera, mut background_output) in
-        cameras_3d.iter_mut(&mut main_world)
-    {
+    for (entity, camera, mut background_output) in cameras_3d.iter_mut(&mut main_world) {
         let mut entity_commands = commands
             .get_entity(entity)
             .expect("Camera entity wasn't synced.");
@@ -223,9 +217,7 @@ fn extract_background_output(mut commands: Commands, mut main_world: ResMut<Main
             background_output.reset = false;
         } else {
             // TODO: needs better strategy for cleaning up
-            entity_commands.remove::<(
-                BackgroundImageOutput,
-            )>();
+            entity_commands.remove::<(BackgroundImageOutput,)>();
         }
     }
 }

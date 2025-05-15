@@ -114,8 +114,8 @@ fn random_star_mass(rng: &mut ThreadRng) -> f32 {
         (0.8..1.04, 1.),    // G (Sol range)
         (1.04..1.4, 1.),    // F
         (1.4..2.1, 1.),     // A
-        (2.1..16., 0.5),    // B
-        (16. ..152., 0.01), // O
+        (2.1..16., 0.1),    // B
+        (16. ..152., 0.001), // O
     ];
     let range = in_ranges
         .choose_weighted(rng, |item| item.1)

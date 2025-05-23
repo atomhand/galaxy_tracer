@@ -142,16 +142,16 @@ fn sample_pos(rng: &mut ThreadRng, radius: f32) -> Vec3 {
 }
 
 fn sample_star_pos(galaxy_config: &GalaxyConfig, rng: &mut ThreadRng) -> Vec3 {
-    let arm_painter = super::ArmLutGenerator::new(galaxy_config, &galaxy_config.stars_params);
+    let arm_painter = super::GalaxyComponentDensity::new(galaxy_config, &galaxy_config.stars_params);
 
     let current_pos = sample_pos(rng, galaxy_config.radius);
     let mut best = current_pos;
-    let weight = arm_painter.get_xyz_intensity(current_pos);
+    let weight = arm_painter.xyz_density(current_pos);
     let mut weight_sum = weight;
 
     for _ in 0..256 {
         let current_pos = sample_pos(rng, galaxy_config.radius);
-        let weight = arm_painter.get_xyz_intensity(current_pos) + 0.0001;
+        let weight = arm_painter.xyz_density(current_pos) + 0.0001;
         weight_sum += weight;
 
         if rng.random::<f32>() < weight / weight_sum {

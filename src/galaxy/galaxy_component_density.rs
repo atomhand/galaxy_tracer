@@ -6,17 +6,17 @@ fn smoothstep(edge0: f32, edge1: f32, x: f32) -> f32 {
     let s = ((x - edge0) / (edge1 - edge0)).clamp(0.0, 1.0);
     s * s * (3.0 - 2.0 * s)
 }
-pub struct ArmLutGenerator<'a> {
+pub struct GalaxyComponentDensity<'a> {
     galaxy: &'a GalaxyConfig,
     component: &'a ComponentConfig,
 }
 
-impl ArmLutGenerator<'_> {
+impl GalaxyComponentDensity<'_> {
     pub fn new<'a>(
         config: &'a GalaxyConfig,
         component: &'a ComponentConfig,
-    ) -> ArmLutGenerator<'a> {
-        ArmLutGenerator {
+    ) -> GalaxyComponentDensity<'a> {
+        GalaxyComponentDensity {
             galaxy: config,
             component,
         }
@@ -29,13 +29,13 @@ impl ArmLutGenerator<'_> {
     }
     pub fn pos_winding(&self, p: Vec2) -> f32 {
         let rad = p.length() / self.galaxy.radius;
-        self.get_raw_winding(rad)
+        self.rad_winding(rad)
     }
-    pub fn get_raw_winding(&self, rad: f32) -> f32 {
-        let r = rad + 0.05;
 
-        //let t =
-        f32::atan(f32::exp(-0.25 / (0.5 * r)) / self.galaxy.winding_b) * 2.0 * self.galaxy.winding_n
+    /// Returns winding value given a radial distance to the galaxy center (scaled to the unit galaxy)
+    pub fn rad_winding(&self, radial_distance: f32) -> f32 {
+        let r = radial_distance + 0.05;
+        f32::atan(f32::exp(-0.5 / r) / self.galaxy.winding_b) * 2.0 * self.galaxy.winding_n
         //let t= atan(exp(1.0/r) / wb) * 2.0 * wn;
     }
 
@@ -45,23 +45,19 @@ impl ArmLutGenerator<'_> {
         (normalized_diff).abs()
     }
 
-    fn arm_modifier(&self, p: Vec2, winding: f32, arm_id: i32) -> f32 {
-        let disp = self.galaxy.arm_offsets[arm_id as usize]; // angular offset
-
+    /// Returns the highest density out of all arms at the given position
+    fn arms_modifier(&self, winding: f32, p: Vec2) -> f32 {
         let angular_offset = self.component.angular_offset.to_radians();
         let theta = -(f32::atan2(p.x, p.y) + angular_offset);
 
-        let v = self.find_theta_difference(winding, theta + disp);
-
-        (1.0 - v).powf(self.component.arm_width * 15.0)
-    }
-
-    fn all_arms_modifier(&self, winding: f32, p: Vec2) -> f32 {
-        let mut v: f32 = 0.0;
-        for i in 0..self.galaxy.n_arms {
-            v = v.max(self.arm_modifier(p, winding, i));
+        // modifier for each arm
+        let mut highest: f32 = 0.0;            
+        for arm_id in 0..self.galaxy.n_arms {
+            let disp = self.galaxy.arm_offsets[arm_id as usize]; // angular offset
+            let v = self.find_theta_difference(winding, theta + disp);
+            highest = f32::max(highest,(1.0 - v).powf(self.component.arm_width * 15.0))
         }
-        v
+        highest
     }
 
     fn get_height_modulation(&self, height: f32) -> f32 {
@@ -74,11 +70,11 @@ impl ArmLutGenerator<'_> {
         val * val
     }
 
-    pub fn get_xyz_intensity(&self, p: Vec3) -> f32 {
-        self.get_xz_intensity(p.xz()) * self.get_height_modulation(p.y)
+    pub fn xyz_density(&self, p: Vec3) -> f32 {
+        self.xz_density(p.xz()) * self.get_height_modulation(p.y)
     }
 
-    pub fn get_xz_intensity(&self, p: Vec2) -> f32 {
+    pub fn xz_density(&self, p: Vec2) -> f32 {
         let r0 = self.component.radial_extent;
         let inner = self.component.radial_dropoff; // central falloff parameter
 
@@ -89,8 +85,8 @@ impl ArmLutGenerator<'_> {
         let r = self.get_radial_intensity(d, r0);
 
         // I think the component winding_factor is only meant to apply to noise?
-        let winding = self.get_raw_winding(d); // * self.component.winding_factor;
-        let arm_mod = self.all_arms_modifier(winding, p);
+        let winding = self.rad_winding(d); // * self.component.winding_factor;
+        let arm_mod = self.arms_modifier(winding,p);
 
         central_falloff * arm_mod * r
     }

@@ -29,7 +29,7 @@ pub fn get_lut(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> I
     let width = render_settings.texture_dimension.next_power_of_two();
     let layers = 4;
 
-    let disk_painter = ArmLutGenerator::new(config, &config.disk_params);
+    let disk_density = GalaxyComponentDensity::new(config, &config.disk_params);
 
     let chunk_size: usize = 4;
     let mut texture_data = vec![0u8; (width * layers) as usize * chunk_size];
@@ -42,7 +42,7 @@ pub fn get_lut(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> I
             let layer = i / width as usize;
 
             let val = match layer {
-                0 => disk_painter.get_raw_winding(x as f32 / width as f32),
+                0 => disk_density.rad_winding(x as f32 / width as f32),
                 1 => 0.0,
                 2 => 0.0,
                 3 => 0.0,
@@ -70,9 +70,9 @@ pub fn get_lut(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> I
 pub fn get_texture(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> Image {
     let dimension = render_settings.texture_dimension.next_power_of_two();
 
-    let disk_painter = ArmLutGenerator::new(config, &config.disk_params);
-    let dust_painter = ArmLutGenerator::new(config, &config.dust_params);
-    let stars_painter = ArmLutGenerator::new(config, &config.stars_params);
+    let disk_painter = GalaxyComponentDensity::new(config, &config.disk_params);
+    let dust_painter = GalaxyComponentDensity::new(config, &config.dust_params);
+    let stars_painter = GalaxyComponentDensity::new(config, &config.stars_params);
 
     let mut texture_data = vec![0u8; (dimension * dimension * 8) as usize];
 
@@ -88,9 +88,9 @@ pub fn get_texture(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) 
                 y as f32 / dimension as f32 * config.radius * 2.0 - config.radius,
             ) * render_settings.padding_coeff;
 
-            let disk = disk_painter.get_xz_intensity(p);
-            let dust = dust_painter.get_xz_intensity(p);
-            let stars = stars_painter.get_xz_intensity(p);
+            let disk = disk_painter.xz_density(p);
+            let dust = dust_painter.xz_density(p);
+            let stars = stars_painter.xz_density(p);
             let winding = disk_painter.pos_winding(p);
 
             let slice = [

@@ -163,10 +163,14 @@ fn ui_system(
 
                 egui::CollapsingHeader::new("Galaxy Parameters").show(ui, |ui| {
                     ui.add(
-                        egui::Slider::new(&mut new_galaxy_config.radius, 100.0..=1000.0).text("Radius"),
+                        egui::Slider::new(&mut new_galaxy_config.radius, 100.0..=1000.0)
+                            .text("Radius"),
                     );
 
-                    let mut texture_root = new_rendering_config.texture_dimension.checked_ilog2().unwrap_or(1);
+                    let mut texture_root = new_rendering_config
+                        .texture_dimension
+                        .checked_ilog2()
+                        .unwrap_or(1);
                     ui.add(
                         egui::Slider::new(&mut texture_root, 4..=11)
                             .custom_formatter(|n, _| {

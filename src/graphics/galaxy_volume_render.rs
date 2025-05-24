@@ -53,18 +53,17 @@ fn update_galaxy_volume(
     galaxy_render_settings: Res<GalaxyRenderConfig>,
 ) {
     if galaxy_render_settings.is_changed() {
-    if let Ok(entity) = query.single() {
-        commands
-            .entity(entity)
-            .insert(if galaxy_render_settings.draw_volume_to_background {
-                volume_upscaler::background_render_layer()
-            } else {
-                RenderLayers::layer(0)
-            });
+        if let Ok(entity) = query.single() {
+            commands
+                .entity(entity)
+                .insert(if galaxy_render_settings.draw_volume_to_background {
+                    volume_upscaler::background_render_layer()
+                } else {
+                    RenderLayers::layer(0)
+                });
+        }
     }
 }
-
-    }
 
 fn update_volume_material(
     galaxy_mat: Query<&MeshMaterial3d<GalaxyVolumeMaterial>, With<GalaxyVolume>>,

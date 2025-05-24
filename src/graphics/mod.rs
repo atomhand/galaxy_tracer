@@ -6,8 +6,11 @@ mod galaxy_volume_render;
 mod extinction_cache;
 mod shader_types;
 
-mod star_instancing;
-pub use star_instancing::{StarInstanceMarker, StarInstancingPlugin};
+#[derive(Component)]
+pub struct StarInstanceMarker;
+
+mod custom_star_instancing;
+//mod star_instancing;
 
 pub use extinction_cache::ExtinctionCache;
 use galaxy_texture::GalaxyTexture;
@@ -17,10 +20,12 @@ pub struct GraphicsPlugin;
 impl Plugin for GraphicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            //star_instancing::StarInstancingPlugin,
             galaxy_volume_render::GalaxyVolumePlugin,
             galaxy_texture::GalaxyTexturePlugin,
             extinction_cache::ExtinctionCachePlugin,
             volume_upscaler::BackgroundRenderingPlugin,
+            custom_star_instancing::StarInstancingPlugin,
         ));
     }
 }

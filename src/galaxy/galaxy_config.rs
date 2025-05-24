@@ -143,15 +143,15 @@ impl Plugin for GalaxyConfigPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GalaxyConfig::default())
             .insert_resource(GalaxyRenderConfig::default())
-            .add_systems(Update,update_generation)
+            .add_systems(Update, update_generation)
             .add_plugins(ExtractResourcePlugin::<GalaxyConfig>::default())
             .add_plugins(ExtractResourcePlugin::<GalaxyRenderConfig>::default());
     }
 }
 
-fn update_generation(mut galaxy_config : ResMut<GalaxyConfig>) {
+fn update_generation(mut galaxy_config: ResMut<GalaxyConfig>) {
     if galaxy_config.is_changed() {
-        galaxy_config.generation+=1;
+        galaxy_config.generation += 1;
     }
 }
 

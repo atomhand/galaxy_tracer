@@ -30,7 +30,6 @@ fn main() {
         })
         .add_plugins((
             galaxy::SpawnStarsPlugin,
-            graphics::StarInstancingPlugin,
             galaxy::GalaxyConfigPlugin,
             ui::UiPlugin,
             graphics::GraphicsPlugin,

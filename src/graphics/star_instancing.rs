@@ -10,6 +10,9 @@ use bevy::{
     },
 };
 
+
+use super::StarInstanceMarker;
+
 const SHADER_ASSET_PATH: &str = "shaders/star_instancing.wgsl";
 
 pub struct StarInstancingPlugin;
@@ -59,9 +62,6 @@ fn update_material(
         };
     }
 }
-
-#[derive(Component)]
-pub struct StarInstanceMarker;
 
 /// Spawns or despawns star instances
 /// Spawns in fairly small batches to avoid stutter when galaxy config changes

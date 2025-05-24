@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
     reflect::TypePath,
     render::{
-        render_resource::{AsBindGroup, ShaderRef,Face},
+        render_resource::{AsBindGroup, Face, ShaderRef},
         view::RenderLayers,
     },
 };
@@ -52,7 +52,7 @@ fn update_galaxy_volume(
     query: Query<Entity, With<GalaxyVolume>>,
     galaxy_render_settings: Res<GalaxyRenderConfig>,
 ) {
-    // TODO: we dont have to do this every frame
+    if galaxy_render_settings.is_changed() {
     if let Ok(entity) = query.single() {
         commands
             .entity(entity)
@@ -64,6 +64,8 @@ fn update_galaxy_volume(
     }
 }
 
+    }
+
 fn update_volume_material(
     galaxy_mat: Query<&MeshMaterial3d<GalaxyVolumeMaterial>, With<GalaxyVolume>>,
     galaxy_texture: Res<super::GalaxyTexture>,
@@ -71,9 +73,7 @@ fn update_volume_material(
     galaxy_render_settings: Res<GalaxyRenderConfig>,
     mut galaxy_materials: ResMut<Assets<GalaxyVolumeMaterial>>,
 ) {
-    // it would be good to divorce parameter updates from texture updates I guess
-    // the texture update is quite cheap so it's not huge deal though
-    if galaxy_texture.is_changed() {
+    if galaxy_texture.is_changed() || galaxy_render_settings.is_changed() {
         let Ok(galaxy) = galaxy_mat.single() else {
             return;
         };

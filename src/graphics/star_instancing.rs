@@ -84,13 +84,15 @@ fn manage_star_instances(
     }
 
     // update supersampling offset
-    if let Some(mat) = materials.get_mut(&star_instancing.material_handle) {
-        mat.supersampling_offset_scale = if galaxy_render_settings.draw_stars_to_background {
-            0.25
-        } else {
-            1.0
+    if galaxy_render_settings.is_changed() {
+        if let Some(mat) = materials.get_mut(&star_instancing.material_handle) {
+            mat.supersampling_offset_scale = if galaxy_render_settings.draw_stars_to_background {
+                0.25
+            } else {
+                1.0
+            };
         };
-    };
+    }
 
     // add instancing components to stars that need them
     for (entity, star) in star_query {

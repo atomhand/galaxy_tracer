@@ -51,11 +51,11 @@ impl GalaxyComponentDensity<'_> {
         let theta = -(f32::atan2(p.x, p.y) + angular_offset);
 
         // modifier for each arm
-        let mut highest: f32 = 0.0;            
+        let mut highest: f32 = 0.0;
         for arm_id in 0..self.galaxy.n_arms {
             let disp = self.galaxy.arm_offsets[arm_id as usize]; // angular offset
             let v = self.find_theta_difference(winding, theta + disp);
-            highest = f32::max(highest,(1.0 - v).powf(self.component.arm_width * 15.0))
+            highest = f32::max(highest, (1.0 - v).powf(self.component.arm_width * 15.0))
         }
         highest
     }
@@ -86,7 +86,7 @@ impl GalaxyComponentDensity<'_> {
 
         // I think the component winding_factor is only meant to apply to noise?
         let winding = self.rad_winding(d); // * self.component.winding_factor;
-        let arm_mod = self.arms_modifier(winding,p);
+        let arm_mod = self.arms_modifier(winding, p);
 
         central_falloff * arm_mod * r
     }

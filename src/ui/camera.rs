@@ -30,12 +30,12 @@ fn spawn_camera(mut commands: Commands, mut clearcolor: ResMut<ClearColor>) {
 #[derive(Component, Clone, ExtractComponent)]
 pub struct CameraMain {
     target_pos: Vec3,
-    galaxy_radius : f32,
-    max_zoom_scale : f32,
+    galaxy_radius: f32,
+    max_zoom_scale: f32,
     zoom: f32,
-    side_view : bool,
+    side_view: bool,
     smooth_zoom_buffer: f32,
-    far_view : bool,
+    far_view: bool,
     drag_origin: Option<Vec3>,
     pub translation: Vec3,
 }
@@ -44,12 +44,12 @@ impl Default for CameraMain {
     fn default() -> Self {
         Self {
             target_pos: Vec3::new(0.0, 0., 0.0),
-            galaxy_radius : 1.0,
+            galaxy_radius: 1.0,
             zoom: 1.0,
-            max_zoom_scale : 4.0,
-            side_view : false,
+            max_zoom_scale: 4.0,
+            side_view: false,
             smooth_zoom_buffer: 0.0,
-            far_view : false,
+            far_view: false,
             drag_origin: None,
             translation: Vec3::ZERO,
         }
@@ -58,13 +58,13 @@ impl Default for CameraMain {
 
 impl CameraMain {
     fn adjusted_zoom(&self) -> f32 {
-        let base_scale = if self.far_view { 10.0 } else { 1.0 }; 
+        let base_scale = if self.far_view { 10.0 } else { 1.0 };
         let min_zoom = 25.0 * base_scale;
-        let max_zoom = self.galaxy_radius *  base_scale * self.max_zoom_scale;
+        let max_zoom = self.galaxy_radius * base_scale * self.max_zoom_scale;
 
         let min_factor = f32::log10(min_zoom);
         let max_factor = f32::log10(max_zoom);
-        let zoom_as_factor = f32::lerp(min_factor,max_factor,self.zoom);
+        let zoom_as_factor = f32::lerp(min_factor, max_factor, self.zoom);
         10.0f32.powf(zoom_as_factor)
     }
 
@@ -84,16 +84,16 @@ impl CameraMain {
         self.target_pos
     }
 
-    fn smooth_constrain(&mut self) {        
+    fn smooth_constrain(&mut self) {
         let d = self.target_pos.xz().length();
         if d > self.galaxy_radius {
             // Constrain the rate of change to get a gradual transition when stopping dragging
-            let fac = (self.galaxy_radius /d).max(0.975);
+            let fac = (self.galaxy_radius / d).max(0.975);
             self.target_pos *= fac;
         }
     }
 
-    fn set_transform(&mut self, transform : &mut Transform) {
+    fn set_transform(&mut self, transform: &mut Transform) {
         self.translation = self.translation();
         transform.translation = self.translation;
         transform.look_at(self.look_pos(), Vec3::Y);
@@ -166,7 +166,6 @@ pub fn camera_control_system(
         camera_main.far_view = !camera_main.far_view;
     }
 
-
     camera_main.side_view = keys.pressed(KeyCode::Space);
 
     let old_zoom = camera_main.zoom;
@@ -217,10 +216,9 @@ pub fn camera_control_system(
     if let Some(drag) = camera_main.drag_origin {
         camera_main.drag_origin = Some(drag + key_delta * speed);
     } else {
-        // if not dragging, constrain camera target to the galaxy radius 
+        // if not dragging, constrain camera target to the galaxy radius
         // -- Could do this when dragging too, but I find this has behaviour overall more pleasant
         camera_main.smooth_constrain();
-
     }
 
     camera_main.set_transform(&mut transform);
@@ -243,7 +241,7 @@ pub fn camera_control_system(
 
             camera_main.target_pos += drag_offset;
         }
-        
+
         camera_main.set_transform(&mut transform);
     }
 }

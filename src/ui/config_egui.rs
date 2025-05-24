@@ -152,6 +152,9 @@ fn ui_system(
 ) {
     let ctx = contexts.ctx_mut();
 
+    let mut new_galaxy_config = galaxy_config.clone();
+    let mut new_rendering_config = rendering_config.clone();
+
     egui::SidePanel::left("side_panel")
         .default_width(200.0)
         .show(ctx, |ui| {
@@ -160,46 +163,50 @@ fn ui_system(
 
                 egui::CollapsingHeader::new("Galaxy Parameters").show(ui, |ui| {
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.radius, 100.0..=1000.0).text("Radius"),
+                        egui::Slider::new(&mut new_galaxy_config.radius, 100.0..=1000.0).text("Radius"),
                     );
+
+                    let mut texture_root = new_rendering_config.texture_dimension.checked_ilog2().unwrap_or(1);
                     ui.add(
-                        egui::Slider::new(&mut rendering_config.texture_root, 4..=11)
+                        egui::Slider::new(&mut texture_root, 4..=11)
                             .custom_formatter(|n, _| {
                                 let n = n as u32;
                                 format!("{}", 2u32.pow(n))
                             })
                             .text("Texture Size"),
                     );
+                    new_rendering_config.texture_dimension = 2u32.pow(texture_root);
 
                     ui.add(
-                        egui::Slider::new(&mut rendering_config.padding_coeff, 1.0..=2.0)
+                        egui::Slider::new(&mut new_rendering_config.padding_coeff, 1.0..=2.0)
                             .text("Padding Coefficient"),
                     );
                     ui.add(
-                        egui::Slider::new(&mut rendering_config.raymarch_steps, 1..=256)
+                        egui::Slider::new(&mut new_rendering_config.raymarch_steps, 1..=256)
                             .text("Raymarch Steps"),
                     );
                     ui.checkbox(
-                        &mut rendering_config.draw_volume_to_background,
+                        &mut new_rendering_config.draw_volume_to_background,
                         "Draw volume to background layer",
                     );
-                    let mut inv_exposure = 1.0 / rendering_config.exposure;
+                    let mut inv_exposure = 1.0 / new_rendering_config.exposure;
                     ui.add(
                         egui::Slider::new(&mut inv_exposure, 1.0..=1000.0)
                             .text("Exposure (Inverse)"),
                     );
-                    rendering_config.exposure = 1.0 / inv_exposure;
+                    new_rendering_config.exposure = 1.0 / inv_exposure;
 
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.winding_b, 0.05..=1.0).text("windingB"),
+                        egui::Slider::new(&mut new_galaxy_config.winding_b, 0.05..=1.0)
+                            .text("windingB"),
                     );
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.winding_n, 1.0..=10.0)
+                        egui::Slider::new(&mut new_galaxy_config.winding_n, 1.0..=10.0)
                             .text("windingN"),
                     );
 
                     ui.checkbox(
-                        &mut rendering_config.diagnostic_mode,
+                        &mut new_rendering_config.diagnostic_mode,
                         "Performance Diagnostic",
                     );
                 });
@@ -207,7 +214,7 @@ fn ui_system(
                 ui.separator();
                 egui::CollapsingHeader::new("Arms").show(ui, |ui| {
                     for i in 0..4 {
-                        let arm_config = &mut galaxy_config.arm_configs[i as usize];
+                        let arm_config = &mut new_galaxy_config.arm_configs[i as usize];
                         arm_component_ui(i, arm_config, ui);
                     }
                 });
@@ -215,30 +222,38 @@ fn ui_system(
 
                 egui::CollapsingHeader::new("Bulge Parameters").show(ui, |ui| {
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.bulge_strength, 1.0..=200.0)
+                        egui::Slider::new(&mut new_galaxy_config.bulge_strength, 1.0..=200.0)
                             .text("Strength"),
                     );
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.bulge_radius, 1.0..=20.0)
+                        egui::Slider::new(&mut new_galaxy_config.bulge_radius, 1.0..=20.0)
                             .text("Scale Factor"),
                     );
                 });
                 ui.separator();
 
-                component_ui(&mut galaxy_config.disk_params, true, ui);
-                component_ui(&mut galaxy_config.dust_params, true, ui);
+                component_ui(&mut new_galaxy_config.disk_params, true, ui);
+                component_ui(&mut new_galaxy_config.dust_params, true, ui);
 
                 egui::CollapsingHeader::new("Stars Parameters").show(ui, |ui| {
                     ui.add(
-                        egui::Slider::new(&mut galaxy_config.stars_per_arm, 4096..=65536)
+                        egui::Slider::new(&mut new_galaxy_config.stars_per_arm, 4096..=65536)
                             .text("Stars per arm"),
                     );
                     ui.checkbox(
-                        &mut rendering_config.draw_stars_to_background,
+                        &mut new_rendering_config.draw_stars_to_background,
                         "Draw stars to background",
                     );
-                    component_ui(&mut galaxy_config.stars_params, false, ui);
+                    component_ui(&mut new_galaxy_config.stars_params, false, ui);
                 });
             });
         });
+
+    if new_galaxy_config != *galaxy_config {
+        new_galaxy_config.update_arms();
+        *galaxy_config = new_galaxy_config;
+    }
+    if new_rendering_config != *rendering_config {
+        *rendering_config = new_rendering_config;
+    }
 }

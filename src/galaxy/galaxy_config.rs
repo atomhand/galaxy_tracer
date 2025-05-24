@@ -5,7 +5,6 @@ use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
 pub struct GalaxyRenderConfig {
     pub raymarch_steps: u32,
     pub draw_volume_to_background: bool,
-    pub texture_root: u32,
     pub texture_dimension: u32,
     pub diagnostic_mode: bool,
     pub draw_stars_to_background: bool,
@@ -39,21 +38,18 @@ pub struct GalaxyConfig {
     pub stars_params: ComponentConfig,
 }
 
-#[derive(Resource)]
-struct GalaxyConfigOld {
-    config: GalaxyConfig,
-    rendering: GalaxyRenderConfig,
-}
+impl GalaxyConfig {
+    pub fn update_arms(&mut self) {
+        let mut arms = 0;
+        for i in 0..4 {
+            let ui = self.arm_configs[i];
 
-impl Default for GalaxyConfigOld {
-    fn default() -> Self {
-        GalaxyConfigOld {
-            config: GalaxyConfig {
-                generation: -1,
-                ..default()
-            },
-            rendering: GalaxyRenderConfig::default(),
+            if ui.enabled {
+                self.arm_offsets[arms] = (ui.offset as f32).to_radians();
+                arms += 1;
+            }
         }
+        self.n_arms = arms as i32;
     }
 }
 
@@ -147,38 +143,15 @@ impl Plugin for GalaxyConfigPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GalaxyConfig::default())
             .insert_resource(GalaxyRenderConfig::default())
-            .insert_resource(GalaxyConfigOld::default())
-            .add_systems(Update, apply_ui_updates)
+            .add_systems(Update,update_generation)
             .add_plugins(ExtractResourcePlugin::<GalaxyConfig>::default())
             .add_plugins(ExtractResourcePlugin::<GalaxyRenderConfig>::default());
     }
 }
 
-fn apply_ui_updates(
-    mut galaxy_config_old: ResMut<GalaxyConfigOld>,
-    mut galaxy_config: ResMut<GalaxyConfig>,
-    mut rendering_config: ResMut<GalaxyRenderConfig>,
-) {
-    if (galaxy_config.is_changed() && *galaxy_config != galaxy_config_old.config)
-        || (rendering_config.is_changed() && *rendering_config != galaxy_config_old.rendering)
-    {
-        galaxy_config.generation += 1;
-
-        rendering_config.texture_dimension = 2u32.pow(rendering_config.texture_root);
-
-        let mut arms = 0;
-        for i in 0..4 {
-            let ui = galaxy_config.arm_configs[i];
-
-            if ui.enabled {
-                galaxy_config.arm_offsets[arms] = (ui.offset as f32).to_radians();
-                arms += 1;
-            }
-        }
-        galaxy_config.n_arms = arms as i32;
-
-        galaxy_config_old.config = galaxy_config.clone();
-        galaxy_config_old.rendering = rendering_config.clone();
+fn update_generation(mut galaxy_config : ResMut<GalaxyConfig>) {
+    if galaxy_config.is_changed() {
+        galaxy_config.generation+=1;
     }
 }
 
@@ -194,8 +167,6 @@ impl Default for GalaxyRenderConfig {
             diagnostic_mode: false,
             draw_volume_to_background: true,
             raymarch_steps: 128,
-
-            texture_root: 9,
             texture_dimension: 512,
             // Tends to look extremely bad in motion
             draw_stars_to_background: false,

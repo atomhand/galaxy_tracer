@@ -142,7 +142,8 @@ fn sample_pos(rng: &mut ThreadRng, radius: f32) -> Vec3 {
 }
 
 fn sample_star_pos(galaxy_config: &GalaxyConfig, rng: &mut ThreadRng) -> Vec3 {
-    let arm_painter = super::GalaxyComponentDensity::new(galaxy_config, &galaxy_config.stars_params);
+    let arm_painter =
+        super::GalaxyComponentDensity::new(galaxy_config, &galaxy_config.stars_params);
 
     let current_pos = sample_pos(rng, galaxy_config.radius);
     let mut best = current_pos;

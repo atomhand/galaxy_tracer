@@ -1,3 +1,4 @@
+use super::StarInstanceMarker;
 use crate::graphics::ExtinctionCache;
 use crate::prelude::*;
 use bevy::{
@@ -20,16 +21,15 @@ use bevy::{
             AddRenderCommand, DrawFunctions, PhaseItem, PhaseItemExtraIndex, RenderCommand,
             RenderCommandResult, SetItemPipeline, TrackedRenderPass, ViewSortedRenderPhases,
         },
+        render_resource::binding_types::*,
         render_resource::*,
-        render_resource::{binding_types::*, *},
-        renderer::{RenderContext, RenderDevice, RenderQueue},
-        storage::{GpuShaderStorageBuffer, ShaderStorageBuffer},
+        renderer::{RenderDevice, RenderQueue},
+        storage::GpuShaderStorageBuffer,
         sync_world::MainEntity,
-        view::{ExtractedView, NoFrustumCulling, NoIndirectDrawing, RenderLayers},
+        view::{ExtractedView, NoFrustumCulling, RenderLayers},
         Render, RenderApp, RenderSet,
     },
 };
-use super::StarInstanceMarker;
 use bytemuck::{Pod, Zeroable};
 
 /// This example uses a shader source file from the assets subdirectory
@@ -129,12 +129,13 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
 struct InstanceMaterialData(Vec<InstanceData>);
 
 impl ExtractComponent for InstanceMaterialData {
-    type QueryData = &'static InstanceMaterialData;
+    type QueryData = (&'static InstanceMaterialData,Option<&'static RenderLayers>);
     type QueryFilter = ();
-    type Out = Self;
+    type Out = (Self,RenderLayers);
 
-    fn extract_component(item: QueryItem<'_, Self::QueryData>) -> Option<Self> {
-        Some(InstanceMaterialData(item.0.clone()))
+    fn extract_component((data,render_layers): QueryItem<'_, Self::QueryData>) -> Option<Self::Out> {
+        let render_layers = render_layers.unwrap_or_default();
+        Some((InstanceMaterialData(data.0.clone()),render_layers.clone()))
     }
 }
 
@@ -179,23 +180,27 @@ fn queue_custom(
     pipeline_cache: Res<PipelineCache>,
     meshes: Res<RenderAssets<RenderMesh>>,
     render_mesh_instances: Res<RenderMeshInstances>,
-    material_meshes: Query<(Entity, &MainEntity), With<InstanceMaterialData>>,
+    material_meshes: Query<
+        (Entity, &MainEntity, &RenderLayers),
+        With<InstanceMaterialData>,
+    >,
     mut transparent_render_phases: ResMut<ViewSortedRenderPhases<Transparent3d>>,
-    views: Query<(&ExtractedView, &Msaa)>,
+    views: Query<(&ExtractedView, &Msaa, Option<&RenderLayers>)>,
 ) {
     let draw_custom = transparent_3d_draw_functions.read().id::<DrawCustom>();
 
-    for (view, msaa) in &views {
+    for (view, msaa, view_layers) in &views {
         let Some(transparent_phase) = transparent_render_phases.get_mut(&view.retained_view_entity)
         else {
             continue;
         };
 
         let msaa_key = MeshPipelineKey::from_msaa_samples(msaa.samples());
+        let view_layers = view_layers.unwrap_or_default();
 
         let view_key = msaa_key | MeshPipelineKey::from_hdr(view.hdr);
         let rangefinder = view.rangefinder3d();
-        for (entity, main_entity) in &material_meshes {
+        for (entity, main_entity, entity_layers) in &material_meshes {
             let Some(mesh_instance) = render_mesh_instances.render_mesh_queue_data(*main_entity)
             else {
                 continue;
@@ -203,6 +208,11 @@ fn queue_custom(
             let Some(mesh) = meshes.get(mesh_instance.mesh_asset_id) else {
                 continue;
             };
+            // skip if the view/entity render layers don't intersect
+            if !view_layers.intersects(entity_layers) {
+                continue;
+            }
+
             let key = view_key
                 | MeshPipelineKey::from_primitive_topology(mesh.primitive_topology())
                 | bevy::pbr::alpha_mode_pipeline_key(AlphaMode::Add, msaa);
@@ -359,7 +369,6 @@ fn prepare_star_instancing_bind_group(
     uniforms: Res<StarInstancingUniforms>,
     render_device: Res<RenderDevice>,
     extinction_cache: Res<ExtinctionCache>,
-    render_config: Res<GalaxyRenderConfig>,
     ssbos: Res<RenderAssets<GpuShaderStorageBuffer>>,
 ) {
     let output_buffer = ssbos.get(&extinction_cache.output_buffer).unwrap();

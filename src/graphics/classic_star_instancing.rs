@@ -10,7 +10,6 @@ use bevy::{
     },
 };
 
-
 use super::StarInstanceMarker;
 
 const SHADER_ASSET_PATH: &str = "shaders/star_instancing.wgsl";

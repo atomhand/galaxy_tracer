@@ -1,16 +1,13 @@
 use crate::prelude::*;
 use bevy::prelude::*;
-use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
+use bevy::render::{
+    extract_resource::{ExtractResource, ExtractResourcePlugin},
+    render_asset::RenderAssetUsages,
+    render_resource::{Extent3d, TextureDimension, TextureFormat},
+};
 use rayon::prelude::*;
-pub struct GalaxyTexturePlugin;
 
-#[derive(Resource, Default, Clone, ExtractResource)]
-pub struct GalaxyTexture {
-    pub tex: Option<Handle<Image>>,
-    pub luts: Option<Handle<Image>>,
-    dimension: u32,
-    generation: i32,
-}
+pub struct GalaxyTexturePlugin;
 
 impl Plugin for GalaxyTexturePlugin {
     fn build(&self, app: &mut App) {
@@ -20,12 +17,15 @@ impl Plugin for GalaxyTexturePlugin {
     }
 }
 
-use bevy::render::{
-    render_asset::RenderAssetUsages,
-    render_resource::{Extent3d, TextureDimension, TextureFormat},
-};
+#[derive(Resource, Default, Clone, ExtractResource)]
+pub struct GalaxyTexture {
+    pub tex: Option<Handle<Image>>,
+    pub luts: Option<Handle<Image>>,
+    dimension: u32,
+    generation: i32,
+}
 
-pub fn get_lut(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> Image {
+fn get_lut(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> Image {
     let width = render_settings.texture_dimension.next_power_of_two();
     let layers = 4;
 
@@ -67,7 +67,7 @@ pub fn get_lut(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> I
     )
 }
 
-pub fn get_texture(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> Image {
+fn get_texture(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> Image {
     let dimension = render_settings.texture_dimension.next_power_of_two();
 
     let disk_painter = GalaxyComponentDensity::new(config, &config.disk_params);

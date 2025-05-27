@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
+use super::galaxy_generator::*;
 
 #[derive(Resource, Clone, PartialEq, ExtractResource)]
 pub struct GalaxyRenderConfig {
@@ -17,15 +18,11 @@ pub struct GalaxyConfig {
     pub generation: i32,
 
     pub radius: f32,
-    pub n_arms: i32,
-    pub arm_offsets: [f32; 4],
 
     pub winding_b: f32,
     pub winding_n: f32,
 
-    pub spacing: f32,
-
-    pub arm_configs: [ArmConfig; 4],
+    pub arms: Vec<ArmConfig>,
 
     pub bulge_strength: f32,
     pub bulge_radius: f32,
@@ -37,21 +34,6 @@ pub struct GalaxyConfig {
     pub dust_params: ComponentConfig,
     pub star_volume_params: ComponentConfig,
     pub star_instance_params: ComponentConfig,
-}
-
-impl GalaxyConfig {
-    pub fn update_arms(&mut self) {
-        let mut arms = 0;
-        for i in 0..4 {
-            let ui = self.arm_configs[i];
-
-            if ui.enabled {
-                self.arm_offsets[arms] = (ui.offset as f32).to_radians();
-                arms += 1;
-            }
-        }
-        self.n_arms = arms as i32;
-    }
 }
 
 #[derive(Clone, PartialEq)]
@@ -143,7 +125,7 @@ pub struct GalaxyConfigPlugin;
 
 impl Plugin for GalaxyConfigPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(GalaxyConfig::default())
+        app.insert_resource(generate_galaxy(GalaxyGenerationSettings::default()))
             .insert_resource(GalaxyRenderConfig::default())
             .add_systems(Update, update_generation)
             .add_plugins(ExtractResourcePlugin::<GalaxyConfig>::default())
@@ -159,8 +141,13 @@ fn update_generation(mut galaxy_config: ResMut<GalaxyConfig>) {
 
 #[derive(Default, Clone, Copy, PartialEq)]
 pub struct ArmConfig {
-    pub enabled: bool,
     pub offset: i32, // in degrees
+}
+
+impl ArmConfig {
+    pub fn offset_radians(&self) -> f32 {
+        (self.offset as f32).to_radians()
+    }
 }
 
 impl Default for GalaxyRenderConfig {
@@ -187,32 +174,7 @@ impl Default for GalaxyConfig {
             bulge_intensity: 1.0,
             radius: 500.0, // in parsecs
             stars_per_arm: 10000,
-            spacing: 40.0,
-            n_arms: 3,
-            arm_configs: [
-                ArmConfig {
-                    enabled: true,
-                    offset: 0,
-                },
-                ArmConfig {
-                    enabled: false,
-                    offset: 90,
-                },
-                ArmConfig {
-                    enabled: true,
-                    offset: 180,
-                },
-                ArmConfig {
-                    enabled: false,
-                    offset: 270,
-                },
-            ],
-            arm_offsets: [
-                0.0,
-                90f32.to_radians(),
-                180f32.to_radians(),
-                270f32.to_radians(),
-            ],
+            arms: vec![ArmConfig { offset: 0 }, ArmConfig { offset: 180 }],
             winding_b: 0.5,
             winding_n: 4.0,
             disk_params: ComponentConfig {
@@ -269,5 +231,11 @@ impl Default for GalaxyConfig {
                 ..default()
             },
         }
+    }
+}
+
+impl GalaxyConfig {
+    pub fn num_arms(&self) -> usize {
+        self.arms.len()
     }
 }

@@ -73,7 +73,7 @@ fn manage_star_instances(
         }
         // update params
         star_instancing.generation = galaxy_config.generation;
-        star_count.count = (galaxy_config.stars_per_arm * galaxy_config.n_arms) as usize;
+        star_count.count = (galaxy_config.stars_per_arm * galaxy_config.num_arms() as i32) as usize;
         star_instancing.stars_left_to_place = star_count.count as i32;
         star_instancing.next_star_index = 0;
     }

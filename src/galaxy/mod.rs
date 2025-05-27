@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 mod galaxy_component_density;
 mod galaxy_config;
+pub mod galaxy_generator;
 mod spawn_stars;
 
 pub use spawn_stars::{SpawnStarsPlugin, Star};

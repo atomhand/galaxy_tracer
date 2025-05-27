@@ -52,9 +52,8 @@ impl GalaxyComponentDensity<'_> {
 
         // modifier for each arm
         let mut highest: f32 = 0.0;
-        for arm_id in 0..self.galaxy.n_arms {
-            let disp = self.galaxy.arm_offsets[arm_id as usize]; // angular offset
-            let v = self.find_theta_difference(winding, theta + disp);
+        for arm in &self.galaxy.arms {
+            let v = self.find_theta_difference(winding, theta + arm.offset_radians());
             highest = f32::max(highest, (1.0 - v).powf(self.component.arm_width * 15.0))
         }
         highest

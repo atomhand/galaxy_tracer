@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
+use crate::galaxy::galaxy_generator::*;
 
 pub struct ConfigEguiPlugin;
 
@@ -18,13 +19,10 @@ fn configure_visuals_system(mut contexts: EguiContexts) {
     });
 }
 
-fn arm_component_ui(id: i32, arm_config: &mut ArmConfig, ui: &mut egui::Ui) {
-    egui::CollapsingHeader::new(format!("Arm config {id}"))
-        .default_open(true)
-        .show(ui, |ui| {
-            ui.checkbox(&mut arm_config.enabled, "Enabled");
-            ui.add(egui::Slider::new(&mut arm_config.offset, 0..=360).text("Angular Offset"));
-        });
+fn arm_component_ui(id: usize, arm_config: &mut ArmConfig, ui: &mut egui::Ui) {
+    ui.add(
+        egui::Slider::new(&mut arm_config.offset, 0..=360).text(format!("Arm {id} Angular Offset")),
+    );
 }
 
 fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui) {
@@ -173,6 +171,10 @@ fn ui_system(
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.heading("Configuration");
 
+                if ui.button("Generate New").clicked() {
+                    new_galaxy_config = generate_galaxy(GalaxyGenerationSettings::default());
+                }
+
                 egui::CollapsingHeader::new("Galaxy Parameters").show(ui, |ui| {
                     ui.add(
                         egui::Slider::new(&mut new_galaxy_config.radius, 100.0..=1000.0)
@@ -229,10 +231,27 @@ fn ui_system(
 
                 ui.separator();
                 egui::CollapsingHeader::new("Arms").show(ui, |ui| {
-                    for i in 0..4 {
-                        let arm_config = &mut new_galaxy_config.arm_configs[i as usize];
-                        arm_component_ui(i, arm_config, ui);
+                    let mut last_angle = 0;
+                    for (i, arm) in new_galaxy_config.arms.iter_mut().enumerate() {
+                        arm_component_ui(i, arm, ui);
+                        last_angle = arm.offset;
                     }
+                    ui.horizontal(|ui| {
+                        if ui.button("Add").clicked() {
+                            new_galaxy_config.arms.push(ArmConfig {
+                                offset: last_angle + 90,
+                            })
+                        }
+                        if ui.button("Remove").clicked() {
+                            new_galaxy_config.arms.pop();
+                        }
+                        if ui.button("Distribute Offsets").clicked() {
+                            let n_arms = new_galaxy_config.num_arms();
+                            for (i, arm) in new_galaxy_config.arms.iter_mut().enumerate() {
+                                arm.offset = i as i32 * (360 / n_arms as i32);
+                            }
+                        }
+                    });
                 });
                 ui.separator();
 
@@ -267,7 +286,6 @@ fn ui_system(
         });
 
     if new_galaxy_config != *galaxy_config {
-        new_galaxy_config.update_arms();
         *galaxy_config = new_galaxy_config;
     }
     if new_rendering_config != *rendering_config {

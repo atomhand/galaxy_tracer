@@ -59,7 +59,8 @@ fn march(ro : vec3<f32>, rd : vec3<f32>, near_offset : f32, far_offset : f32) ->
 
     // we trace backwards from the far point
     let step_size = abs(near_offset-far_offset) / STEPS;
-    let start = ro + rd * (far_offset + jitter(rd.xy + rd.zz) * step_size * 5.0);
+    let jitter_offset = jitter(rd.xy + rd.zz) ;
+    let start = ro + rd * (far_offset + jitter_offset * step_size * 1.0);
     let end = ro + rd * near_offset;
     for(var i =0; i<i32(STEPS); i++) {
         let p = start - step_size * f32(i) * rd;

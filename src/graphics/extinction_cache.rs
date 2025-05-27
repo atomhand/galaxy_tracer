@@ -172,7 +172,7 @@ fn prepare_uniforms(
 }
 
 #[derive(Resource)]
-struct ExtinctionCacheBindGroups([BindGroup; 1]);
+struct ExtinctionCacheBindGroups([BindGroup; 2]);
 
 #[allow(clippy::too_many_arguments)]
 fn prepare_bind_group(
@@ -206,14 +206,21 @@ fn prepare_bind_group(
         .and_then(|x| gpu_images.get(x))
         .unwrap();
 
-    let bind_group = render_device.create_bind_group(
-        "extinction_cache_bind_group",
-        &pipeline.bind_group_layout,
+    let config_bind_group = render_device.create_bind_group(
+        "extinction_cache_config_bind_group",
+        &pipeline.config_bind_group_layout,
         &BindGroupEntries::sequential((
             camera_uniform,
             output_buffer.buffer.as_entire_buffer_binding(),
             input_positions.buffer.as_entire_buffer_binding(),
             input_colours.buffer.as_entire_buffer_binding(),
+        )),
+    ); 
+
+    let volume_bind_group = render_device.create_bind_group(
+        "extinction_cache_volume_bind_group",
+        &pipeline.volume_bind_group_layout,
+        &BindGroupEntries::sequential((
             galaxy_uniform,
             bulge_params,
             disk_params,
@@ -224,31 +231,24 @@ fn prepare_bind_group(
             &lut_view.sampler,
         )),
     );
-    commands.insert_resource(ExtinctionCacheBindGroups([bind_group]));
+    commands.insert_resource(ExtinctionCacheBindGroups([config_bind_group,volume_bind_group]));
 }
 
 #[derive(Resource)]
 struct ExtinctionCachePipeline {
-    bind_group_layout: BindGroupLayout,
+    volume_bind_group_layout: BindGroupLayout,
+    config_bind_group_layout: BindGroupLayout,
     pipeline: CachedComputePipelineId,
 }
 
 impl FromWorld for ExtinctionCachePipeline {
     fn from_world(world: &mut World) -> Self {
         let render_device = world.resource::<RenderDevice>();
-        let bind_group_layout = render_device.create_bind_group_layout(
-            "extinction_cache_bind_group_layout",
+        let volume_bind_group_layout = render_device.create_bind_group_layout(
+            "extinction_cache_volume_bind_group_layout",
             &BindGroupLayoutEntries::sequential(
                 ShaderStages::COMPUTE,
                 (
-                    // camera pos
-                    uniform_buffer::<Vec4>(false),
-                    // Extinction output
-                    storage_buffer::<Vec4>(false),
-                    // positions input buffer
-                    storage_buffer_read_only::<Vec4>(false),
-                    // colours input buffer
-                    storage_buffer_read_only::<Vec4>(false),
                     uniform_buffer::<GalaxyParams>(false),
                     uniform_buffer::<BulgeParams>(false),
                     uniform_buffer::<ComponentParams>(false),
@@ -260,11 +260,28 @@ impl FromWorld for ExtinctionCachePipeline {
                 ),
             ),
         );
+        let config_bind_group_layout = render_device.create_bind_group_layout(
+            "extinction_cache_config_bind_group_layout",
+            &BindGroupLayoutEntries::sequential(
+                ShaderStages::COMPUTE,
+                (
+                    // camera pos
+                    uniform_buffer::<Vec4>(false),
+                    // Extinction output
+                    storage_buffer::<Vec4>(false),
+                    // positions input buffer
+                    storage_buffer_read_only::<Vec4>(false),
+                    // colours input buffer
+                    storage_buffer_read_only::<Vec4>(false),
+                ),
+            ),
+        );
+
         let shader = world.load_asset(SHADER_ASSET_PATH);
         let pipeline_cache = world.resource::<PipelineCache>();
         let pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
             label: None,
-            layout: vec![bind_group_layout.clone()],
+            layout: vec![config_bind_group_layout.clone(), volume_bind_group_layout.clone()],
             push_constant_ranges: Vec::new(),
             shader: shader.clone(),
             shader_defs: vec![
@@ -277,7 +294,8 @@ impl FromWorld for ExtinctionCachePipeline {
         });
 
         ExtinctionCachePipeline {
-            bind_group_layout,
+            volume_bind_group_layout,
+            config_bind_group_layout,
             pipeline,
         }
     }
@@ -344,6 +362,7 @@ impl render_graph::Node for ExtinctionCacheNode {
                     .get_compute_pipeline(pipeline.pipeline)
                     .unwrap();
                 pass.set_bind_group(0, &bind_groups[0], &[]);
+                pass.set_bind_group(1, &bind_groups[1], &[]);
                 pass.set_pipeline(pipeline);
                 pass.dispatch_workgroups(size as u32 / WORKGROUP_SIZE, 1, 1);
             }

@@ -77,7 +77,7 @@ fn manage_star_instances(
         }
     }
 
-    if !galaxy_config.stars_params.enabled {
+    if !galaxy_config.star_instance_params.enabled {
         instances.0.clear();
         instances.0.push(InstanceData {
             position: Vec3::ZERO,
@@ -129,13 +129,15 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
 struct InstanceMaterialData(Vec<InstanceData>);
 
 impl ExtractComponent for InstanceMaterialData {
-    type QueryData = (&'static InstanceMaterialData,Option<&'static RenderLayers>);
+    type QueryData = (&'static InstanceMaterialData, Option<&'static RenderLayers>);
     type QueryFilter = ();
-    type Out = (Self,RenderLayers);
+    type Out = (Self, RenderLayers);
 
-    fn extract_component((data,render_layers): QueryItem<'_, Self::QueryData>) -> Option<Self::Out> {
+    fn extract_component(
+        (data, render_layers): QueryItem<'_, Self::QueryData>,
+    ) -> Option<Self::Out> {
         let render_layers = render_layers.unwrap_or_default();
-        Some((InstanceMaterialData(data.0.clone()),render_layers.clone()))
+        Some((InstanceMaterialData(data.0.clone()), render_layers.clone()))
     }
 }
 
@@ -180,10 +182,7 @@ fn queue_custom(
     pipeline_cache: Res<PipelineCache>,
     meshes: Res<RenderAssets<RenderMesh>>,
     render_mesh_instances: Res<RenderMeshInstances>,
-    material_meshes: Query<
-        (Entity, &MainEntity, &RenderLayers),
-        With<InstanceMaterialData>,
-    >,
+    material_meshes: Query<(Entity, &MainEntity, &RenderLayers), With<InstanceMaterialData>>,
     mut transparent_render_phases: ResMut<ViewSortedRenderPhases<Transparent3d>>,
     views: Query<(&ExtractedView, &Msaa, Option<&RenderLayers>)>,
 ) {

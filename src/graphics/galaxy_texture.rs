@@ -72,7 +72,7 @@ fn get_texture(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> I
 
     let disk_painter = GalaxyComponentDensity::new(config, &config.disk_params);
     let dust_painter = GalaxyComponentDensity::new(config, &config.dust_params);
-    let stars_painter = GalaxyComponentDensity::new(config, &config.stars_params);
+    let stars_painter = GalaxyComponentDensity::new(config, &config.star_volume_params);
 
     let mut texture_data = vec![0u8; (dimension * dimension * 8) as usize];
 

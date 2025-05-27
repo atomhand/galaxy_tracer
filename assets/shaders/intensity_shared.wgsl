@@ -26,6 +26,11 @@ fn dust_ridge_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
     return max(0.0,ridge_noise(pos_rotated * dust_params.noise_scale, dust_params.noise_persistence,octaves,2.5,dust_params.noise_offset, dust_params.noise_tilt));
 }
 
+fn cloud_noise(p : vec3<f32>, winding : f32, octaves : i32, scale : f32, persistence : f32) -> f32 {
+    let r = get_twirled_unit_pos(p,winding);
+    return octave_noise_3d(octaves,persistence,scale*0.1,r);
+}
+
 // END Noise utilities
 
 // These structs are duplicated in render.rs, so make sure to update both
@@ -73,11 +78,12 @@ struct ComponentParams {
 @group(2) @binding(0) var<uniform> galaxy: GalaxyParams;
 @group(2) @binding(1) var<uniform> bulge_params: BulgeParams;
 @group(2) @binding(2) var<uniform> disk_params: ComponentParams;
-@group(2) @binding(3) var<uniform> dust_params: ComponentParams;
-@group(2) @binding(4) var galaxy_xz_texture: texture_2d<f32>;
-@group(2) @binding(5) var galaxy_xz_sampler: sampler;
-@group(2) @binding(6) var lut_texture: texture_2d_array<f32>;
-@group(2) @binding(7) var lut_sampler: sampler;
+@group(2) @binding(3) var<uniform> stars_params: ComponentParams;
+@group(2) @binding(4) var<uniform> dust_params: ComponentParams;
+@group(2) @binding(5) var galaxy_xz_texture: texture_2d<f32>;
+@group(2) @binding(6) var galaxy_xz_sampler: sampler;
+@group(2) @binding(7) var lut_texture: texture_2d_array<f32>;
+@group(2) @binding(8) var lut_sampler: sampler;
 #endif
 
 const LUT_ID_WINDING : i32 = 0;
@@ -110,6 +116,25 @@ fn reconstruct_intensity(p : vec3<f32>, xz_intensity : f32, y_thickness : f32) -
     return xz_intensity * h;
 }
 
+#ifndef EXTINCTION_ONLY
+fn get_stars_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
+    if(base_intensity < 0.0005 || stars_params.strength == 0.0) {
+        return 0.0;
+    }
+
+    let base_noise = abs(octave_noise_3d(stars_params.noise_octaves,stars_params.noise_persistence,stars_params.noise_scale, p));
+
+    var add_noise = 0.0;
+    if(stars_params.noise_offset != 0.0) {
+        let add_noise_scale = 4.0;
+        add_noise = stars_params.noise_offset * cloud_noise(p,winding_angle,4,2.*add_noise_scale,-2.);  
+        add_noise += 0.5 * stars_params.noise_offset * cloud_noise(p,winding_angle*0.5,4,4.*add_noise_scale,-2.);  
+    }
+    let val = max(0.0,abs(pow(base_noise + 1.0+ add_noise,stars_params.noise_tilt)));
+
+    return val * base_intensity * stars_params.strength;
+}
+
 fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
     if(base_intensity < 0.0005 || disk_params.strength == 0.0) {
         return 0.0;
@@ -125,6 +150,7 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     return base_intensity * p2 * disk_params.strength;
 #endif
 }
+#endif
 
 fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
     if(base_intensity < 0.0005 || dust_params.strength == 0.0) {
@@ -176,21 +202,25 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
 #ifdef EXTINCTION_ONLY
     return in_col * extinction;
 #else
-    let disk_xz: f32  = reconstruct_intensity(p, xz_sample.x, disk_params.y_thickness);
+    let disk_base_intensity: f32  = reconstruct_intensity(p, xz_sample.x, disk_params.y_thickness);
     let disk_winding_angle : f32 = base_winding * disk_params.winding_factor;//-disk_sample.y;
 
     //  blue
     let disk_col = vec3<f32>(0.4,0.6,1.0);
-    let disk_intensity : f32 = get_disk_intensity(p, disk_winding_angle, disk_xz) * stepsize;
-    
-    let bulge_intensity = get_bulge_intensity(p) * stepsize * galaxy.exposure * 0.1;
+    let disk_intensity : f32 = get_disk_intensity(p, base_winding * disk_params.winding_factor, disk_base_intensity) * stepsize;
+
+    let stars_col = vec3<f32>(0.4,0.6,1.0);
+    let stars_base_intensity : f32 = reconstruct_intensity(p,xz_sample.z,stars_params.y_thickness);
+    let stars_intensity : f32 = get_stars_intensity(p, base_winding * stars_params.winding_factor, stars_base_intensity) * stepsize;
+
+    let bulge_intensity = get_bulge_intensity(p) * stepsize * 0.1;
     // yellow
     let bulge_col = vec3<f32>(1.,0.9,0.45);
 
 #ifdef DIAGNOSTIC
     return in_col + stepsize * galaxy.exposure * vec3<f32>((disk_intensity + dust_intensity), 0.0, 0.0);
 #else
-    let col = in_col + disk_col * disk_intensity * galaxy.exposure + bulge_col * bulge_intensity;
+    let col = in_col + (disk_col * disk_intensity + stars_col * stars_intensity + bulge_col * bulge_intensity) * galaxy.exposure;
     return col * extinction;
 #endif
 #endif

@@ -77,7 +77,7 @@ fn manage_star_instances(
         star_instancing.stars_left_to_place = star_count.count as i32;
         star_instancing.next_star_index = 0;
     }
-    if !galaxy_config.stars_params.enabled {
+    if !galaxy_config.star_instance_params.enabled {
         return;
     }
     // Spawn stars for the current batch
@@ -143,7 +143,7 @@ fn sample_pos(rng: &mut ThreadRng, radius: f32) -> Vec3 {
 
 fn sample_star_pos(galaxy_config: &GalaxyConfig, rng: &mut ThreadRng) -> Vec3 {
     let arm_painter =
-        super::GalaxyComponentDensity::new(galaxy_config, &galaxy_config.stars_params);
+        super::GalaxyComponentDensity::new(galaxy_config, &galaxy_config.star_instance_params);
 
     let current_pos = sample_pos(rng, galaxy_config.radius);
     let mut best = current_pos;

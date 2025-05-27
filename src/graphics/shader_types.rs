@@ -65,7 +65,7 @@ pub struct ComponentParams {
     noise_offset: f32,
     noise_tilt: f32,
     noise_persistence: f32,
-    noise_octaves: f32,
+    noise_octaves: i32,
 }
 
 impl ComponentParams {
@@ -87,9 +87,9 @@ impl ComponentParams {
             noise_tilt: component.noise_tilt,
             noise_persistence: component.noise_persistence,
             noise_octaves: if component.noise_enabled {
-                component.noise_octaves as f32
+                component.noise_octaves as i32
             } else {
-                0.0
+                0
             },
         }
     }

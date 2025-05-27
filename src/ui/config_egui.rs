@@ -31,7 +31,8 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
     let heading = match config.component_type {
         ComponentType::Disk => "Disk Config",
         ComponentType::Dust => "Dust Config",
-        ComponentType::Stars => "Stars Config",
+        ComponentType::StarVolume => "Star Volume Config",
+        ComponentType::StarInstances => "Star Instances Config",
     };
 
     let minval = ComponentConfig::MIN;
@@ -85,10 +86,21 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
             ui.group(|ui| {
                 ui.checkbox(&mut config.noise_enabled, "Enabled");
                 // speciual case for stars, ugly hack but w/e
-                if config.component_type == ComponentType::Stars {
+                if config.component_type == ComponentType::StarVolume {
                     ui.add(
-                        egui::Slider::new(&mut config.noise_scale, 1.0..=100.0).text("Frequency"),
+                        egui::Slider::new(&mut config.noise_scale, 1.0..=10.0).text("Frequency"),
                     );
+                    ui.add(
+                        egui::Slider::new(&mut config.noise_offset, -10.0..=10.0).text("Offset"),
+                    );
+                    ui.add(
+                        egui::Slider::new(
+                            &mut config.noise_winding_factor,
+                            minval.noise_winding_factor..=1.0,
+                        )
+                        .text("Winding Factor"),
+                    );
+                    ui.add(egui::Slider::new(&mut config.noise_tilt, 0.0..=-2.0).text("Tilt"));
                 } else {
                     ui.add(
                         egui::Slider::new(
@@ -97,28 +109,28 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
                         )
                         .text("Frequency"),
                     );
+                    ui.add(
+                        egui::Slider::new(
+                            &mut config.noise_offset,
+                            minval.noise_offset..=maxval.noise_offset,
+                        )
+                        .text("Offset"),
+                    );
+                    ui.add(
+                        egui::Slider::new(
+                            &mut config.noise_winding_factor,
+                            minval.noise_winding_factor..=maxval.noise_winding_factor,
+                        )
+                        .text("Winding Factor"),
+                    );
+                    ui.add(
+                        egui::Slider::new(
+                            &mut config.noise_tilt,
+                            minval.noise_tilt..=maxval.noise_tilt,
+                        )
+                        .text("Tilt"),
+                    );
                 }
-                ui.add(
-                    egui::Slider::new(
-                        &mut config.noise_offset,
-                        minval.noise_offset..=maxval.noise_offset,
-                    )
-                    .text("Offset"),
-                );
-                ui.add(
-                    egui::Slider::new(
-                        &mut config.noise_winding_factor,
-                        minval.noise_winding_factor..=maxval.noise_winding_factor,
-                    )
-                    .text("Winding Factor"),
-                );
-                ui.add(
-                    egui::Slider::new(
-                        &mut config.noise_tilt,
-                        minval.noise_tilt..=maxval.noise_tilt,
-                    )
-                    .text("Tilt"),
-                );
                 ui.add(
                     egui::Slider::new(
                         &mut config.noise_persistence,
@@ -238,8 +250,9 @@ fn ui_system(
 
                 component_ui(&mut new_galaxy_config.disk_params, true, ui);
                 component_ui(&mut new_galaxy_config.dust_params, true, ui);
+                component_ui(&mut new_galaxy_config.star_volume_params, true, ui);
 
-                egui::CollapsingHeader::new("Stars Parameters").show(ui, |ui| {
+                egui::CollapsingHeader::new("Star Instace Parameters").show(ui, |ui| {
                     ui.add(
                         egui::Slider::new(&mut new_galaxy_config.stars_per_arm, 4096..=65536)
                             .text("Stars per arm"),
@@ -248,7 +261,7 @@ fn ui_system(
                         &mut new_rendering_config.draw_stars_to_background,
                         "Draw stars to background",
                     );
-                    component_ui(&mut new_galaxy_config.stars_params, false, ui);
+                    component_ui(&mut new_galaxy_config.star_instance_params, false, ui);
                 });
             });
         });

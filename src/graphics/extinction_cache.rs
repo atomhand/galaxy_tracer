@@ -215,7 +215,7 @@ fn prepare_bind_group(
             input_positions.buffer.as_entire_buffer_binding(),
             input_colours.buffer.as_entire_buffer_binding(),
         )),
-    ); 
+    );
 
     let volume_bind_group = render_device.create_bind_group(
         "extinction_cache_volume_bind_group",
@@ -231,7 +231,10 @@ fn prepare_bind_group(
             &lut_view.sampler,
         )),
     );
-    commands.insert_resource(ExtinctionCacheBindGroups([config_bind_group,volume_bind_group]));
+    commands.insert_resource(ExtinctionCacheBindGroups([
+        config_bind_group,
+        volume_bind_group,
+    ]));
 }
 
 #[derive(Resource)]
@@ -281,7 +284,10 @@ impl FromWorld for ExtinctionCachePipeline {
         let pipeline_cache = world.resource::<PipelineCache>();
         let pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
             label: None,
-            layout: vec![config_bind_group_layout.clone(), volume_bind_group_layout.clone()],
+            layout: vec![
+                config_bind_group_layout.clone(),
+                volume_bind_group_layout.clone(),
+            ],
             push_constant_ranges: Vec::new(),
             shader: shader.clone(),
             shader_defs: vec![

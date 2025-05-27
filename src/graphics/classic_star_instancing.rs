@@ -78,7 +78,7 @@ fn manage_star_instances(
 ) {
     extinction.required_size = star_count.count;
 
-    if !galaxy_config.stars_params.enabled {
+    if !galaxy_config.star_instance_params.enabled {
         return;
     }
 

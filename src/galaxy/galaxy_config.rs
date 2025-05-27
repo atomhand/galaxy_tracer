@@ -35,7 +35,8 @@ pub struct GalaxyConfig {
 
     pub disk_params: ComponentConfig,
     pub dust_params: ComponentConfig,
-    pub stars_params: ComponentConfig,
+    pub star_volume_params: ComponentConfig,
+    pub star_instance_params: ComponentConfig,
 }
 
 impl GalaxyConfig {
@@ -57,7 +58,8 @@ impl GalaxyConfig {
 pub enum ComponentType {
     Disk,
     Dust,
-    Stars,
+    StarVolume,
+    StarInstances,
 }
 
 #[derive(Clone, PartialEq)]
@@ -232,23 +234,38 @@ impl Default for GalaxyConfig {
                 y_thickness: 0.02,
                 radial_extent: 0.45,
                 radial_dropoff: 0.05,
-                noise_scale: 6.0,
                 angular_offset: -45.,
+
+                noise_scale: 6.0,
                 noise_offset: 1.0,
                 noise_octaves: 5,
                 noise_winding_factor: 0.25,
                 ..default()
             },
-            stars_params: ComponentConfig {
-                component_type: ComponentType::Stars, // Match disk
+            star_volume_params: ComponentConfig {
+                component_type: ComponentType::StarVolume, // Match disk
+                strength: 150.0,
+                arm_width: 0.7,
+                y_thickness: 0.01,
+                angular_offset: -20.,
+
+                radial_dropoff: 0.05,
+                radial_extent: 0.45,
+
+                noise_tilt: -1.0,
+                noise_winding_factor: 0.9,
+                noise_scale: 10.0,
+                noise_persistence: 0.1,
+                noise_offset: 2.5,
+                ..default()
+            },
+            star_instance_params: ComponentConfig {
+                component_type: ComponentType::StarInstances, // Match disk
                 strength: 900.0,
                 arm_width: 0.3,
                 y_thickness: 0.02,
                 radial_dropoff: 0.05,
                 radial_extent: 0.4,
-                noise_octaves: 10,
-                noise_tilt: 0.3,
-                noise_winding_factor: 0.1,
                 ..default()
             },
         }

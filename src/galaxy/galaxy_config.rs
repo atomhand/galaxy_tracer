@@ -254,8 +254,8 @@ impl Default for GalaxyConfig {
 
                 noise_tilt: -1.0,
                 noise_winding_factor: 0.9,
-                noise_scale: 10.0,
-                noise_persistence: 0.1,
+                noise_scale: 9.0,
+                noise_persistence: 1.0,
                 noise_offset: 2.5,
                 ..default()
             },

@@ -122,11 +122,11 @@ fn get_stars_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32)
         return 0.0;
     }
 
-    let base_noise = abs(octave_noise_3d(stars_params.noise_octaves,stars_params.noise_persistence,stars_params.noise_scale, p));
+    let base_noise = abs(octave_noise_3d(stars_params.noise_octaves,stars_params.noise_persistence,0.1, p));
 
     var add_noise = 0.0;
     if(stars_params.noise_offset != 0.0) {
-        let add_noise_scale = 4.0;
+        let add_noise_scale = stars_params.noise_scale;
         add_noise = stars_params.noise_offset * cloud_noise(p,winding_angle,4,2.*add_noise_scale,-2.);  
         add_noise += 0.5 * stars_params.noise_offset * cloud_noise(p,winding_angle*0.5,4,4.*add_noise_scale,-2.);  
     }

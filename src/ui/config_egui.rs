@@ -100,7 +100,7 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
                         )
                         .text("Winding Factor"),
                     );
-                    ui.add(egui::Slider::new(&mut config.noise_tilt, 0.0..=-2.0).text("Tilt"));
+                    ui.add(egui::Slider::new(&mut config.noise_tilt, -2.0..=2.0).text("Tilt"));
                 } else {
                     ui.add(
                         egui::Slider::new(

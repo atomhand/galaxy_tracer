@@ -3,6 +3,8 @@ use bevy::prelude::*;
 mod galaxy_texture;
 mod galaxy_volume_render;
 
+mod psf_texture;
+
 mod extinction_cache;
 mod shader_types;
 
@@ -21,6 +23,7 @@ impl Plugin for GraphicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             //classic_star_instancing::StarInstancingPlugin,
+            psf_texture::PsfTexturePlugin,
             galaxy_volume_render::GalaxyVolumePlugin,
             galaxy_texture::GalaxyTexturePlugin,
             extinction_cache::ExtinctionCachePlugin,

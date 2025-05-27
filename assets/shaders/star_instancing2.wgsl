@@ -12,6 +12,8 @@ struct StarInstancingSettings {
 #import bevy_pbr::mesh_view_bindings::view
 @group(2) @binding(0) var<storage> extinction_output: array<vec4<f32>>;
 @group(2) @binding(1) var<uniform> settings: StarInstancingSettings;
+@group(2) @binding(2) var star_psf_texture: texture_2d<f32>;
+@group(2) @binding(3) var linear_sampler: sampler;
 
 struct Vertex {
     @location(0) position: vec3<f32>,
@@ -33,50 +35,32 @@ struct VertexOutput {
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
     let billboard_margin_scale = 4.0;
-    let minor_stars_scale_factor = 0.1;
+    let minor_stars_scale_factor = 0.5;
 
     // retrieve colour based on instance tag
     let in_color = extinction_output[i32(vertex.i_pos_scale.w)].rgb;
 
-    var scale_factor =  (in_color.x+in_color.y+in_color.z) * minor_stars_scale_factor * billboard_margin_scale;
-    var alpha = 1.0;
-    if scale_factor < 1.0 {
-        alpha = scale_factor/1.0;
-        scale_factor = 1.0;
-    }
+    let view_pos = (view.clip_from_world * vec4<f32>(vertex.i_pos_scale.xyz, 1.0)).xyz;
+    let distance = length(view_pos);
+
+    var scale =  (in_color.x+in_color.y+in_color.z) * minor_stars_scale_factor * billboard_margin_scale;
+    //let min_scale = distance * 0.01;
+    //scale = max(scale,min_scale);
 
     let camera_right = normalize(vec3<f32>(view.clip_from_world[0].x, view.clip_from_world[1].x, view.clip_from_world[2].x));    
     let camera_up = normalize(vec3<f32>(view.clip_from_world[0].y, view.clip_from_world[1].y, view.clip_from_world[2].y));
 
     var out : VertexOutput;
-    out.world_position = vec4<f32>((camera_right * vertex.position.x + camera_up * vertex.position.y ) * scale_factor + vertex.i_pos_scale.xyz,1.0);
+    out.world_position = vec4<f32>((camera_right * vertex.position.x + camera_up * vertex.position.y ) * scale + vertex.i_pos_scale.xyz,1.0);
     out.clip_position = view.clip_from_world * vec4<f32>(out.world_position.xyz, 1.0);
     out.uv = vertex.position.xy * billboard_margin_scale;
-    out.color = vec4<f32>(in_color,alpha);
+    out.color = vec4<f32>(in_color,1.0);
 
     return out;
 }
 
 fn draw_star(pos : vec2<f32>, star_color : vec3<f32>, I : f32) -> vec3<f32> {
-    let system_transition_factor = 0.0;
-
-    let c = star_color.rgb;
-
-    var d : f32 = length(pos);
-
-    var col = I * c;
-    var spectrum = I * c;
-
-    col = spectrum / (d*d*d);
-
-    let ARMS_SCALE = 1.0 / 1.4 ;
-
-    d = length(pos * vec2<f32>(50.0,0.5)) * ARMS_SCALE;
-    col += spectrum/ (d*d*d) * (1.0 - system_transition_factor);
-    d = length(pos * vec2<f32>(0.5,50.0)) * ARMS_SCALE;
-    col += spectrum / (d*d*d) * (1.0 - system_transition_factor);
-
-    return col;
+    return textureSample(star_psf_texture, linear_sampler, pos + vec2<f32>(0.5,0.5)).r  * normalize(star_color.rgb)* I;
 }
 
 const weights_4 = array<vec2<f32>,4>(
@@ -98,19 +82,15 @@ const weights_8 = array<vec2<f32>,8>(
 
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
-    let dpdx = dpdx(in.uv) * settings.supersampling_offset* 0.25;//vec2(dpdx(in.uv),dpdy(in.uv));
-    let dpdy = dpdy(in.uv) * settings.supersampling_offset * 0.25;
+    let dpdx = dpdx(in.uv) * settings.supersampling_offset;//vec2(dpdx(in.uv),dpdy(in.uv));
+    let dpdy = dpdy(in.uv) * settings.supersampling_offset;
 
-    let intensity =  in.color.a / 256.0;//.02*exp(-15.*rnd(1));
+    let intensity = 1.0;//.02*exp(-15.*rnd(1));
 
     var starcol = vec3<f32>(0.0);
     for(var i =0; i<8; i+=1) {
-        starcol     += draw_star(in.uv + dpdx * weights_8[i].x + dpdy * weights_8[i].y, in.color.rgb, intensity);
+        starcol     += draw_star(in.uv + dpdx * weights_8[i].x + dpdy * weights_8[i].y, in.color.rgb, intensity) / 8.0;
     }
-
-    starcol = in.color.a * starcol / 8.0;
-
-    let a = (starcol.x+starcol.y+starcol.z)/3.0;
-
+    let a = 1.0 * (starcol.x+starcol.y+starcol.z)/3.0;
     return vec4<f32>(starcol,a);
 }

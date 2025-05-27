@@ -6,7 +6,6 @@ use bevy::render::{
     render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 use rayon::prelude::*;
-
 pub struct GalaxyTexturePlugin;
 
 impl Plugin for GalaxyTexturePlugin {

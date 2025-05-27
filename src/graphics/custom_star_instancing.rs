@@ -26,6 +26,7 @@ use bevy::{
         renderer::{RenderDevice, RenderQueue},
         storage::GpuShaderStorageBuffer,
         sync_world::MainEntity,
+        texture::GpuImage,
         view::{ExtractedView, NoFrustumCulling, RenderLayers},
         Render, RenderApp, RenderSet,
     },
@@ -129,13 +130,15 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
 struct InstanceMaterialData(Vec<InstanceData>);
 
 impl ExtractComponent for InstanceMaterialData {
-    type QueryData = (&'static InstanceMaterialData,Option<&'static RenderLayers>);
+    type QueryData = (&'static InstanceMaterialData, Option<&'static RenderLayers>);
     type QueryFilter = ();
-    type Out = (Self,RenderLayers);
+    type Out = (Self, RenderLayers);
 
-    fn extract_component((data,render_layers): QueryItem<'_, Self::QueryData>) -> Option<Self::Out> {
+    fn extract_component(
+        (data, render_layers): QueryItem<'_, Self::QueryData>,
+    ) -> Option<Self::Out> {
         let render_layers = render_layers.unwrap_or_default();
-        Some((InstanceMaterialData(data.0.clone()),render_layers.clone()))
+        Some((InstanceMaterialData(data.0.clone()), render_layers.clone()))
     }
 }
 
@@ -180,10 +183,7 @@ fn queue_custom(
     pipeline_cache: Res<PipelineCache>,
     meshes: Res<RenderAssets<RenderMesh>>,
     render_mesh_instances: Res<RenderMeshInstances>,
-    material_meshes: Query<
-        (Entity, &MainEntity, &RenderLayers),
-        With<InstanceMaterialData>,
-    >,
+    material_meshes: Query<(Entity, &MainEntity, &RenderLayers), With<InstanceMaterialData>>,
     mut transparent_render_phases: ResMut<ViewSortedRenderPhases<Transparent3d>>,
     views: Query<(&ExtractedView, &Msaa, Option<&RenderLayers>)>,
 ) {
@@ -261,6 +261,7 @@ struct CustomPipeline {
     shader: Handle<Shader>,
     mesh_pipeline: MeshPipeline,
     bind_group_layout: BindGroupLayout,
+    linear_sampler: Sampler,
 }
 
 impl FromWorld for CustomPipeline {
@@ -274,13 +275,22 @@ impl FromWorld for CustomPipeline {
                 (
                     storage_buffer_read_only::<Vec4>(false),
                     uniform_buffer::<StarInstancingSetting>(false),
+                    texture_2d(TextureSampleType::Float { filterable: true }),
+                    sampler(SamplerBindingType::Filtering),
                 ),
             ),
         );
+        let linear_sampler = render_device.create_sampler(&SamplerDescriptor {
+            label: Some("background_upscale_linear_sampler"),
+            mag_filter: FilterMode::Linear,
+            min_filter: FilterMode::Linear,
+            ..SamplerDescriptor::default()
+        });
         CustomPipeline {
             shader: world.load_asset(SHADER_ASSET_PATH),
             mesh_pipeline: mesh_pipeline.clone(),
             bind_group_layout,
+            linear_sampler,
         }
     }
 }
@@ -363,22 +373,37 @@ type DrawCustom = (
 #[derive(Resource)]
 struct StarInstancingBindgroup(BindGroup);
 
+#[allow(clippy::too_many_arguments)]
 fn prepare_star_instancing_bind_group(
     mut commands: Commands,
     star_instancing_pipeline: Res<CustomPipeline>,
     uniforms: Res<StarInstancingUniforms>,
+    star_textures: Res<super::psf_texture::PsfTexture>,
     render_device: Res<RenderDevice>,
     extinction_cache: Res<ExtinctionCache>,
     ssbos: Res<RenderAssets<GpuShaderStorageBuffer>>,
+    gpu_image_assets: Res<RenderAssets<GpuImage>>,
 ) {
     let output_buffer = ssbos.get(&extinction_cache.output_buffer).unwrap();
 
     let uniform = uniforms.supersampling_offset.binding().unwrap();
 
+    let Some(star_texture) = &star_textures.tex else {
+        return;
+    };
+    let Some(star_texture) = gpu_image_assets.get(star_texture) else {
+        return;
+    };
+
     commands.insert_resource(StarInstancingBindgroup(render_device.create_bind_group(
         "Star_instancing_bind_group",
         &star_instancing_pipeline.bind_group_layout,
-        &BindGroupEntries::sequential((output_buffer.buffer.as_entire_buffer_binding(), uniform)),
+        &BindGroupEntries::sequential((
+            output_buffer.buffer.as_entire_buffer_binding(),
+            uniform,
+            &star_texture.texture_view,
+            &star_instancing_pipeline.linear_sampler,
+        )),
     )));
 }
 

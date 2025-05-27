@@ -132,7 +132,7 @@ fn get_stars_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32)
     }
     let val = max(0.0,abs(pow(base_noise + 1.0+ add_noise,stars_params.noise_tilt)));
 
-    return val * base_intensity * stars_params.strength;
+    return max(0.,val * base_intensity * stars_params.strength);
 }
 
 fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
@@ -147,7 +147,7 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     p2 = pow(p2,disk_params.noise_tilt);
     p2 += disk_params.noise_offset;
     
-    return base_intensity * p2 * disk_params.strength;
+    return max(0.,base_intensity * p2 * disk_params.strength);
 #endif
 }
 #endif
@@ -167,7 +167,7 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     let p2 = dust_ridge_noise(p,winding_angle,dust_params.noise_octaves);
 #endif
     let s : f32 = 0.01;
-    return base_intensity * p2 * s * dust_params.strength;
+    return max(0.,base_intensity * p2 * s * dust_params.strength);
 #endif
 }
 

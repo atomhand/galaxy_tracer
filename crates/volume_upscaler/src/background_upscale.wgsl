@@ -126,8 +126,8 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
     // but if the position reconstruction were higher quality (eg. had a depth input),
     // discontinuities would be less common and we could afford to increase velocity's
     // effect to reduce floatiness.
-    let velocity = length((old_uv-in.uv)*dimensions);
-    let confidence_velocity_factor = saturate(1.0 /velocity);
+    let velocity = length((old_uv-in.uv)*dimensions)*0.25;
+    let confidence_velocity_factor = saturate(1.0 /(velocity*velocity));
     var history_confidence = min(confidence_velocity_factor,history_sample.a);    
     if any(saturate(old_uv) != old_uv) {
         history_confidence = 0.0;

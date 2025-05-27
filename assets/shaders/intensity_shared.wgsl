@@ -9,11 +9,13 @@ fn get_twirled_unit_pos(p : vec3<f32>, winding_angle : f32) -> vec3<f32> {
 }
 
 fn disk_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
+    if(octaves == 0) {return 0.5;}
     let r = get_twirled_unit_pos(p,winding_angle);
     return octave_noise_3d(octaves,disk_params.noise_persistence,disk_params.noise_scale, r);    
 }
 
 fn dust_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
+    if(octaves == 0) {return 0.5;}
     let pr = get_twirled_unit_pos(p, winding_angle);
     return max(0.0,ridge_noise(pr * dust_params.noise_scale, dust_params.noise_persistence,octaves,2.5,dust_params.noise_offset, dust_params.noise_tilt));
 }
@@ -49,7 +51,7 @@ struct ComponentParams {
     noise_offset : f32,
     noise_tilt : f32,
     noise_persistence : f32,
-    noise_octaves : f32,
+    noise_octaves : i32,
 }
 
 #ifdef COMPUTE_BINDINGS
@@ -106,16 +108,10 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
     if(base_intensity < 0.0005 || disk_params.strength == 0.0) {
         return 0.0;
     }
-
-    var p2 = 0.5;
-    let octaves = i32(disk_params.noise_octaves);
 #ifdef DIAGNOSTIC
-    return f32(octaves) / 10.0;
+    return f32(disk_params.noise_octaves) / 10.0;
 #else
-    if octaves > 0 {
-        p2 = abs(disk_noise(p, winding_angle, octaves));
-    }
-
+    var p2 = abs(disk_noise(p, winding_angle, disk_params.noise_octaves));
     p2 = max(p2, 0.01);
     p2 = pow(p2,disk_params.noise_tilt);
     p2 += disk_params.noise_offset;
@@ -125,21 +121,13 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
 }
 
 fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
-        if(base_intensity < 0.0005 || dust_params.strength == 0.0) {
+    if(base_intensity < 0.0005 || dust_params.strength == 0.0) {
         return 0.0;
     }
-
-    var p2 = 0.5;
-    let octaves = i32(dust_params.noise_octaves);
 #ifdef DIAGNOSTIC
-    return f32(octaves) / 10.0;
+    return f32(dust_params.noise_octaves) / 10.0;
 #else
-    if octaves > 0 {
-        p2 = dust_noise(p, winding_angle, octaves);
-    }
-
-    // These should be folded into the cached noise texture
-    // (BUt I need to sort the tex format to deal with values outside 0..1 )
+    var p2 = dust_noise(p, winding_angle, dust_params.noise_octaves);
     p2 = max(p2-dust_params.noise_offset,0.0);
     p2 = clamp(pow(5*p2, dust_params.noise_tilt), -10.0, 10.0);
 
@@ -152,15 +140,10 @@ fn get_dust_intensity_ridged(p : vec3<f32>, winding_angle : f32, base_intensity 
     if(base_intensity < 0.0005 || dust_params.strength == 0.0) {
         return 0.0;
     }
-
-    var p2 = 0.5;
-    let octaves = i32(dust_params.noise_octaves);
 #ifdef DIAGNOSTIC
-    return f32(octaves) / 10.0;
+    return f32(dust_params.noise_octaves) / 10.0;
 #else
-    if octaves > 0 {
-        p2 = dust_noise(p,winding_angle,octaves);
-    }
+    let p2 = dust_noise(p,winding_angle,dust_params.noise_octaves);
 
     let s : f32 = 0.01;
     return p2 * base_intensity * s * dust_params.strength;

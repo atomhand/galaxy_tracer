@@ -10,14 +10,20 @@ fn get_twirled_unit_pos(p : vec3<f32>, winding_angle : f32) -> vec3<f32> {
 
 fn disk_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
     if(octaves == 0) {return 0.5;}
-    let r = get_twirled_unit_pos(p,winding_angle);
-    return octave_noise_3d(octaves,disk_params.noise_persistence,disk_params.noise_scale, r);    
+    let pos_rotated = get_twirled_unit_pos(p,winding_angle);
+    return octave_noise_3d(octaves,disk_params.noise_persistence,disk_params.noise_scale, pos_rotated);    
 }
 
 fn dust_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
     if(octaves == 0) {return 0.5;}
-    let pr = get_twirled_unit_pos(p, winding_angle);
-    return max(0.0,ridge_noise(pr * dust_params.noise_scale, dust_params.noise_persistence,octaves,2.5,dust_params.noise_offset, dust_params.noise_tilt));
+    let pos_rotated = get_twirled_unit_pos(p, winding_angle);
+    return octave_noise_3d(octaves,dust_params.noise_persistence,dust_params.noise_scale, pos_rotated);
+}
+
+fn dust_ridge_noise(p : vec3<f32>, winding_angle : f32, octaves : i32) -> f32 {
+    if(octaves == 0) {return 0.5;}
+    let pos_rotated = get_twirled_unit_pos(p, winding_angle);
+    return max(0.0,ridge_noise(pos_rotated * dust_params.noise_scale, dust_params.noise_persistence,octaves,2.5,dust_params.noise_offset, dust_params.noise_tilt));
 }
 
 // END Noise utilities
@@ -127,26 +133,15 @@ fn get_dust_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
 #ifdef DIAGNOSTIC
     return f32(dust_params.noise_octaves) / 10.0;
 #else
+#ifdef NO_RIDGED_NOISE
     var p2 = dust_noise(p, winding_angle, dust_params.noise_octaves);
     p2 = max(p2-dust_params.noise_offset,0.0);
     p2 = clamp(pow(5*p2, dust_params.noise_tilt), -10.0, 10.0);
-
+#else
+    let p2 = dust_ridge_noise(p,winding_angle,dust_params.noise_octaves);
+#endif
     let s : f32 = 0.01;
     return base_intensity * p2 * s * dust_params.strength;
-#endif
-}
-
-fn get_dust_intensity_ridged(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
-    if(base_intensity < 0.0005 || dust_params.strength == 0.0) {
-        return 0.0;
-    }
-#ifdef DIAGNOSTIC
-    return f32(dust_params.noise_octaves) / 10.0;
-#else
-    let p2 = dust_noise(p,winding_angle,dust_params.noise_octaves);
-
-    let s : f32 = 0.01;
-    return p2 * base_intensity * s * dust_params.strength;
 #endif
 }
 

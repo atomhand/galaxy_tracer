@@ -100,7 +100,9 @@ fn manage_star_instances(
 
     // add instancing components to stars that need them
     for (entity, transform, star) in star_query {
-        if star.index as usize >= instances.len() { continue; }
+        if star.index as usize >= instances.len() {
+            continue;
+        }
         instances.0[star.index as usize] = InstanceData {
             position: transform.translation,
             index: star.index as f32,
@@ -163,7 +165,8 @@ impl Plugin for StarInstancingMaterialPlugin {
     }
 
     fn finish(&self, app: &mut App) {
-        app.sub_app_mut(RenderApp).init_resource::<StarInstancingPipeline>();
+        app.sub_app_mut(RenderApp)
+            .init_resource::<StarInstancingPipeline>();
     }
 }
 
@@ -187,7 +190,9 @@ fn queue_custom(
     mut transparent_render_phases: ResMut<ViewSortedRenderPhases<Transparent3d>>,
     views: Query<(&ExtractedView, &Msaa, Option<&RenderLayers>)>,
 ) {
-    let draw_custom = transparent_3d_draw_functions.read().id::<DrawStarInstancing>();
+    let draw_custom = transparent_3d_draw_functions
+        .read()
+        .id::<DrawStarInstancing>();
 
     for (view, msaa, view_layers) in &views {
         let Some(transparent_phase) = transparent_render_phases.get_mut(&view.retained_view_entity)

@@ -85,13 +85,13 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
 
             ui.group(|ui| {
                 ui.checkbox(&mut config.noise_enabled, "Enabled");
-                    ui.add(
-                        egui::Slider::new(
-                            &mut config.noise_scale,
-                            minval.noise_scale..=maxval.noise_scale,
-                        )
-                        .text("Frequency"),
-                    );
+                ui.add(
+                    egui::Slider::new(
+                        &mut config.noise_scale,
+                        minval.noise_scale..=maxval.noise_scale,
+                    )
+                    .text("Frequency"),
+                );
                 // speciual case for stars, ugly hack but w/e
                 if config.component_type == ComponentType::StarVolume {
                     ui.add(
@@ -168,16 +168,17 @@ fn ui_system(
         .default_width(200.0)
         .show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
-
-                ui.heading("Generate");                
-                    ui.add(egui::DragValue::new(&mut new_galaxy_config.seed));
-                    if ui.button("Randomise Seed").clicked() {
-                        new_galaxy_config.seed = rand::rng().random();
-                    }
-                    if new_galaxy_config.seed != galaxy_config.seed {
-                        new_galaxy_config = generate_galaxy(GalaxyGenerationSettings::new(Some(new_galaxy_config.seed)));
-                        new_galaxy_config.generation = galaxy_config.generation + 1;
-                    }
+                ui.heading("Generate");
+                ui.add(egui::DragValue::new(&mut new_galaxy_config.seed));
+                if ui.button("Randomise Seed").clicked() {
+                    new_galaxy_config.seed = rand::rng().random();
+                }
+                if new_galaxy_config.seed != galaxy_config.seed {
+                    new_galaxy_config = generate_galaxy(GalaxyGenerationSettings::new(Some(
+                        new_galaxy_config.seed,
+                    )));
+                    new_galaxy_config.generation = galaxy_config.generation + 1;
+                }
                 ui.heading("Configuration");
 
                 egui::CollapsingHeader::new("Galaxy Parameters").show(ui, |ui| {
@@ -186,6 +187,10 @@ fn ui_system(
                             .text("Radius"),
                     );
 
+                    ui.add(
+                        egui::Slider::new(&mut new_galaxy_config.major_stars_spacing, 5.0..=50.0)
+                            .text("Major Stars Spacing"),
+                    );
                     let mut texture_root = new_rendering_config
                         .texture_dimension
                         .checked_ilog2()

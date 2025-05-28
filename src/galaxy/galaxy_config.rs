@@ -15,8 +15,10 @@ pub struct GalaxyRenderConfig {
 
 #[derive(Resource, Clone, PartialEq, ExtractResource)]
 pub struct GalaxyConfig {
-    pub seed : u64,
+    pub seed: u64,
     pub generation: i32,
+
+    pub major_stars_spacing: f32,
 
     pub radius: f32,
 
@@ -171,8 +173,9 @@ impl Default for GalaxyRenderConfig {
 impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
-            seed : 0,
+            seed: 0,
             generation: 1,
+            major_stars_spacing: 15.0,
             bulge_strength: 100.0,
             bulge_radius: 9.0,
             bulge_intensity: 1.0,

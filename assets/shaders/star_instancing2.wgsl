@@ -32,7 +32,7 @@ struct VertexOutput {
 
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
-    let billboard_margin_scale = 4.0;
+    let billboard_margin_scale = 8.0;
     let minor_stars_scale_factor = 0.1;
 
     // retrieve colour based on instance tag

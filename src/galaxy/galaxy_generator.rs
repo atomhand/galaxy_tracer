@@ -6,7 +6,7 @@ use rand_distr::Normal;
 use std::ops::Range;
 
 pub struct GalaxyGenerationSettings {
-    pub seed : Option<u64>,
+    pub seed: Option<u64>,
     pub arms_range: Range<u32>,
     pub winding_b_range: Range<f32>,
     pub winding_n_range: Range<f32>,
@@ -14,7 +14,7 @@ pub struct GalaxyGenerationSettings {
 }
 
 impl GalaxyGenerationSettings {
-    pub fn new(seed : Option<u64>) -> Self {
+    pub fn new(seed: Option<u64>) -> Self {
         Self {
             seed,
             arms_range: 2..6,
@@ -112,7 +112,7 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
         ..disk_params
     };
     let h2_params = ComponentConfig {
-        enabled : false,
+        enabled: false,
         component_type: ComponentType::H2,
         strength: 250.0,
         arm_width: width_distribution.sample(&mut rng),
@@ -147,5 +147,6 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
         star_volume_params,
         star_instance_params,
         h2_params,
+        ..default()
     }
 }

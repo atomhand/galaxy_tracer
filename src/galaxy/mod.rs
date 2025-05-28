@@ -15,4 +15,5 @@ pub use galaxy_config::{
 #[derive(Resource)]
 pub struct StarCount {
     pub count: usize,
+    pub major_stars_count: usize,
 }

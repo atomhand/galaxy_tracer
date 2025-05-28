@@ -3,6 +3,7 @@ use crate::prelude::*;
 use bevy::prelude::*;
 use rand::prelude::*;
 use rayon::prelude::*;
+use rand_chacha::ChaCha8Rng;
 
 pub struct SpawnStarsPlugin;
 
@@ -10,8 +11,8 @@ impl Plugin for SpawnStarsPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(StarSpawningControl {
             generation: -1,
-            stars_left_to_place: 0,
-            next_star_index: 0,
+            stars_placed: 0,
+            rng : ChaCha8Rng::seed_from_u64(0),
         })
         .insert_resource(StarCount { count: 0 })
         .add_systems(Update, manage_star_instances);
@@ -21,8 +22,8 @@ impl Plugin for SpawnStarsPlugin {
 #[derive(Resource)]
 pub struct StarSpawningControl {
     generation: i32,
-    stars_left_to_place: i32,
-    next_star_index: u32,
+    stars_placed: usize,
+    rng : ChaCha8Rng,
 }
 
 #[derive(Component)]
@@ -64,7 +65,7 @@ fn manage_star_instances(
     existing_star_query: Query<Entity, With<Star>>,
     mut star_instancing: ResMut<StarSpawningControl>,
 ) {
-    const BATCH_SIZE: i32 = 4096;
+    const BATCH_SIZE: usize = 4096;
 
     if star_instancing.generation != galaxy_config.generation {
         // cleanup existing stars
@@ -74,40 +75,36 @@ fn manage_star_instances(
         // update params
         star_instancing.generation = galaxy_config.generation;
         star_count.count = (galaxy_config.stars_per_arm * galaxy_config.num_arms() as i32) as usize;
-        star_instancing.stars_left_to_place = star_count.count as i32;
-        star_instancing.next_star_index = 0;
+        star_instancing.stars_placed = 0;
+        
+        star_instancing.rng = ChaCha8Rng::seed_from_u64(galaxy_config.seed);
     }
     if !galaxy_config.star_instance_params.enabled {
         return;
     }
     // Spawn stars for the current batch
-    if star_instancing.stars_left_to_place > 0 {
-        let batch_size = star_instancing.stars_left_to_place.min(BATCH_SIZE);
+    if star_instancing.stars_placed < star_count.count {
+        let batch_size = BATCH_SIZE.min(star_count.count - star_instancing.stars_placed);
 
-        let mut star_samples = vec![(Vec3::ZERO, 0.0); batch_size as usize];
-        star_samples.par_iter_mut().for_each(|sample| {
-            let mut rng = rand::rng();
-            *sample = (
-                sample_star_pos(&galaxy_config, &mut rng),
-                random_star_mass(&mut rng),
-            );
-        });
+        let stars_to_spawn = (0..batch_size).into_par_iter().map(|i| {
+            let mut rng = ChaCha8Rng::seed_from_u64(galaxy_config.seed);
+            rng.set_stream((star_instancing.stars_placed + i) as u64);
 
-        for star in star_samples {
-            commands.spawn((
-                Transform::from_translation(star.0),
+            (
+                Transform::from_translation(sample_star_pos(&galaxy_config, &mut rng)),
                 Star {
-                    index: star_instancing.next_star_index,
-                    mass: star.1,
-                },
-            ));
-            star_instancing.next_star_index += 1;
-        }
-        star_instancing.stars_left_to_place -= batch_size;
+                    index : (i+star_instancing.stars_placed) as u32,
+                mass : random_star_mass(&mut rng),
+                }
+            )
+        }).collect::<Vec<(Transform,Star)>>();
+
+        commands.spawn_batch(stars_to_spawn);
+        star_instancing.stars_placed += batch_size;
     }
 }
 
-fn random_star_mass(rng: &mut ThreadRng) -> f32 {
+fn random_star_mass(rng: &mut ChaCha8Rng) -> f32 {
     let in_ranges = [
         (0.08..0.45, 0.25),  // M (Red Dwarf)
         (0.45..0.8, 0.5),    // K
@@ -125,14 +122,14 @@ fn random_star_mass(rng: &mut ThreadRng) -> f32 {
     rng.random_range(range)
 }
 
-fn sample_unit_circle(rng: &mut ThreadRng) -> Vec2 {
+fn sample_unit_circle(rng: &mut ChaCha8Rng) -> Vec2 {
     let length = rng.random::<f32>().sqrt();
     let angle = std::f32::consts::PI * rng.random_range(0.0..2.0);
 
     vec2(angle.cos(), angle.sin()) * length
 }
 
-fn sample_pos(rng: &mut ThreadRng, radius: f32) -> Vec3 {
+fn sample_pos(rng: &mut ChaCha8Rng, radius: f32) -> Vec3 {
     let circle_sample = sample_unit_circle(rng) * radius;
     let height_sample: f32 = rng.random_range(-2.0..2.0);
 
@@ -141,7 +138,7 @@ fn sample_pos(rng: &mut ThreadRng, radius: f32) -> Vec3 {
     vec3(circle_sample.x, height_sample, circle_sample.y) * 2.0
 }
 
-fn sample_star_pos(galaxy_config: &GalaxyConfig, rng: &mut ThreadRng) -> Vec3 {
+fn sample_star_pos(galaxy_config: &GalaxyConfig, rng: &mut ChaCha8Rng) -> Vec3 {
     let arm_painter =
         super::GalaxyComponentDensity::new(galaxy_config, &galaxy_config.star_instance_params);
 

@@ -2,6 +2,7 @@ use crate::galaxy::galaxy_generator::*;
 use crate::prelude::*;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
+use rand::prelude::*;
 
 pub struct ConfigEguiPlugin;
 
@@ -167,11 +168,17 @@ fn ui_system(
         .default_width(200.0)
         .show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.heading("Configuration");
 
-                if ui.button("Generate New").clicked() {
-                    new_galaxy_config = generate_galaxy(GalaxyGenerationSettings::default());
-                }
+                ui.heading("Generate");                
+                    ui.add(egui::DragValue::new(&mut new_galaxy_config.seed));
+                    if ui.button("Randomise Seed").clicked() {
+                        new_galaxy_config.seed = rand::rng().random();
+                    }
+                    if new_galaxy_config.seed != galaxy_config.seed {
+                        new_galaxy_config = generate_galaxy(GalaxyGenerationSettings::new(Some(new_galaxy_config.seed)));
+                        new_galaxy_config.generation = galaxy_config.generation + 1;
+                    }
+                ui.heading("Configuration");
 
                 egui::CollapsingHeader::new("Galaxy Parameters").show(ui, |ui| {
                     ui.add(

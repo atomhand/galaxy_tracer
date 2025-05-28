@@ -1,19 +1,22 @@
 use crate::prelude::*;
 use bevy::prelude::*;
 use rand::{distr::Distribution, prelude::*};
+use rand_chacha::ChaCha8Rng;
 use rand_distr::Normal;
 use std::ops::Range;
 
 pub struct GalaxyGenerationSettings {
+    pub seed : Option<u64>,
     pub arms_range: Range<u32>,
     pub winding_b_range: Range<f32>,
     pub winding_n_range: Range<f32>,
     pub dust_distribution: Normal<f32>,
 }
 
-impl Default for GalaxyGenerationSettings {
-    fn default() -> Self {
+impl GalaxyGenerationSettings {
+    pub fn new(seed : Option<u64>) -> Self {
         Self {
+            seed,
             arms_range: 2..6,
             winding_b_range: 0.2..1.0,
             winding_n_range: 1.0..6.0,
@@ -23,8 +26,10 @@ impl Default for GalaxyGenerationSettings {
 }
 
 pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
+    let seed = settings.seed.unwrap_or(rand::rng().random());
+
     let radius = 500.0f32;
-    let mut rng = rand::rng();
+    let mut rng = ChaCha8Rng::seed_from_u64(seed);
     let num_arms = rng.random_range(settings.arms_range);
     let base_width = (num_arms as f32 * 0.25).min(2.0);
     let width_distribution = Normal::new(base_width, base_width / 4.0).unwrap();
@@ -127,6 +132,7 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
     };
 
     GalaxyConfig {
+        seed,
         generation: 1,
         radius,
         winding_b,

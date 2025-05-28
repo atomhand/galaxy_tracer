@@ -15,6 +15,7 @@ pub struct GalaxyRenderConfig {
 
 #[derive(Resource, Clone, PartialEq, ExtractResource)]
 pub struct GalaxyConfig {
+    pub seed : u64,
     pub generation: i32,
 
     pub radius: f32,
@@ -127,7 +128,7 @@ pub struct GalaxyConfigPlugin;
 
 impl Plugin for GalaxyConfigPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(generate_galaxy(GalaxyGenerationSettings::default()))
+        app.insert_resource(generate_galaxy(GalaxyGenerationSettings::new(None)))
             .insert_resource(GalaxyRenderConfig::default())
             .add_systems(Update, update_generation)
             .add_plugins(ExtractResourcePlugin::<GalaxyConfig>::default())
@@ -170,6 +171,7 @@ impl Default for GalaxyRenderConfig {
 impl Default for GalaxyConfig {
     fn default() -> Self {
         Self {
+            seed : 0,
             generation: 1,
             bulge_strength: 100.0,
             bulge_radius: 9.0,

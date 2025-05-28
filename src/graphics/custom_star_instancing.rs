@@ -87,9 +87,10 @@ fn manage_star_instances(
         return;
     }
 
-    if instances.0.len() != star_count.count + 1 {
+    if instances.0.len() != star_count.count.max(1) {
+        instances.0.clear();
         instances.0.resize(
-            star_count.count + 1,
+            star_count.count.max(1),
             InstanceData {
                 position: Vec3::ZERO,
                 index: 0.0,

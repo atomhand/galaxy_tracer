@@ -39,7 +39,7 @@ pub struct StarInstancingPlugin;
 
 impl Plugin for StarInstancingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(CustomMaterialPlugin)
+        app.add_plugins(StarInstancingMaterialPlugin)
             .add_systems(Startup, setup)
             .add_systems(Update, manage_star_instances);
     }
@@ -100,6 +100,7 @@ fn manage_star_instances(
 
     // add instancing components to stars that need them
     for (entity, transform, star) in star_query {
+        if star.index as usize >= instances.len() { continue; }
         instances.0[star.index as usize] = InstanceData {
             position: transform.translation,
             index: star.index as f32,
@@ -141,15 +142,15 @@ impl ExtractComponent for InstanceMaterialData {
     }
 }
 
-struct CustomMaterialPlugin;
+struct StarInstancingMaterialPlugin;
 
-impl Plugin for CustomMaterialPlugin {
+impl Plugin for StarInstancingMaterialPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(ExtractComponentPlugin::<InstanceMaterialData>::default());
         app.sub_app_mut(RenderApp)
             .init_resource::<StarInstancingUniforms>()
-            .add_render_command::<Transparent3d, DrawCustom>()
-            .init_resource::<SpecializedMeshPipelines<CustomPipeline>>()
+            .add_render_command::<Transparent3d, DrawStarInstancing>()
+            .init_resource::<SpecializedMeshPipelines<StarInstancingPipeline>>()
             .add_systems(
                 Render,
                 (
@@ -162,7 +163,7 @@ impl Plugin for CustomMaterialPlugin {
     }
 
     fn finish(&self, app: &mut App) {
-        app.sub_app_mut(RenderApp).init_resource::<CustomPipeline>();
+        app.sub_app_mut(RenderApp).init_resource::<StarInstancingPipeline>();
     }
 }
 
@@ -177,8 +178,8 @@ struct InstanceData {
 #[allow(clippy::too_many_arguments)]
 fn queue_custom(
     transparent_3d_draw_functions: Res<DrawFunctions<Transparent3d>>,
-    custom_pipeline: Res<CustomPipeline>,
-    mut pipelines: ResMut<SpecializedMeshPipelines<CustomPipeline>>,
+    custom_pipeline: Res<StarInstancingPipeline>,
+    mut pipelines: ResMut<SpecializedMeshPipelines<StarInstancingPipeline>>,
     pipeline_cache: Res<PipelineCache>,
     meshes: Res<RenderAssets<RenderMesh>>,
     render_mesh_instances: Res<RenderMeshInstances>,
@@ -186,7 +187,7 @@ fn queue_custom(
     mut transparent_render_phases: ResMut<ViewSortedRenderPhases<Transparent3d>>,
     views: Query<(&ExtractedView, &Msaa, Option<&RenderLayers>)>,
 ) {
-    let draw_custom = transparent_3d_draw_functions.read().id::<DrawCustom>();
+    let draw_custom = transparent_3d_draw_functions.read().id::<DrawStarInstancing>();
 
     for (view, msaa, view_layers) in &views {
         let Some(transparent_phase) = transparent_render_phases.get_mut(&view.retained_view_entity)
@@ -256,13 +257,13 @@ fn prepare_instance_buffers(
 }
 
 #[derive(Resource)]
-struct CustomPipeline {
+struct StarInstancingPipeline {
     shader: Handle<Shader>,
     mesh_pipeline: MeshPipeline,
     bind_group_layout: BindGroupLayout,
 }
 
-impl FromWorld for CustomPipeline {
+impl FromWorld for StarInstancingPipeline {
     fn from_world(world: &mut World) -> Self {
         let render_device = world.resource::<RenderDevice>();
         let mesh_pipeline = world.resource::<MeshPipeline>();
@@ -276,7 +277,7 @@ impl FromWorld for CustomPipeline {
                 ),
             ),
         );
-        CustomPipeline {
+        StarInstancingPipeline {
             shader: world.load_asset(SHADER_ASSET_PATH),
             mesh_pipeline: mesh_pipeline.clone(),
             bind_group_layout,
@@ -284,7 +285,7 @@ impl FromWorld for CustomPipeline {
     }
 }
 
-impl SpecializedMeshPipeline for CustomPipeline {
+impl SpecializedMeshPipeline for StarInstancingPipeline {
     type Key = MeshPipelineKey;
 
     fn specialize(
@@ -351,7 +352,7 @@ fn prepare_uniforms(
         .write_buffer(&render_device, &render_queue);
 }
 
-type DrawCustom = (
+type DrawStarInstancing = (
     SetItemPipeline,
     SetMeshViewBindGroup<0>,
     SetMeshBindGroup<1>,
@@ -364,7 +365,7 @@ struct StarInstancingBindgroup(BindGroup);
 
 fn prepare_star_instancing_bind_group(
     mut commands: Commands,
-    star_instancing_pipeline: Res<CustomPipeline>,
+    star_instancing_pipeline: Res<StarInstancingPipeline>,
     uniforms: Res<StarInstancingUniforms>,
     render_device: Res<RenderDevice>,
     extinction_cache: Res<ExtinctionCache>,

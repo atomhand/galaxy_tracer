@@ -84,11 +84,15 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
 
             ui.group(|ui| {
                 ui.checkbox(&mut config.noise_enabled, "Enabled");
+                    ui.add(
+                        egui::Slider::new(
+                            &mut config.noise_scale,
+                            minval.noise_scale..=maxval.noise_scale,
+                        )
+                        .text("Frequency"),
+                    );
                 // speciual case for stars, ugly hack but w/e
                 if config.component_type == ComponentType::StarVolume {
-                    ui.add(
-                        egui::Slider::new(&mut config.noise_scale, 1.0..=10.0).text("Frequency"),
-                    );
                     ui.add(
                         egui::Slider::new(&mut config.noise_offset, -10.0..=10.0).text("Offset"),
                     );
@@ -101,13 +105,6 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
                     );
                     ui.add(egui::Slider::new(&mut config.noise_tilt, -2.0..=2.0).text("Tilt"));
                 } else {
-                    ui.add(
-                        egui::Slider::new(
-                            &mut config.noise_scale,
-                            minval.noise_scale..=maxval.noise_scale,
-                        )
-                        .text("Frequency"),
-                    );
                     ui.add(
                         egui::Slider::new(
                             &mut config.noise_offset,

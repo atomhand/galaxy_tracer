@@ -64,8 +64,8 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
         radial_dropoff: 0.05,
         noise_octaves: 4,
         noise_tilt: 0.3,
-        noise_winding_factor: 0.1,
-        noise_scale: 10.0,
+        noise_winding_factor: 0.5,
+        noise_scale: 5.0,
         ..default()
     };
 
@@ -98,7 +98,7 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
         noise_winding_factor: rng.random_range(0.75..1.0),
         noise_scale: 9.0,
         noise_persistence: 2.0,
-        noise_offset: 2.5,
+        noise_offset: 10.0,
         noise_octaves: 3,
         ..default()
     };
@@ -107,6 +107,7 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
         ..disk_params
     };
     let h2_params = ComponentConfig {
+        enabled : false,
         component_type: ComponentType::H2,
         strength: 250.0,
         arm_width: width_distribution.sample(&mut rng),

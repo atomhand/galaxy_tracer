@@ -27,6 +27,8 @@ impl GalaxyComponentDensity<'_> {
         let r = f32::exp(-distance / (r0 * 0.5f32));
         (r - 0.01f32).clamp(0.0, 0.1)
     }
+
+    #[allow(dead_code)]
     pub fn pos_winding(&self, p: Vec2) -> f32 {
         let rad = p.length() / self.galaxy.radius;
         self.rad_winding(rad)

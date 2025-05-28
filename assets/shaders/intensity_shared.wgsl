@@ -157,7 +157,9 @@ fn get_disk_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) 
 #ifdef DIAGNOSTIC
     return f32(disk_params.noise_octaves) / 10.0;
 #else
-    var p2 = abs(disk_noise(p, winding_angle, disk_params.noise_octaves));
+    // In the GAMER paper, we take the abs() of this noise value
+    // however I think without the abs the result is more interesting
+    var p2 = (disk_noise(p, winding_angle, disk_params.noise_octaves));
     p2 = max(p2, 0.01);
     p2 = pow(p2,disk_params.noise_tilt);
     p2 += disk_params.noise_offset;

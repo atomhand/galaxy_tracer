@@ -1,3 +1,4 @@
+use super::star_picking::PickableStar;
 use super::GalaxyComponentDensity;
 use super::StarCount;
 use crate::prelude::*;
@@ -124,7 +125,7 @@ fn manage_star_instances(
                             },
                         )
                     })
-                    .collect::<Vec<(Transform, Star)>>();
+                    .collect::<Vec<_>>();
 
                 commands.spawn_batch(stars_to_spawn);
                 StarSpawningState::PlacingMinorStars(current_star + batch_size)
@@ -190,9 +191,10 @@ fn manage_star_instances(
                             mass: star_sampler.random_star_mass(&mut rng),
                             is_major: true,
                         },
+                        PickableStar {},
                     )
                 })
-                .collect::<Vec<(Transform, Star)>>();
+                .collect::<Vec<_>>();
 
             commands.spawn_batch(stars_to_spawn);
             StarSpawningState::PlacingMinorStars(star_count.major_stars_count)

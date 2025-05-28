@@ -73,6 +73,8 @@ fn get_texture(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> I
     let disk_painter = GalaxyComponentDensity::new(config, &config.disk_params);
     let dust_painter = GalaxyComponentDensity::new(config, &config.dust_params);
     let stars_painter = GalaxyComponentDensity::new(config, &config.star_volume_params);
+    let h2_painter = GalaxyComponentDensity::new(config, &config.h2_params);
+
 
     let mut texture_data = vec![0u8; (dimension * dimension * 8) as usize];
 
@@ -91,13 +93,13 @@ fn get_texture(config: &GalaxyConfig, render_settings: &GalaxyRenderConfig) -> I
             let disk = disk_painter.xz_density(p);
             let dust = dust_painter.xz_density(p);
             let stars = stars_painter.xz_density(p);
-            let winding = disk_painter.pos_winding(p);
+            let h2 = h2_painter.xz_density(p);
 
             let slice = [
                 (disk as f16).to_le_bytes(),
                 (dust as f16).to_le_bytes(),
                 (stars as f16).to_le_bytes(),
-                (winding as f16).to_le_bytes(),
+                (h2 as f16).to_le_bytes(),
             ]
             .concat();
 

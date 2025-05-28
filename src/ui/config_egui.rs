@@ -1,7 +1,7 @@
+use crate::galaxy::galaxy_generator::*;
 use crate::prelude::*;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
-use crate::galaxy::galaxy_generator::*;
 
 pub struct ConfigEguiPlugin;
 
@@ -31,6 +31,7 @@ fn component_ui(config: &mut ComponentConfig, has_noise: bool, ui: &mut egui::Ui
         ComponentType::Dust => "Dust Config",
         ComponentType::StarVolume => "Star Volume Config",
         ComponentType::StarInstances => "Star Instances Config",
+        ComponentType::H2 => "H2 Config",
     };
 
     let minval = ComponentConfig::MIN;
@@ -269,6 +270,7 @@ fn ui_system(
 
                 component_ui(&mut new_galaxy_config.disk_params, true, ui);
                 component_ui(&mut new_galaxy_config.dust_params, true, ui);
+                component_ui(&mut new_galaxy_config.h2_params, true, ui);
                 component_ui(&mut new_galaxy_config.star_volume_params, true, ui);
 
                 egui::CollapsingHeader::new("Star Instace Parameters").show(ui, |ui| {

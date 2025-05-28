@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use bevy::prelude::*;
-use rand::{distr::Distribution,prelude::*};
+use rand::{distr::Distribution, prelude::*};
 use rand_distr::Normal;
 use std::ops::Range;
 
@@ -8,7 +8,7 @@ pub struct GalaxyGenerationSettings {
     pub arms_range: Range<u32>,
     pub winding_b_range: Range<f32>,
     pub winding_n_range: Range<f32>,
-    pub dust_distribution : Normal<f32>,
+    pub dust_distribution: Normal<f32>,
 }
 
 impl Default for GalaxyGenerationSettings {
@@ -17,7 +17,7 @@ impl Default for GalaxyGenerationSettings {
             arms_range: 2..6,
             winding_b_range: 0.2..1.0,
             winding_n_range: 1.0..6.0,
-            dust_distribution: Normal::new(900.0,500.0).unwrap()
+            dust_distribution: Normal::new(900.0, 500.0).unwrap(),
         }
     }
 }
@@ -27,7 +27,7 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
     let mut rng = rand::rng();
     let num_arms = rng.random_range(settings.arms_range);
     let base_width = (num_arms as f32 * 0.25).min(2.0);
-    let width_distribution = Normal::new(base_width,base_width/4.0).unwrap();
+    let width_distribution = Normal::new(base_width, base_width / 4.0).unwrap();
 
     let base_angle_offset = 360 / num_arms as i32;
 
@@ -43,7 +43,7 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
         current_angle = if rng.random_bool(0.75) {
             current_angle + base_angle_offset
         } else {
-            rng.random_range((current_angle+base_angle_offset/2)..upper_angle)
+            rng.random_range((current_angle + base_angle_offset / 2)..upper_angle)
         }
     }
 
@@ -65,10 +65,9 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
         noise_octaves: 4,
         noise_tilt: 0.3,
         noise_winding_factor: 0.1,
-        noise_scale : 10.0,
+        noise_scale: 10.0,
         ..default()
     };
-
 
     let dust_params = ComponentConfig {
         component_type: ComponentType::Dust,
@@ -88,7 +87,7 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
     let star_volume_params = ComponentConfig {
         component_type: ComponentType::StarVolume,
         strength: 150.0,
-        arm_width: width_distribution.sample(&mut rng)+0.4,
+        arm_width: width_distribution.sample(&mut rng) + 0.4,
         y_thickness: 0.01,
         angular_offset: -20.,
 
@@ -100,12 +99,30 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
         noise_scale: 9.0,
         noise_persistence: 2.0,
         noise_offset: 2.5,
-        noise_octaves : 3,
+        noise_octaves: 3,
         ..default()
     };
     let star_instance_params = ComponentConfig {
         component_type: ComponentType::StarInstances, // Match disk
         ..disk_params
+    };
+    let h2_params = ComponentConfig {
+        component_type: ComponentType::H2,
+        strength: 250.0,
+        arm_width: width_distribution.sample(&mut rng),
+        y_thickness: 0.005,
+        angular_offset: -10.,
+
+        radial_dropoff: 0.1,
+        radial_extent: 0.45,
+
+        noise_tilt: 0.0,
+        noise_winding_factor: rng.random_range(0.2..0.5),
+        noise_scale: 6.0,
+        noise_persistence: 1.0,
+        noise_offset: 0.0,
+        noise_octaves: 6,
+        ..default()
     };
 
     GalaxyConfig {
@@ -122,5 +139,6 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
         dust_params,
         star_volume_params,
         star_instance_params,
+        h2_params,
     }
 }

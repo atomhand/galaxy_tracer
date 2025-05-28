@@ -70,20 +70,22 @@ struct ComponentParams {
 @group(1) @binding(1) var<uniform> bulge_params: BulgeParams;
 @group(1) @binding(2) var<uniform> disk_params: ComponentParams;
 @group(1) @binding(3) var<uniform> dust_params: ComponentParams;
-@group(1) @binding(4) var galaxy_xz_texture: texture_2d<f32>;
-@group(1) @binding(5) var galaxy_xz_sampler: sampler;
-@group(1) @binding(6) var lut_texture: texture_2d_array<f32>;
-@group(1) @binding(7) var lut_sampler: sampler;
+@group(1) @binding(4) var<uniform> h2_params: ComponentParams;
+@group(1) @binding(5) var galaxy_xz_texture: texture_2d<f32>;
+@group(1) @binding(6) var galaxy_xz_sampler: sampler;
+@group(1) @binding(7) var lut_texture: texture_2d_array<f32>;
+@group(1) @binding(8) var lut_sampler: sampler;
 #else
 @group(2) @binding(0) var<uniform> galaxy: GalaxyParams;
 @group(2) @binding(1) var<uniform> bulge_params: BulgeParams;
 @group(2) @binding(2) var<uniform> disk_params: ComponentParams;
 @group(2) @binding(3) var<uniform> stars_params: ComponentParams;
 @group(2) @binding(4) var<uniform> dust_params: ComponentParams;
-@group(2) @binding(5) var galaxy_xz_texture: texture_2d<f32>;
-@group(2) @binding(6) var galaxy_xz_sampler: sampler;
-@group(2) @binding(7) var lut_texture: texture_2d_array<f32>;
-@group(2) @binding(8) var lut_sampler: sampler;
+@group(2) @binding(5) var<uniform> h2_params: ComponentParams;
+@group(2) @binding(6) var galaxy_xz_texture: texture_2d<f32>;
+@group(2) @binding(7) var galaxy_xz_sampler: sampler;
+@group(2) @binding(8) var lut_texture: texture_2d_array<f32>;
+@group(2) @binding(9) var lut_sampler: sampler;
 #endif
 
 const LUT_ID_WINDING : i32 = 0;
@@ -116,6 +118,19 @@ fn reconstruct_intensity(p : vec3<f32>, xz_intensity : f32, y_thickness : f32) -
     return xz_intensity * h;
 }
 
+fn get_h2_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
+    if(base_intensity < 0.0005 || h2_params.strength == 0.0) {
+        return 0.0;
+    }
+
+    
+    let add_noise_scale = h2_params.noise_scale*3.0;
+    let add_noise = min(cloud_noise(p,winding_angle,h2_params.noise_octaves,add_noise_scale,1.), cloud_noise(p,winding_angle*0.5,h2_params.noise_octaves,add_noise_scale,1.));  
+    let val = max(0.0,pow(h2_params.noise_offset +add_noise,h2_params.noise_tilt));
+
+    return max(0.,val * base_intensity * h2_params.strength);
+}
+
 #ifndef EXTINCTION_ONLY
 fn get_stars_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32) -> f32 {
     if(base_intensity < 0.0005 || stars_params.strength == 0.0) {
@@ -127,8 +142,8 @@ fn get_stars_intensity(p : vec3<f32>, winding_angle : f32, base_intensity : f32)
     var add_noise = 0.0;
     if(stars_params.noise_offset != 0.0) {
         let add_noise_scale = stars_params.noise_scale;
-        add_noise = stars_params.noise_offset * cloud_noise(p,winding_angle,4,2.*add_noise_scale,-2.);  
-        add_noise += 0.5 * stars_params.noise_offset * cloud_noise(p,winding_angle*0.5,4,4.*add_noise_scale,-2.);  
+        add_noise = stars_params.noise_offset * cloud_noise(p,winding_angle,4,2.*add_noise_scale,1.);  
+        add_noise += 0.5 * stars_params.noise_offset * cloud_noise(p,winding_angle*0.5,4,4.*add_noise_scale,1.);  
     }
     let val = max(0.0,abs(pow(base_noise + 1.0+ add_noise,stars_params.noise_tilt)));
 
@@ -193,11 +208,15 @@ fn ray_step(p: vec3<f32>, in_col : vec3<f32>, stepsize : f32) -> vec3<f32> {
     let base_winding : f32 = -lookup_winding(d);//-xz_sample.w;//-get_winding(d);
 
     let dust_xz = reconstruct_intensity(p, xz_sample.y, dust_params.y_thickness);
-    let dust_winding_angle : f32 = base_winding * dust_params.winding_factor;
-    let dust_intensity : f32 = get_dust_intensity(p, dust_winding_angle, dust_xz) * stepsize;
+    let dust_intensity : f32 = get_dust_intensity(p, base_winding * dust_params.winding_factor, dust_xz) * stepsize;
     // yellow absorption spectra = appears red
     let dust_col = vec3<f32>(0.4,0.6,1.0);
-    let extinction : vec3<f32> = exp(-dust_intensity * dust_col );
+    var extinction : vec3<f32> = exp(-dust_intensity * dust_col );
+
+    let h2_xz = reconstruct_intensity(p, xz_sample.w, h2_params.y_thickness);
+    let h2_intensity : f32 = get_h2_intensity(p, base_winding * h2_params.winding_factor, h2_xz) * stepsize;
+    let h2_col = vec3<f32>(0.0,0.3,0.5);
+    extinction *= exp(-h2_intensity * h2_col );
 
 #ifdef EXTINCTION_ONLY
     return in_col * extinction;

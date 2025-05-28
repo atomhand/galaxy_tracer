@@ -102,11 +102,13 @@ pub struct GalaxyVolumeMaterial {
     stars_params: ComponentParams,
     #[uniform(4)]
     dust_params: ComponentParams,
-    #[texture(5)]
-    #[sampler(6)]
+    #[uniform(5)]
+    h2_params: ComponentParams,
+    #[texture(6)]
+    #[sampler(7)]
     xz_texture: Option<Handle<Image>>,
-    #[texture(7, dimension = "2d_array")]
-    #[sampler(8)]
+    #[texture(8, dimension = "2d_array")]
+    #[sampler(9)]
     lut: Option<Handle<Image>>,
     //alpha_mode: AlphaMode,
     diagnostic_mode: bool,
@@ -122,6 +124,7 @@ impl GalaxyVolumeMaterial {
         self.disk_params = ComponentParams::read(&galaxy_config.disk_params);
         self.stars_params = ComponentParams::read(&galaxy_config.star_volume_params);
         self.dust_params = ComponentParams::read(&galaxy_config.dust_params);
+        self.h2_params = ComponentParams::read(&galaxy_config.h2_params);
         self.diagnostic_mode = galaxy_render_settings.diagnostic_mode;
     }
     pub fn new(galaxy_config: &GalaxyConfig, galaxy_render_settings: &GalaxyRenderConfig) -> Self {

@@ -1,6 +1,6 @@
+use super::galaxy_generator::*;
 use bevy::prelude::*;
 use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
-use super::galaxy_generator::*;
 
 #[derive(Resource, Clone, PartialEq, ExtractResource)]
 pub struct GalaxyRenderConfig {
@@ -32,6 +32,7 @@ pub struct GalaxyConfig {
 
     pub disk_params: ComponentConfig,
     pub dust_params: ComponentConfig,
+    pub h2_params: ComponentConfig,
     pub star_volume_params: ComponentConfig,
     pub star_instance_params: ComponentConfig,
 }
@@ -42,6 +43,7 @@ pub enum ComponentType {
     Dust,
     StarVolume,
     StarInstances,
+    H2,
 }
 
 #[derive(Clone, PartialEq)]
@@ -228,6 +230,18 @@ impl Default for GalaxyConfig {
                 y_thickness: 0.02,
                 radial_dropoff: 0.05,
                 radial_extent: 0.4,
+                ..default()
+            },
+            h2_params: ComponentConfig {
+                component_type: ComponentType::H2,
+                radial_dropoff: 0.05,
+                radial_extent: 0.45,
+
+                noise_tilt: 1.0,
+                noise_winding_factor: 0.3,
+                noise_scale: 9.0,
+                noise_persistence: 1.0,
+                noise_offset: 2.5,
                 ..default()
             },
         }

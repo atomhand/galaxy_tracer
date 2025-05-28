@@ -62,9 +62,10 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
         y_thickness: 0.02,
         radial_extent: 0.4,
         radial_dropoff: 0.05,
-        noise_octaves: 10,
+        noise_octaves: 4,
         noise_tilt: 0.3,
         noise_winding_factor: 0.1,
+        noise_scale : 10.0,
         ..default()
     };
 
@@ -97,8 +98,9 @@ pub fn generate_galaxy(settings: GalaxyGenerationSettings) -> GalaxyConfig {
         noise_tilt: -1.0,
         noise_winding_factor: rng.random_range(0.75..1.0),
         noise_scale: 9.0,
-        noise_persistence: 1.0,
+        noise_persistence: 2.0,
         noise_offset: 2.5,
+        noise_octaves : 3,
         ..default()
     };
     let star_instance_params = ComponentConfig {

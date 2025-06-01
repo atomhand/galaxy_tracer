@@ -115,18 +115,20 @@ fn manage_star_instances(
                     .filter_map(|i| {
                         let mut rng = ChaCha8Rng::seed_from_u64(galaxy_config.seed);
                         rng.set_stream((current_star + i) as u64);
-                        star_sampler.sample_star_pos(&mut rng).map(
-                            |pos| (Transform::from_translation(pos),
-                            Star {
-                                index: (i + current_star) as u32,
-                                mass: star_sampler.random_star_mass(&mut rng),
-                                is_major: false,
-                            })
-                        )
+                        star_sampler.sample_star_pos(&mut rng).map(|pos| {
+                            (
+                                Transform::from_translation(pos),
+                                Star {
+                                    index: (i + current_star) as u32,
+                                    mass: star_sampler.random_star_mass(&mut rng),
+                                    is_major: false,
+                                },
+                            )
+                        })
                     })
                     .collect::<Vec<_>>();
                 let actual_batch = stars_to_spawn.len();
-                commands.spawn_batch(stars_to_spawn);                
+                commands.spawn_batch(stars_to_spawn);
                 StarSpawningState::PlacingMinorStars(current_star + actual_batch)
             } else {
                 StarSpawningState::Finished
@@ -282,7 +284,9 @@ impl<'a> StarSampler<'a> {
         for _ in 0..256 {
             let current_pos = self.sample_pos(rng);
             let weight = self.arm_painter.xyz_density(current_pos) + self.base_position_weight;
-            if weight == 0. { continue; }
+            if weight == 0. {
+                continue;
+            }
             weight_sum += weight;
 
             if rng.random::<f32>() < weight / weight_sum {

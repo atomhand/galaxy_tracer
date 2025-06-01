@@ -13,14 +13,14 @@ use bevy::{
     },
 };
 
-use super::background_upscale::BackgroundUpscaleSettings;
+use super::background_upscale::BackgroundUpscaleSettingsUniform;
 
 const UPSCALE_FACTOR: i32 = 4;
 pub const BACKGROUND_RENDER_LAYER: usize = 999;
 
 /// The target camera
 #[derive(Component)]
-#[require(BackgroundUpscaleSettings)]
+#[require(BackgroundUpscaleSettingsUniform)]
 pub struct BackgroundCamera;
 
 /// The child camera that renders the lowres background image
@@ -49,15 +49,7 @@ impl Plugin for BackgroundCameraPlugin {
         app.register_type::<BackgroundImageOutput>();
         app.add_plugins(SyncComponentPlugin::<BackgroundImageOutput>::default());
         app.add_plugins((ExtractComponentPlugin::<BackgroundChildCamera>::default(),));
-        app.add_systems(
-            Update,
-            (
-                setup_new_camera,
-                update_uniform,
-                update_target_size,
-                cleanup,
-            ),
-        );
+        app.add_systems(Update, (setup_new_camera, update_target_size, cleanup));
 
         let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
             return;
@@ -124,7 +116,7 @@ fn setup_new_camera(
             Entity,
             &Camera,
             Option<&mut BackgroundImageOutput>,
-            &mut BackgroundUpscaleSettings,
+            &mut BackgroundUpscaleSettingsUniform,
         ),
         Added<BackgroundCamera>,
     >,
@@ -193,13 +185,6 @@ fn setup_new_camera(
                 ))
                 .add_child(cam);
         }
-    }
-}
-
-fn update_uniform(frame_count: Res<FrameCount>, mut query: Query<&mut BackgroundUpscaleSettings>) {
-    for mut pass_settings in query.iter_mut() {
-        pass_settings.current_pixel =
-            (frame_count.0 as i32 % (UPSCALE_FACTOR * UPSCALE_FACTOR)) as f32;
     }
 }
 

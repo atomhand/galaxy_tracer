@@ -56,14 +56,17 @@ fn manage_star_instances(
     mut commands: Commands,
     galaxy_config: Res<GalaxyConfig>,
     star_query: Query<(Entity, &Transform, &Star), Without<StarInstanceMarker>>,
-    mut instance_data_query: Query<(Entity, &mut InstanceMaterialData), With<StarInstanceHolder>>,
+    mut instance_data_query: Query<
+        (Entity, Option<&mut InstanceMaterialData>),
+        With<StarInstanceHolder>,
+    >,
     star_count: Res<StarCount>,
     mut extinction: ResMut<ExtinctionCache>,
     galaxy_render_settings: Res<GalaxyRenderConfig>,
 ) {
     extinction.required_size = star_count.count.max(1);
 
-    let Ok((entity, mut instances)) = instance_data_query.single_mut() else {
+    let Ok((entity, instances)) = instance_data_query.single_mut() else {
         return;
     };
 
@@ -77,20 +80,22 @@ fn manage_star_instances(
         }
     }
 
-    if !galaxy_config.star_instance_params.enabled {
-        instances.0.clear();
-        instances.0.push(InstanceData {
-            position: Vec3::ZERO,
-            index: 0.0,
-            //color: star.color().extend(1.0).to_array(),
-        });
+    if !galaxy_config.star_instance_params.enabled || star_count.count == 0 {
+        commands.entity(entity).remove::<InstanceMaterialData>();
         return;
     }
 
-    if instances.0.len() != star_count.count.max(1) {
+    let Some(mut instances) = instances else {
+        commands
+            .entity(entity)
+            .insert(InstanceMaterialData(Vec::new()));
+        return;
+    };
+
+    if instances.0.len() != star_count.count {
         instances.0.clear();
         instances.0.resize(
-            star_count.count.max(1),
+            star_count.count,
             InstanceData {
                 position: Vec3::ZERO,
                 index: 0.0,
@@ -101,7 +106,7 @@ fn manage_star_instances(
 
     // add instancing components to stars that need them
     for (entity, transform, star) in star_query {
-        if star.index as usize >= instances.len() {
+        if star.index as usize >= instances.0.len() {
             continue;
         }
         instances.0[star.index as usize] = InstanceData {

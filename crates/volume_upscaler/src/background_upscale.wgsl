@@ -6,7 +6,8 @@
 
 struct BackgroundUpscaleSettings {
     current_pixel : f32,
-    dimensions : vec2<f32>
+    dimensions : vec2<f32>,
+    galaxy_radius : f32,
 }
 
 //@group(0) @binding(0) var screen_texture: texture_2d<f32>;
@@ -75,9 +76,6 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
     out.history = vec4<f32>(background_sample,0.0);
     out.view_target = vec4<f32>(background_sample,1.0);
 #else
-    // need to pass this as a uniform this constant
-    let galaxy_radius : f32 = 500.0;
-
     // Calculate reference fragment world position for reprojection
     // We use whichever intersection is closest - (or just the only intersection, if one is a miss/behind the camera)
     // -- an origin-centred sphere scaled with a radius chosen to be the larger of
@@ -93,7 +91,7 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
     let clip_pos = uv_to_ndc(in.uv); // Convert from uv to clip space
     let ro : vec3<f32> = view.world_position;//(view.world_from_clip * vec4(clip_pos, 0.0, 1.0)).xyz;
     // backface of a sphere
-    let rad = max(galaxy_radius*1.5,length(ro));
+    let rad = upscale_settings.galaxy_radius*1.5;//max(upscale_settings.galaxy_radius*1.5,length(ro));
     var sph = sphIntersect(ro,rd, rad);
     var t = max(sph.x,sph.y);
     // galactic xz plane
@@ -150,6 +148,9 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
         out.history = vec4<f32>(blended_sample,history_confidence);
         out.view_target = vec4<f32>(blended_sample,1.0);
     }
+
+    out.view_target = vec4<f32>(t/10000.0,0.0,0.0,1.0);
+    
 #endif
     
     return out;

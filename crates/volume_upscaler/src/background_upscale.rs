@@ -35,6 +35,8 @@ use bevy::{
 
 const UPSCALE_SHADER_HANDLE: Handle<Shader> = weak_handle!("a633e007-3aba-4f08-abeb-f309f98fce4b");
 
+const UPSCALE_FACTOR: i32 = 4;
+
 /// It is generally encouraged to set up post processing effects as a plugin
 pub struct BackgroundUpscalePlugin;
 
@@ -54,12 +56,14 @@ impl Plugin for BackgroundUpscalePlugin {
             // This plugin will take care of extracting it automatically.
             // It's important to derive [`ExtractComponent`] on [`PostProcessingSettings`]
             // for this plugin to work correctly.
-            ExtractComponentPlugin::<BackgroundUpscaleSettings>::default(),
+            ExtractComponentPlugin::<BackgroundUpscaleSettingsUniform>::default(),
             // The settings will also be the data used in the shader.
             // This plugin will prepare the component for the GPU by creating a uniform buffer
             // and writing the data to that buffer every frame.
-            UniformComponentPlugin::<BackgroundUpscaleSettings>::default(),
+            UniformComponentPlugin::<BackgroundUpscaleSettingsUniform>::default(),
         ));
+
+        app.add_systems(Update, update_settings);
 
         // We need to get the render app from the main app
         let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
@@ -144,11 +148,11 @@ impl ViewNode for BackgroundUpscaleNode {
         &'static ViewTarget,
         &'static BackgroundImageOutput,
         &'static BackgroundHistoryTextures,
-        &'static BackgroundUpscaleSettings,
+        &'static BackgroundUpscaleSettingsUniform,
         &'static UpscalePipelineId,
         // As there could be multiple post processing components sent to the GPU (one per camera),
         // we need to get the index of the one that is associated with the current view.
-        &'static DynamicUniformIndex<BackgroundUpscaleSettings>,
+        &'static DynamicUniformIndex<BackgroundUpscaleSettingsUniform>,
     );
 
     // Runs the node logic
@@ -195,7 +199,8 @@ impl ViewNode for BackgroundUpscaleNode {
         };
 
         // Get the settings uniform binding
-        let settings_uniforms = world.resource::<ComponentUniforms<BackgroundUpscaleSettings>>();
+        let settings_uniforms =
+            world.resource::<ComponentUniforms<BackgroundUpscaleSettingsUniform>>();
         let Some(settings_binding) = settings_uniforms.uniforms().binding() else {
             return Ok(());
         };
@@ -310,7 +315,7 @@ impl FromWorld for BackgroundUpscalePipeline {
                     // The settings uniform that will control the effect
                     uniform_buffer::<ViewUniform>(true),
                     uniform_buffer::<PreviousViewData>(true),
-                    uniform_buffer::<BackgroundUpscaleSettings>(true),
+                    uniform_buffer::<BackgroundUpscaleSettingsUniform>(true),
                     // The screen texture
                     //texture_2d(TextureSampleType::Float { filterable: true }),
                     // history input texture
@@ -443,7 +448,10 @@ fn prepare_background_history_textures(
     mut texture_cache: ResMut<TextureCache>,
     render_device: Res<RenderDevice>,
     frame_count: Res<FrameCount>,
-    views: Query<(Entity, &ExtractedCamera, &ExtractedView), With<BackgroundUpscaleSettings>>,
+    views: Query<
+        (Entity, &ExtractedCamera, &ExtractedView),
+        With<BackgroundUpscaleSettingsUniform>,
+    >,
 ) {
     for (entity, camera, view) in &views {
         if let Some(physical_target_size) = camera.physical_target_size {
@@ -489,9 +497,34 @@ fn prepare_background_history_textures(
     }
 }
 
+/// Used to set global settings for the upscale crate
+#[derive(Resource)]
+pub struct BackgroundUpscaleSettings {
+    pub galaxy_radius: f32,
+}
+
+fn update_settings(
+    frame_count: Res<FrameCount>,
+    mut query: Query<&mut BackgroundUpscaleSettingsUniform>,
+    upscale_settings: Option<Res<BackgroundUpscaleSettings>>,
+) {
+    let galaxy_radius = if let Some(settings) = upscale_settings {
+        settings.galaxy_radius
+    } else {
+        10.0
+    };
+
+    for mut pass_settings in query.iter_mut() {
+        pass_settings.current_pixel =
+            (frame_count.0 as i32 % (UPSCALE_FACTOR * UPSCALE_FACTOR)) as f32;
+        pass_settings.galaxy_radius = galaxy_radius;
+    }
+}
+
 // This is the component that will get passed to the shader
 #[derive(Component, Default, Clone, ExtractComponent, ShaderType)]
-pub struct BackgroundUpscaleSettings {
-    pub current_pixel: f32,
+pub struct BackgroundUpscaleSettingsUniform {
+    current_pixel: f32,
     pub dimensions: Vec2,
+    galaxy_radius: f32,
 }

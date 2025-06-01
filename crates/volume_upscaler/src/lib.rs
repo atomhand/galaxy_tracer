@@ -4,7 +4,7 @@ mod background_upscale;
 pub mod prelude;
 
 pub use background_camera::{BACKGROUND_RENDER_LAYER, BackgroundCamera, background_render_layer};
-
+pub use background_upscale::BackgroundUpscaleSettings;
 pub struct BackgroundRenderingPlugin;
 
 impl Plugin for BackgroundRenderingPlugin {

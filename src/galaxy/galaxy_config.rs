@@ -1,6 +1,7 @@
 use super::galaxy_generator::*;
 use bevy::prelude::*;
 use bevy::render::extract_resource::{ExtractResource, ExtractResourcePlugin};
+use volume_upscaler::BackgroundUpscaleSettings;
 
 #[derive(Resource, Clone, PartialEq, ExtractResource)]
 pub struct GalaxyRenderConfig {
@@ -138,9 +139,12 @@ impl Plugin for GalaxyConfigPlugin {
     }
 }
 
-fn update_generation(mut galaxy_config: ResMut<GalaxyConfig>) {
+fn update_generation(mut commands: Commands, mut galaxy_config: ResMut<GalaxyConfig>) {
     if galaxy_config.is_changed() {
         galaxy_config.generation += 1;
+        commands.insert_resource(BackgroundUpscaleSettings {
+            galaxy_radius: galaxy_config.radius,
+        });
     }
 }
 

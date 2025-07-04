@@ -147,10 +147,7 @@ fn fragment(in: FullscreenVertexOutput) -> Output {
 
         out.history = vec4<f32>(blended_sample,history_confidence);
         out.view_target = vec4<f32>(blended_sample,1.0);
-    }
-
-    out.view_target = vec4<f32>(t/10000.0,0.0,0.0,1.0);
-    
+    }    
 #endif
     
     return out;

@@ -284,7 +284,7 @@ fn ui_system(
                 component_ui(&mut new_galaxy_config.h2_params, true, ui);
                 component_ui(&mut new_galaxy_config.star_volume_params, true, ui);
 
-                egui::CollapsingHeader::new("Star Instace Parameters").show(ui, |ui| {
+                egui::CollapsingHeader::new("Star Instance Parameters").show(ui, |ui| {
                     ui.add(
                         egui::Slider::new(&mut new_galaxy_config.stars_per_arm, 4096..=65536)
                             .text("Stars per arm"),

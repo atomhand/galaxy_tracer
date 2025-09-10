@@ -2,17 +2,26 @@
     mesh_functions,
     view_transformations::position_world_to_clip
 }
+struct StarInstancingSettings {
+    supersampling_offset : f32,
+    padding : vec3<f32>,
+}
+
 #import bevy_pbr::mesh_functions::{get_world_from_local, mesh_position_local_to_clip}
 #import bevy_pbr::view_transformations::position_world_to_clip;
 #import bevy_pbr::mesh_view_bindings::view
 @group(2) @binding(0) var<storage> extinction_output: array<vec4<f32>>;
-@group(2) @binding(1) var<uniform> supersampling_offset_scale: f32;
-
+@group(2) @binding(1) var<uniform> settings: StarInstancingSettings;
 
 struct Vertex {
-    @builtin(instance_index) instance_index: u32,
     @location(0) position: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) uv: vec2<f32>,
+
+    @location(3) i_pos_scale: vec4<f32>,
+    //@location(4) i_color: vec4<f32>,
 };
+
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
@@ -23,12 +32,11 @@ struct VertexOutput {
 
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
-    let billboard_margin_scale = 4.0;
+    let billboard_margin_scale = 8.0;
     let minor_stars_scale_factor = 0.1;
 
     // retrieve colour based on instance tag
-    let tag = mesh_functions::get_tag(vertex.instance_index);
-    let in_color = extinction_output[tag].rgb;
+    let in_color = extinction_output[i32(vertex.i_pos_scale.w)].rgb;
 
     var scale_factor =  (in_color.x+in_color.y+in_color.z) * minor_stars_scale_factor * billboard_margin_scale;
     var alpha = 1.0;
@@ -41,7 +49,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     let camera_up = normalize(vec3<f32>(view.clip_from_world[0].y, view.clip_from_world[1].y, view.clip_from_world[2].y));
 
     var out : VertexOutput;
-    out.world_position = get_world_from_local(vertex.instance_index) * vec4<f32>((camera_right * vertex.position.x + camera_up * vertex.position.y ) * scale_factor,1.0);
+    out.world_position = vec4<f32>((camera_right * vertex.position.x + camera_up * vertex.position.y ) * scale_factor + vertex.i_pos_scale.xyz,1.0);
     out.clip_position = view.clip_from_world * vec4<f32>(out.world_position.xyz, 1.0);
     out.uv = vertex.position.xy * billboard_margin_scale;
     out.color = vec4<f32>(in_color,alpha);
@@ -90,8 +98,8 @@ const weights_8 = array<vec2<f32>,8>(
 
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
-    let dpdx = dpdx(in.uv) * supersampling_offset_scale;//vec2(dpdx(in.uv),dpdy(in.uv));
-    let dpdy = dpdy(in.uv) * supersampling_offset_scale;
+    let dpdx = dpdx(in.uv) * settings.supersampling_offset* 0.25;//vec2(dpdx(in.uv),dpdy(in.uv));
+    let dpdy = dpdy(in.uv) * settings.supersampling_offset * 0.25;
 
     let intensity =  in.color.a / 256.0;//.02*exp(-15.*rnd(1));
 

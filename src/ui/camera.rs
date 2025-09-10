@@ -27,7 +27,7 @@ fn spawn_camera(mut commands: Commands, mut clearcolor: ResMut<ClearColor>) {
         Transform::from_xyz(10.0, 12.0, 16.0).looking_at(Vec3::ZERO, Vec3::Y),
         CameraMain::default(),
         volume_upscaler::BackgroundCamera,
-        NoIndirectDrawing, // req for custom instnacing support
+        NoIndirectDrawing, // req for custom instancing support
     ));
 }
 
@@ -209,7 +209,7 @@ pub fn camera_control_system(
 
     camera_main.zoom = camera_main.zoom.clamp(0., 1.);
     let tzoom = camera_main.zoom * 0.85 + 0.15;
-    let speed: f32 = (tzoom * galaxy_scale) * 0.5 * time.delta_secs();
+    let speed: f32 = tzoom * galaxy_scale * 0.5 * time.delta_secs();
     camera_main.target_pos += key_delta * speed;
 
     // Activate the mouse drag system while zooming

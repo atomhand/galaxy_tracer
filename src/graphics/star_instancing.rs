@@ -1,4 +1,3 @@
-use super::StarInstanceMarker;
 use crate::graphics::ExtinctionCache;
 use crate::prelude::*;
 use bevy::{
@@ -33,7 +32,10 @@ use bevy::{
 use bytemuck::{Pod, Zeroable};
 
 /// This example uses a shader source file from the assets subdirectory
-const SHADER_ASSET_PATH: &str = "shaders/star_instancing2.wgsl";
+const SHADER_ASSET_PATH: &str = "shaders/star_instancing.wgsl";
+
+#[derive(Component)]
+pub struct StarInstanceMarker;
 
 pub struct StarInstancingPlugin;
 

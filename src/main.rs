@@ -10,7 +10,7 @@ mod ui;
 mod prelude;
 
 fn main() {
-    //std::env::set_var("RUST_BACKTRACE", "1");
+    std::env::set_var("RUST_BACKTRACE", "1");
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -25,9 +25,7 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins(EguiPlugin {
-            enable_multipass_for_primary_context: false,
-        })
+        .add_plugins(EguiPlugin::default())
         .add_plugins((
             galaxy::SpawnStarsPlugin,
             galaxy::GalaxyConfigPlugin,

@@ -21,7 +21,7 @@ impl Plugin for SpawnStarsPlugin {
             count: 0,
             major_stars_count: 0,
         })
-        .add_systems(Update, manage_star_instances);
+        .add_systems(Update, manage_stars);
     }
 }
 
@@ -77,7 +77,7 @@ impl Star {
 /// Spawns or despawns star instances
 /// Spawns in fairly small batches to avoid stutter when galaxy config changes
 /// - Might be a flag active during game loading that causes the spawn to run to finish
-fn manage_star_instances(
+fn manage_stars(
     mut commands: Commands,
     mut star_count: ResMut<StarCount>,
     galaxy_config: Res<GalaxyConfig>,

@@ -41,18 +41,19 @@ impl Plugin for StarInstancingPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(StarInstancingMaterialPlugin)
             .add_systems(Startup, setup)
-            .add_systems(Update, manage_star_instances);
+            // Needs to run BEFORE spawn_stars::manage_star_instances
+            // otherwise insert commands get queued to run after the entity
+            // is potentially deleted
+            .add_systems(PreUpdate, manage_star_instancing);
     }
 }
 
 #[derive(Component)]
 struct StarInstanceHolder;
 
-/// Spawns or despawns star instances
-/// Spawns in fairly small batches to avoid stutter when galaxy config changes
-/// - Might be a flag active during game loading that causes the spawn to run to finish
+/// Update the star instancing buffer to reflect the active star entities
 #[allow(clippy::too_many_arguments)]
-fn manage_star_instances(
+fn manage_star_instancing(
     mut commands: Commands,
     galaxy_config: Res<GalaxyConfig>,
     star_query: Query<(Entity, &Transform, &Star), Without<StarInstanceMarker>>,

@@ -38,10 +38,11 @@ fn absorb_egui_inputs(
     mut mouse: ResMut<ButtonInput<MouseButton>>,
     mut mouse_wheel: ResMut<Events<MouseWheel>>,
 ) {
-    let ctx = contexts.ctx_mut();
-    if !(ctx.wants_pointer_input() || ctx.is_pointer_over_area()) {
-        return;
-    }
+    if let Ok(ctx) = contexts.ctx_mut() {
+        if !(ctx.wants_pointer_input() || ctx.is_pointer_over_area()) {
+            return;
+        }
+    };
 
     mouse.reset_all();
     mouse_wheel.clear();

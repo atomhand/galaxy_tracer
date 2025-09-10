@@ -1,7 +1,7 @@
 use crate::galaxy::galaxy_generator::*;
 use crate::prelude::*;
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts};
+use bevy_egui::{egui, EguiContexts, EguiPrimaryContextPass};
 use rand::prelude::*;
 
 pub struct ConfigEguiPlugin;
@@ -9,15 +9,17 @@ pub struct ConfigEguiPlugin;
 impl Plugin for ConfigEguiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, configure_visuals_system)
-            .add_systems(Update, ui_system);
+            .add_systems(EguiPrimaryContextPass, ui_system);
     }
 }
 
 fn configure_visuals_system(mut contexts: EguiContexts) {
-    contexts.ctx_mut().set_visuals(egui::Visuals {
-        window_corner_radius: 0.0.into(),
-        ..Default::default()
-    });
+    if let Ok(context) = contexts.ctx_mut() {
+        context.set_visuals(egui::Visuals {
+            window_corner_radius: 0.0.into(),
+            ..Default::default()
+        });
+    }
 }
 
 fn arm_component_ui(id: usize, arm_config: &mut ArmConfig, ui: &mut egui::Ui) {
@@ -159,7 +161,7 @@ fn ui_system(
     mut galaxy_config: ResMut<GalaxyConfig>,
     mut rendering_config: ResMut<GalaxyRenderConfig>,
 ) {
-    let ctx = contexts.ctx_mut();
+    let Ok(ctx) = contexts.ctx_mut() else { return };
 
     let mut new_galaxy_config = galaxy_config.clone();
     let mut new_rendering_config = rendering_config.clone();

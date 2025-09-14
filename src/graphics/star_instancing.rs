@@ -1,5 +1,6 @@
 use crate::graphics::ExtinctionCache;
 use crate::prelude::*;
+use crate::ui::CameraMain;
 use bevy::{
     core_pipeline::core_3d::Transparent3d,
     ecs::{
@@ -287,7 +288,7 @@ impl FromWorld for StarInstancingPipeline {
                 ShaderStages::VERTEX_FRAGMENT,
                 (
                     storage_buffer_read_only::<Vec4>(false),
-                    uniform_buffer::<StarInstancingSetting>(false),
+                    uniform_buffer::<StarInstancingSettings>(false),
                 ),
             ),
         );
@@ -337,14 +338,15 @@ impl SpecializedMeshPipeline for StarInstancingPipeline {
 
 #[derive(ShaderType, Pod, Zeroable, Clone, Copy, Debug, Default)]
 #[repr(C)]
-struct StarInstancingSetting {
+struct StarInstancingSettings {
     supersampling_offset: f32,
-    padding: Vec3,
+    camera_transition: f32,
+    padding: Vec2,
 }
 
 #[derive(Resource, Default)]
 struct StarInstancingUniforms {
-    supersampling_offset: UniformBuffer<StarInstancingSetting>,
+    buffer: UniformBuffer<StarInstancingSettings>,
 }
 
 fn prepare_uniforms(
@@ -352,18 +354,20 @@ fn prepare_uniforms(
     render_queue: Res<RenderQueue>,
     galaxy_render_settings: Res<GalaxyRenderConfig>,
     mut uniforms: ResMut<StarInstancingUniforms>,
+    camera_query: Query<&CameraMain>,
 ) {
-    uniforms.supersampling_offset.set(StarInstancingSetting {
+    let camera = camera_query.single();
+
+    uniforms.buffer.set(StarInstancingSettings {
         supersampling_offset: if galaxy_render_settings.draw_stars_to_background {
             0.25
         } else {
             1.0
         },
-        padding: Vec3::ZERO,
+        camera_transition: camera.map(|c| c.mode_transition).unwrap_or(0.0),
+        padding: Vec2::ZERO,
     });
-    uniforms
-        .supersampling_offset
-        .write_buffer(&render_device, &render_queue);
+    uniforms.buffer.write_buffer(&render_device, &render_queue);
 }
 
 type DrawStarInstancing = (
@@ -387,7 +391,7 @@ fn prepare_star_instancing_bind_group(
 ) {
     let output_buffer = ssbos.get(&extinction_cache.output_buffer).unwrap();
 
-    let uniform = uniforms.supersampling_offset.binding().unwrap();
+    let uniform = uniforms.buffer.binding().unwrap();
 
     commands.insert_resource(StarInstancingBindgroup(render_device.create_bind_group(
         "Star_instancing_bind_group",

@@ -4,7 +4,8 @@
 }
 struct StarInstancingSettings {
     supersampling_offset : f32,
-    padding : vec3<f32>,
+    camera_transition : f32,
+    padding : vec2<f32>,
 }
 
 #import bevy_pbr::mesh_functions::{get_world_from_local, mesh_position_local_to_clip}
@@ -35,10 +36,16 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     let billboard_margin_scale = 8.0;
     let minor_stars_scale_factor = 0.1;
 
-    // retrieve colour based on instance tag
-    let in_color = extinction_output[i32(vertex.i_pos_scale.w)].rgb;
+    let idx = i32(vertex.i_pos_scale.w);
 
-    var scale_factor =  (in_color.x+in_color.y+in_color.z) * minor_stars_scale_factor * billboard_margin_scale;
+    // retrieve colour based on instance tag
+    let in_color = extinction_output[idx].rgb;
+
+    var scale_factor =  mix(
+        (in_color.x+in_color.y+in_color.z) * minor_stars_scale_factor,
+        1.0,
+        settings.camera_transition
+    )  * billboard_margin_scale; 
     var alpha = 1.0;
     if scale_factor < 1.0 {
         alpha = scale_factor/1.0;
@@ -72,9 +79,9 @@ fn draw_star(pos : vec2<f32>, star_color : vec3<f32>, I : f32) -> vec3<f32> {
     let ARMS_SCALE = 1.0 / 1.4 ;
 
     d = length(pos * vec2<f32>(50.0,0.5)) * ARMS_SCALE;
-    col += spectrum/ (d*d*d) * (1.0 - system_transition_factor);
+    col += spectrum/ (d*d*d) * (1.0 - system_transition_factor) * (1.0 - settings.camera_transition);
     d = length(pos * vec2<f32>(0.5,50.0)) * ARMS_SCALE;
-    col += spectrum / (d*d*d) * (1.0 - system_transition_factor);
+    col += spectrum / (d*d*d) * (1.0 - system_transition_factor) * (1.0 - settings.camera_transition);
 
     return col;
 }

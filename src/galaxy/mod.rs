@@ -5,7 +5,7 @@ mod galaxy_config;
 pub mod galaxy_generator;
 mod spawn_stars;
 mod star_picking;
-pub use star_picking::StarPickingPlugin;
+pub use star_picking::{PickableStar, StarPickingPlugin};
 
 pub use spawn_stars::{SpawnStarsPlugin, Star};
 

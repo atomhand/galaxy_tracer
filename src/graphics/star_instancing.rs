@@ -90,9 +90,14 @@ fn manage_star_instancing(
     }
 
     let Some(mut instances) = instances else {
-        commands
-            .entity(entity)
-            .insert(InstanceMaterialData(Vec::new()));
+        // create new instance buffer with the correct number of (blank) entries
+        commands.entity(entity).insert(InstanceMaterialData(vec![
+            InstanceData {
+                position: Vec3::ZERO,
+                index: 0.0,
+            };
+            star_count.count
+        ]));
         return;
     };
 
@@ -103,7 +108,6 @@ fn manage_star_instancing(
             InstanceData {
                 position: Vec3::ZERO,
                 index: 0.0,
-                //color: [0.0; 4],
             },
         );
     }

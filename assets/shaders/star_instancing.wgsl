@@ -34,7 +34,8 @@ struct VertexOutput {
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
     let billboard_margin_scale = 8.0;
-    let minor_stars_scale_factor = 0.1;
+    let galaxy_view_scale = 0.1;
+    let system_view_scale = 0.0;
 
     let idx = i32(vertex.i_pos_scale.w);
 
@@ -42,14 +43,14 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     let in_color = extinction_output[idx].rgb;
 
     var scale_factor =  mix(
-        (in_color.x+in_color.y+in_color.z) * minor_stars_scale_factor,
-        1.0,
+        (in_color.x+in_color.y+in_color.z) * galaxy_view_scale,
+        system_view_scale,
         settings.camera_transition
     )  * billboard_margin_scale; 
     var alpha = 1.0;
-    if scale_factor < 1.0 {
-        alpha = scale_factor/1.0;
-        scale_factor = 1.0;
+    if scale_factor < 4.0 {
+        alpha = scale_factor/4.0;
+        scale_factor = 4.0;
     }
 
     let camera_right = normalize(vec3<f32>(view.clip_from_world[0].x, view.clip_from_world[1].x, view.clip_from_world[2].x));    
